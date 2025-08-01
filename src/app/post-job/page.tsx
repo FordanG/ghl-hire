@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { 
   Building2, 
-  MapPin, 
   DollarSign, 
   Clock, 
   FileText, 

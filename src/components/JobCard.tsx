@@ -39,9 +39,14 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
           ? `${job.description.substring(0, 120)}...` 
           : job.description
         }
-        <span className="text-blue-500 font-medium hover:underline cursor-pointer ml-1">
-          Read more
-        </span>
+        {job.description.length > 120 && (
+          <Link 
+            href={`/jobs/${job.id}`}
+            className="text-blue-500 font-medium hover:underline cursor-pointer ml-1"
+          >
+            Read more
+          </Link>
+        )}
       </p>
       
       <div className="flex items-center justify-between">

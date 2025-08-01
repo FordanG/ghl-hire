@@ -40,7 +40,7 @@ export default function ContactPage() {
             Contact Us
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto fade-in fade-in-2">
-            Have questions about GHL Hire? We're here to help. Reach out to our team and we'll get back to you as soon as possible.
+            Have questions about GHL Hire? We&apos;re here to help. Reach out to our team and we&apos;ll get back to you as soon as possible.
           </p>
         </div>
       </section>

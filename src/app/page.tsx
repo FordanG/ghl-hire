@@ -17,7 +17,7 @@ export default function Home() {
           The Premier Job Board for <span className="text-blue-500">GoHighLevel</span> Professionals
         </h1>
         <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8 fade-in fade-in-2">
-          Welcome to <span className="font-semibold text-gray-900">GHL Hire</span>, the dedicated career platform connecting talented professionals with exciting opportunities in the GoHighLevel ecosystem. Whether you're a seasoned GHL expert or looking to break in, we're your gateway to career growth in marketing automation and CRM.
+          Welcome to <span className="font-semibold text-gray-900">GHL Hire</span>, the dedicated career platform connecting talented professionals with exciting opportunities in the GoHighLevel ecosystem. Whether you&apos;re a seasoned GHL expert or looking to break in, we&apos;re your gateway to career growth in marketing automation and CRM.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4 fade-in fade-in-3">
           <Link 
@@ -187,7 +187,7 @@ export default function Home() {
           <div className="flex flex-col items-center fade-in fade-in-5">
             <Target className="w-8 h-8 text-blue-500 mb-2" />
             <div className="font-semibold text-gray-900">Precision Matching</div>
-            <p className="text-gray-500 text-sm mt-1">Specialized vetting for agencies and SaaS companies' unique needs.</p>
+            <p className="text-gray-500 text-sm mt-1">Specialized vetting for agencies and SaaS companies&apos; unique needs.</p>
           </div>
         </div>
       </section>

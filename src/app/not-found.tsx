@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Search, ArrowLeft } from 'lucide-react';
+import { Home, Search } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -14,7 +14,7 @@ export default function NotFound() {
             <div className="text-6xl font-bold text-blue-500 mb-4">404</div>
             <h1 className="text-3xl font-semibold mb-4">Page Not Found</h1>
             <p className="text-gray-600 mb-8">
-              Sorry, we couldn't find the page you're looking for. It might have been moved, deleted, or you entered the wrong URL.
+              Sorry, we couldn&apos;t find the page you&apos;re looking for. It might have been moved, deleted, or you entered the wrong URL.
             </p>
           </div>
 

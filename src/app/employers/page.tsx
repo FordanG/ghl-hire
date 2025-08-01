@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { 
   Users, 
   Target, 
@@ -7,10 +6,7 @@ import {
   TrendingUp, 
   Shield, 
   CheckCircle, 
-  Star,
-  Building2,
-  Zap,
-  PlusSquare
+  Star
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -181,7 +177,7 @@ export default function EmployersPage() {
               </div>
               <h3 className="text-xl font-semibold mb-3">Make Your Hire</h3>
               <p className="text-gray-600">
-                Interview your top choices and make an offer. We'll help facilitate the entire process from start to finish.
+                Interview your top choices and make an offer. We&apos;ll help facilitate the entire process from start to finish.
               </p>
             </div>
           </div>
@@ -333,7 +329,7 @@ export default function EmployersPage() {
                 </div>
               </div>
               <p className="text-gray-600 mb-4">
-                "GHL Hire helped us find the perfect GoHighLevel specialist in just 3 days. The quality of candidates was exceptional."
+                &ldquo;GHL Hire helped us find the perfect GoHighLevel specialist in just 3 days. The quality of candidates was exceptional.&rdquo;
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
@@ -353,7 +349,7 @@ export default function EmployersPage() {
                 </div>
               </div>
               <p className="text-gray-600 mb-4">
-                "The platform's focus on GoHighLevel talent made all the difference. We found developers who understood our needs immediately."
+                &ldquo;The platform&apos;s focus on GoHighLevel talent made all the difference. We found developers who understood our needs immediately.&rdquo;
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
@@ -373,7 +369,7 @@ export default function EmployersPage() {
                 </div>
               </div>
               <p className="text-gray-600 mb-4">
-                "Outstanding service and results. GHL Hire has become our go-to platform for all GoHighLevel hiring needs."
+                &ldquo;Outstanding service and results. GHL Hire has become our go-to platform for all GoHighLevel hiring needs.&rdquo;
               </p>
               <div className="flex items-center">
                 <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>

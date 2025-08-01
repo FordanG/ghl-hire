@@ -79,7 +79,7 @@ export default function TermsPage() {
           <section className="fade-in fade-in-1">
             <h2 className="text-2xl font-semibold mb-4">Disclaimer</h2>
             <p className="text-gray-600 leading-relaxed">
-              The materials on GHL Hire are provided on an 'as is' basis. GHL Hire makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
+              The materials on GHL Hire are provided on an &apos;as is&apos; basis. GHL Hire makes no warranties, expressed or implied, and hereby disclaims and negates all other warranties including without limitation, implied warranties or conditions of merchantability, fitness for a particular purpose, or non-infringement of intellectual property or other violation of rights.
             </p>
           </section>
 
