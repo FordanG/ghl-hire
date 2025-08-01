@@ -27,14 +27,8 @@ export default function Header() {
             Employers
           </Link>
           <Link 
-            href="/resources" 
-            className="text-gray-500 px-2 py-1 transition-colors fade-in fade-in-5 hover:text-gray-900 hover:underline"
-          >
-            Resources
-          </Link>
-          <Link 
             href="/signin" 
-            className="text-gray-500 px-2 py-1 transition-colors fade-in fade-in-6 hover:text-gray-900 hover:underline"
+            className="text-gray-500 px-2 py-1 transition-colors fade-in fade-in-5 hover:text-gray-900 hover:underline"
           >
             Sign In
           </Link>

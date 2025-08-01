@@ -47,9 +47,6 @@ export default function NotFound() {
               <Link href="/employers" className="block text-blue-600 hover:text-blue-500 transition-colors">
                 For Employers
               </Link>
-              <Link href="/resources" className="block text-blue-600 hover:text-blue-500 transition-colors">
-                Resources
-              </Link>
               <Link href="/contact" className="block text-blue-600 hover:text-blue-500 transition-colors">
                 Contact Us
               </Link>
