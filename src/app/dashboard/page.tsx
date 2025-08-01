@@ -3,7 +3,6 @@ import {
   TrendingUp, 
   FileText, 
   Bookmark, 
-  Bell, 
   CheckCircle, 
   Clock,
   ArrowRight,
@@ -39,7 +38,7 @@ export default function CandidateDashboard() {
             Welcome back, {mockProfile.name.split(' ')[0]}!
           </h1>
           <p className="text-gray-600 mt-1">
-            Here's what's happening with your job search
+            Here&apos;s what&apos;s happening with your job search
           </p>
         </div>
 
@@ -238,7 +237,7 @@ export default function CandidateDashboard() {
             <div className="text-center py-8">
               <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-sm font-medium text-gray-900 mb-2">AI-powered recommendations coming soon</h3>
-              <p className="text-sm text-gray-500 mb-4">We're working on personalized job recommendations based on your profile and preferences.</p>
+              <p className="text-sm text-gray-500 mb-4">We&apos;re working on personalized job recommendations based on your profile and preferences.</p>
               <Link 
                 href="/jobs"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"

@@ -13,10 +13,8 @@ import {
   Calendar,
   Star,
   MapPin,
-  Clock,
   Mail,
   Phone,
-  FileText,
   Users,
   TrendingUp,
   UserCheck,
@@ -36,7 +34,6 @@ export default function ApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [jobFilter, setJobFilter] = useState<string>('all');
-  const [selectedApplications, setSelectedApplications] = useState<string[]>([]);
 
   const filteredApplications = applications.filter(app => {
     const matchesSearch = app.candidate.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -377,25 +374,6 @@ export default function ApplicationsPage() {
           </div>
         )}
 
-        {/* Bulk Actions */}
-        {selectedApplications.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{selectedApplications.length} applications selected</span>
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition-colors">
-                  Move to Review
-                </button>
-                <button className="px-3 py-1 text-sm bg-purple-100 text-purple-800 rounded hover:bg-purple-200 transition-colors">
-                  Schedule Interview
-                </button>
-                <button className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors">
-                  Reject
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </CompanyDashboardLayout>
   );

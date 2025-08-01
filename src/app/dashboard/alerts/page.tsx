@@ -6,14 +6,11 @@ import {
   Plus, 
   Edit, 
   Trash2, 
-  Search, 
   MapPin, 
   DollarSign,
   Clock,
   Settings,
   Mail,
-  Smartphone,
-  Toggle,
   CheckCircle
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -22,7 +19,6 @@ import { mockJobAlerts, type JobAlert } from '@/lib/dashboard-data';
 export default function JobAlertsPage() {
   const [alerts, setAlerts] = useState<JobAlert[]>(mockJobAlerts);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingAlert, setEditingAlert] = useState<JobAlert | null>(null);
 
   const [newAlert, setNewAlert] = useState({
     name: '',
@@ -298,7 +294,7 @@ export default function JobAlertsPage() {
                 </label>
                 <select
                   value={newAlert.frequency}
-                  onChange={(e) => setNewAlert(prev => ({ ...prev, frequency: e.target.value as any }))}
+                  onChange={(e) => setNewAlert(prev => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                 >
                   <option value="daily">Daily</option>
@@ -386,7 +382,7 @@ export default function JobAlertsPage() {
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Use Specific Keywords</h4>
               <p className="text-blue-700">
-                Include specific GoHighLevel terms like "GHL," "automation workflows," or "white label" for better matches.
+                Include specific GoHighLevel terms like &ldquo;GHL,&rdquo; &ldquo;automation workflows,&rdquo; or &ldquo;white label&rdquo; for better matches.
               </p>
             </div>
             <div>

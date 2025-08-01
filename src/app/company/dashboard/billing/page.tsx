@@ -5,15 +5,8 @@ import {
   CreditCard,
   Check,
   Download,
-  Calendar,
-  DollarSign,
-  Zap,
-  Star,
   Users,
-  Briefcase,
-  BarChart3,
   Shield,
-  ArrowUpRight,
   AlertCircle,
   Edit,
   Trash2,
@@ -22,7 +15,7 @@ import {
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
 
 export default function BillingPage() {
-  const [currentPlan, setCurrentPlan] = useState('professional');
+  const [currentPlan] = useState('professional');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
   const plans = [
@@ -131,7 +124,7 @@ export default function BillingPage() {
     teamMembers: { used: 3, limit: 5 }
   };
 
-  const PlanCard = ({ plan, isActive }: { plan: any; isActive: boolean }) => (
+  const PlanCard = ({ plan, isActive }: { plan: typeof plans[0]; isActive: boolean }) => (
     <div className={`relative border-2 rounded-lg p-6 ${
       isActive 
         ? 'border-blue-500 bg-blue-50' 

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { 
   User, 
   Mail, 
-  Phone, 
   MapPin, 
   Edit, 
   Plus, 
@@ -17,7 +16,7 @@ import {
   FileText
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { mockProfile, type Profile, type WorkExperience, type Education, type Certification } from '@/lib/dashboard-data';
+import { mockProfile, type Profile, type WorkExperience } from '@/lib/dashboard-data';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile>(mockProfile);
@@ -194,7 +193,7 @@ export default function ProfilePage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'overview' | 'experience' | 'education' | 'certifications')}
                   className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     isActive
                       ? 'border-blue-500 text-blue-600'

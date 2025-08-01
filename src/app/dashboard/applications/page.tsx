@@ -197,7 +197,7 @@ export default function ApplicationsPage() {
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No applications yet</h3>
             <p className="text-gray-600 mb-6">
-              You haven't applied to any jobs yet. Start browsing opportunities to begin your job search.
+              You haven&apos;t applied to any jobs yet. Start browsing opportunities to begin your job search.
             </p>
             <Link 
               href="/jobs"
@@ -215,7 +215,7 @@ export default function ApplicationsPage() {
             <div>
               <h4 className="font-medium text-blue-800 mb-2">Follow Up</h4>
               <p className="text-blue-700">
-                Don't be afraid to follow up on applications after 1-2 weeks if you haven't heard back.
+                Don&apos;t be afraid to follow up on applications after 1-2 weeks if you haven&apos;t heard back.
               </p>
             </div>
             <div>

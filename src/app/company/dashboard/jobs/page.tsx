@@ -6,7 +6,6 @@ import {
   Plus,
   Search,
   Filter,
-  MoreHorizontal,
   Edit,
   Eye,
   Trash2,
@@ -32,7 +31,6 @@ export default function JobPostingsPage() {
   const [jobs, setJobs] = useState<JobPosting[]>(mockJobPostings);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -318,25 +316,6 @@ export default function JobPostingsPage() {
           </div>
         )}
 
-        {/* Bulk Actions */}
-        {selectedJobs.length > 0 && (
-          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">{selectedJobs.length} jobs selected</span>
-              <div className="flex gap-2">
-                <button className="px-3 py-1 text-sm bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition-colors">
-                  Pause All
-                </button>
-                <button className="px-3 py-1 text-sm bg-green-100 text-green-800 rounded hover:bg-green-200 transition-colors">
-                  Activate All
-                </button>
-                <button className="px-3 py-1 text-sm bg-red-100 text-red-800 rounded hover:bg-red-200 transition-colors">
-                  Delete All
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </CompanyDashboardLayout>
   );

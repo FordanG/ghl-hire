@@ -2,25 +2,21 @@
 
 import { useState } from 'react';
 import { 
-  BarChart3,
   TrendingUp,
-  TrendingDown,
   Users,
   Eye,
   Clock,
   Target,
   Calendar,
   Download,
-  Filter,
-  Briefcase,
   UserCheck,
   MessageSquare,
   Star,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  LucideIcon
 } from 'lucide-react';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
-import { mockCompanyStats, mockJobPostings, mockApplications } from '@/lib/company-data';
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
@@ -74,7 +70,7 @@ export default function AnalyticsPage() {
     value: string | number;
     trend: 'up' | 'down' | 'neutral';
     trendValue: number;
-    icon: any;
+    icon: LucideIcon;
     iconColor: string;
   }) => (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -115,7 +111,7 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-3">
             <select 
               value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value as any)}
+              onChange={(e) => setTimeRange(e.target.value as '7d' | '30d' | '90d' | '1y')}
               className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
             >
               <option value="7d">Last 7 days</option>

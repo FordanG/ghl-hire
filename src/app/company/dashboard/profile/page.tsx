@@ -198,7 +198,7 @@ export default function CompanyProfilePage() {
               return (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id as 'overview' | 'benefits' | 'social' | 'verification')}
                   className={`group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm ${
                     isActive
                       ? 'border-blue-500 text-blue-600'
