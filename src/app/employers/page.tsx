@@ -200,7 +200,7 @@ export default function EmployersPage() {
           <div className="border border-gray-200 rounded-xl p-8 fade-in fade-in-3">
             <div className="text-center mb-6">
               <h3 className="text-xl font-semibold mb-2">Basic</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-1">$299</div>
+              <div className="text-3xl font-bold text-blue-600 mb-1">$29.99</div>
               <div className="text-gray-500">per job posting</div>
             </div>
             <ul className="space-y-3 mb-8">
@@ -238,7 +238,7 @@ export default function EmployersPage() {
             </div>
             <div className="text-center mb-6">
               <h3 className="text-xl font-semibold mb-2">Professional</h3>
-              <div className="text-3xl font-bold text-blue-600 mb-1">$599</div>
+              <div className="text-3xl font-bold text-blue-600 mb-1">$59.99</div>
               <div className="text-gray-500">per job posting</div>
             </div>
             <ul className="space-y-3 mb-8">
