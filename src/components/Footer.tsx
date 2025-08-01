@@ -7,7 +7,7 @@ export default function Footer() {
         <span className="text-lg font-semibold tracking-tight text-gray-900">
           GHL<span className="font-light text-blue-400">Hire</span>
         </span>
-        <span className="ml-4 text-xs">© 2024</span>
+        <span className="ml-4 text-xs">© 2025</span>
       </div>
       
       <div className="flex items-center gap-6 mt-4 md:mt-0">
