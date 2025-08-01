@@ -23,7 +23,7 @@ export default function BillingPage() {
     {
       id: 'basic',
       name: 'Basic',
-      price: { monthly: 99, yearly: 990 },
+      price: { monthly: 29.99, yearly: 299.90 },
       features: [
         '5 active job postings',
         'Basic applicant tracking',
@@ -40,7 +40,7 @@ export default function BillingPage() {
     {
       id: 'professional',
       name: 'Professional',
-      price: { monthly: 299, yearly: 2990 },
+      price: { monthly: 59.99, yearly: 599.90 },
       popular: true,
       features: [
         '20 active job postings',
@@ -60,7 +60,7 @@ export default function BillingPage() {
     {
       id: 'enterprise',
       name: 'Enterprise',
-      price: { monthly: 599, yearly: 5990 },
+      price: { monthly: 99.99, yearly: 999.90 },
       features: [
         'Unlimited job postings',
         'Full applicant tracking suite',
@@ -85,7 +85,7 @@ export default function BillingPage() {
       id: '1',
       date: '2025-01-01',
       description: 'Professional Plan - Monthly',
-      amount: 299,
+      amount: 59.99,
       status: 'paid',
       invoice: 'INV-2025-001'
     },
@@ -93,7 +93,7 @@ export default function BillingPage() {
       id: '2',
       date: '2024-12-01',
       description: 'Professional Plan - Monthly',
-      amount: 299,
+      amount: 59.99,
       status: 'paid',
       invoice: 'INV-2024-012'
     },
@@ -101,7 +101,7 @@ export default function BillingPage() {
       id: '3',
       date: '2024-11-01',
       description: 'Professional Plan - Monthly',
-      amount: 299,
+      amount: 59.99,
       status: 'paid',
       invoice: 'INV-2024-011'
     }
@@ -272,7 +272,7 @@ export default function BillingPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Amount</p>
-                <p className="font-medium text-gray-900">$299.00</p>
+                <p className="font-medium text-gray-900">$59.99</p>
               </div>
             </div>
           </div>
