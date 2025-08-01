@@ -6,6 +6,7 @@ import {
   Check,
   Download,
   Users,
+  Briefcase,
   Shield,
   AlertCircle,
   Edit,
