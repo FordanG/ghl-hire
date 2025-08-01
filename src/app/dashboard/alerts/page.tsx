@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { 
   Bell, 
   Plus, 
-  Edit, 
   Trash2, 
   MapPin, 
   DollarSign,
@@ -123,13 +122,6 @@ export default function JobAlertsPage() {
             title={alert.active ? 'Pause alert' : 'Activate alert'}
           >
             <CheckCircle className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setEditingAlert(alert)}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-            title="Edit alert"
-          >
-            <Edit className="w-5 h-5" />
           </button>
           <button
             onClick={() => deleteAlert(alert.id)}
