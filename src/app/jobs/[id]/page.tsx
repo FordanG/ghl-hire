@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar, ExternalLink, Bookmark } from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import JobDetailClient from './JobDetailClient';
 import { supabase } from '@/lib/supabase';
 
 interface JobDetailPageProps {
@@ -103,16 +104,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 lg:flex-col fade-in fade-in-5">
-            <button className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">
-              <ExternalLink className="w-5 h-5" />
-              Apply Now
-            </button>
-            <button className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
-              <Bookmark className="w-5 h-5" />
-              Save Job
-            </button>
-          </div>
+          <JobDetailClient job={job} />
         </div>
 
         {/* Job Content */}
