@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bookmark, ExternalLink, BookmarkCheck } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
   const [loading, setLoading] = useState(true);
 
   // Check if job is saved and if user has applied
-  useState(() => {
+  useEffect(() => {
     const checkStatus = async () => {
       if (!profile) {
         setLoading(false);
@@ -57,7 +57,7 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
     };
 
     checkStatus();
-  });
+  }, [profile, job.id]);
 
   const handleApply = () => {
     if (!user) {

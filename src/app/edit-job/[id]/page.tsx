@@ -2,21 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AlertCircle, Briefcase, MapPin, DollarSign, CheckCircle } from 'lucide-react';
+import { AlertCircle, Briefcase, MapPin, DollarSign, CheckCircle, Trash2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
-export default function PostJobPage() {
+interface EditJobPageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default function EditJobPage({ params }: EditJobPageProps) {
   const router = useRouter();
   const { user, company, loading: authLoading } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [canPostJob, setCanPostJob] = useState(true);
-  const [jobCount, setJobCount] = useState(0);
-  const [jobLimit, setJobLimit] = useState(1);
-  const [planType, setPlanType] = useState('free');
+  const [jobId, setJobId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -28,59 +32,74 @@ export default function PostJobPage() {
     experience_level: 'Mid Level',
     salary_min: '',
     salary_max: '',
-    status: 'draft' as 'draft' | 'active',
+    status: 'draft' as 'draft' | 'active' | 'closed',
   });
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/signin?redirect=/post-job');
+      router.push('/signin');
     }
 
     if (!authLoading && !company) {
-      router.push('/signup?redirect=/post-job');
+      router.push('/signup');
     }
   }, [authLoading, user, company, router]);
 
   useEffect(() => {
-    const checkJobLimit = async () => {
+    const loadJob = async () => {
+      const { id } = await params;
+      setJobId(id);
+
       if (!company) return;
 
       try {
-        // Get subscription info
-        const { data: subscription } = await supabase
-          .from('subscriptions')
+        // Fetch job
+        const { data: job, error: fetchError } = await supabase
+          .from('jobs')
           .select('*')
-          .eq('company_id', company.id)
+          .eq('id', id)
           .single();
 
-        if (subscription) {
-          setPlanType(subscription.plan_type);
-          setJobLimit(subscription.job_post_limit);
-
-          // Count active jobs
-          const { data: jobs } = await supabase
-            .from('jobs')
-            .select('id')
-            .eq('company_id', company.id)
-            .in('status', ['draft', 'active']);
-
-          const count = jobs?.length || 0;
-          setJobCount(count);
-
-          // Check if can post more jobs
-          if (subscription.plan_type === 'premium') {
-            setCanPostJob(true);
-          } else {
-            setCanPostJob(count < subscription.job_post_limit);
-          }
+        if (fetchError || !job) {
+          setError('Job not found');
+          setLoading(false);
+          return;
         }
+
+        // Verify ownership
+        if (job.company_id !== company.id) {
+          setError('You do not have permission to edit this job');
+          setLoading(false);
+          return;
+        }
+
+        // Populate form
+        setFormData({
+          title: job.title || '',
+          description: job.description || '',
+          requirements: job.requirements || '',
+          benefits: job.benefits || '',
+          location: job.location || '',
+          remote: job.remote || false,
+          job_type: job.job_type || 'Full-Time',
+          experience_level: job.experience_level || 'Mid Level',
+          salary_min: job.salary_min ? job.salary_min.toString() : '',
+          salary_max: job.salary_max ? job.salary_max.toString() : '',
+          status: job.status || 'draft',
+        });
+
+        setLoading(false);
       } catch (err) {
-        console.error('Error checking job limit:', err);
+        console.error('Error loading job:', err);
+        setError('Failed to load job');
+        setLoading(false);
       }
     };
 
-    checkJobLimit();
-  }, [company]);
+    if (company) {
+      loadJob();
+    }
+  }, [params, company, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -94,27 +113,22 @@ export default function PostJobPage() {
     if (error) setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent, publishNow: boolean = false) => {
+  const handleSubmit = async (e: React.FormEvent, newStatus?: 'draft' | 'active' | 'closed') => {
     e.preventDefault();
 
-    if (!company) {
-      setError('You must be logged in as an employer to post jobs');
+    if (!company || !jobId) {
+      setError('Invalid job or company');
       return;
     }
 
-    if (!canPostJob && publishNow) {
-      setError(`You've reached your job posting limit (${jobLimit}). Please upgrade your plan to post more jobs.`);
-      return;
-    }
-
-    setLoading(true);
+    setSaving(true);
     setError(null);
 
     try {
       // Validate required fields
       if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
         setError('Please fill in all required fields');
-        setLoading(false);
+        setSaving(false);
         return;
       }
 
@@ -124,15 +138,16 @@ export default function PostJobPage() {
 
       if (salaryMin && salaryMax && salaryMin > salaryMax) {
         setError('Minimum salary cannot be greater than maximum salary');
-        setLoading(false);
+        setSaving(false);
         return;
       }
 
-      // Create job
-      const { data: job, error: insertError } = await supabase
+      const statusToUpdate = newStatus || formData.status;
+
+      // Update job
+      const { error: updateError } = await supabase
         .from('jobs')
-        .insert({
-          company_id: company.id,
+        .update({
           title: formData.title.trim(),
           description: formData.description.trim(),
           requirements: formData.requirements.trim() || null,
@@ -143,29 +158,56 @@ export default function PostJobPage() {
           experience_level: formData.experience_level,
           salary_min: salaryMin,
           salary_max: salaryMax,
-          status: publishNow ? 'active' : 'draft',
+          status: statusToUpdate,
         })
-        .select()
-        .single();
+        .eq('id', jobId);
 
-      if (insertError) {
-        throw insertError;
+      if (updateError) {
+        throw updateError;
       }
 
-      // Redirect to job preview or dashboard
-      if (publishNow) {
-        router.push(`/jobs/${job.id}`);
+      // Redirect based on action
+      if (newStatus === 'active') {
+        router.push(`/jobs/${jobId}`);
       } else {
         router.push('/company/dashboard');
       }
     } catch (err: any) {
-      console.error('Job posting error:', err);
-      setError(err.message || 'Failed to post job. Please try again.');
-      setLoading(false);
+      console.error('Job update error:', err);
+      setError(err.message || 'Failed to update job. Please try again.');
+      setSaving(false);
     }
   };
 
-  if (authLoading) {
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this job? This action cannot be undone.')) {
+      return;
+    }
+
+    if (!jobId) return;
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const { error: deleteError } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      router.push('/company/dashboard');
+    } catch (err: any) {
+      console.error('Job deletion error:', err);
+      setError(err.message || 'Failed to delete job. Please try again.');
+      setSaving(false);
+    }
+  };
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -176,8 +218,26 @@ export default function PostJobPage() {
     );
   }
 
-  if (!company) {
-    return null;
+  if (error && !jobId) {
+    return (
+      <div className="min-h-screen flex flex-col text-gray-900 bg-white">
+        <Header />
+        <div className="flex-1 flex items-center justify-center px-4">
+          <div className="text-center max-w-md">
+            <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Error Loading Job</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={() => router.push('/company/dashboard')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
   }
 
   return (
@@ -188,48 +248,10 @@ export default function PostJobPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8 fade-in fade-in-1">
-            <h1 className="text-3xl font-semibold tracking-tight mb-2">Post a New Job</h1>
+            <h1 className="text-3xl font-semibold tracking-tight mb-2">Edit Job</h1>
             <p className="text-gray-600">
-              Fill out the form below to create a new job listing for your company
+              Update your job listing details below
             </p>
-          </div>
-
-          {/* Job Limit Warning */}
-          {!canPostJob && (
-            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3 fade-in fade-in-2">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-yellow-800 font-medium">
-                  Job Posting Limit Reached
-                </p>
-                <p className="text-sm text-yellow-700 mt-1">
-                  You've used {jobCount} of {jobLimit} job posts on your {planType} plan.
-                  Upgrade to post more jobs or close existing ones.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Current Plan Info */}
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 fade-in fade-in-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-900">
-                  Current Plan: <span className="capitalize">{planType}</span>
-                </p>
-                <p className="text-sm text-blue-700 mt-1">
-                  Job Posts: {jobCount} / {planType === 'premium' ? 'Unlimited' : jobLimit}
-                </p>
-              </div>
-              {planType !== 'premium' && (
-                <button
-                  onClick={() => router.push('/pricing')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  Upgrade Plan
-                </button>
-              )}
-            </div>
           </div>
 
           {/* Error Message */}
@@ -240,8 +262,48 @@ export default function PostJobPage() {
             </div>
           )}
 
-          {/* Job Posting Form */}
-          <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-8 fade-in fade-in-3">
+          {/* Job Status */}
+          <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4 fade-in fade-in-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Current Status: <span className="capitalize">{formData.status}</span>
+                </p>
+              </div>
+              <div className="flex gap-2">
+                {formData.status === 'draft' && (
+                  <button
+                    onClick={(e) => handleSubmit(e, 'active')}
+                    disabled={saving}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    Publish
+                  </button>
+                )}
+                {formData.status === 'active' && (
+                  <button
+                    onClick={(e) => handleSubmit(e, 'closed')}
+                    disabled={saving}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    Close
+                  </button>
+                )}
+                {formData.status === 'closed' && (
+                  <button
+                    onClick={(e) => handleSubmit(e, 'active')}
+                    disabled={saving}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium disabled:opacity-50"
+                  >
+                    Reopen
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Job Editing Form */}
+          <form onSubmit={(e) => handleSubmit(e)} className="space-y-8 fade-in fade-in-3">
             {/* Basic Information */}
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
@@ -446,25 +508,22 @@ export default function PostJobPage() {
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <button
                 type="button"
-                onClick={(e) => handleSubmit(e, false)}
-                disabled={loading}
-                className="flex-1 px-6 py-3 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleDelete}
+                disabled={saving}
+                className="px-6 py-3 border border-red-300 text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? 'Saving...' : 'Save as Draft'}
+                <Trash2 className="w-5 h-5" />
+                Delete Job
               </button>
               <button
                 type="submit"
-                disabled={loading || !canPostJob}
+                disabled={saving}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? 'Publishing...' : 'Publish Job'}
-                {!loading && <CheckCircle className="w-5 h-5" />}
+                {saving ? 'Saving...' : 'Save Changes'}
+                {!saving && <CheckCircle className="w-5 h-5" />}
               </button>
             </div>
-
-            <p className="text-sm text-gray-500 text-center">
-              By posting a job, you agree to our Terms of Service and Community Guidelines
-            </p>
           </form>
         </div>
       </div>

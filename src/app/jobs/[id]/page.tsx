@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar } from 'lucide-react';
+import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar, ExternalLink } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobDetailClient from './JobDetailClient';
@@ -29,6 +29,21 @@ async function getJob(id: string) {
   return job;
 }
 
+async function getSimilarJobs(currentJobId: string, limit: number = 3) {
+  const { data: jobs, error } = await supabase
+    .from('jobs')
+    .select(`
+      *,
+      company:companies(company_name)
+    `)
+    .eq('status', 'active')
+    .neq('id', currentJobId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  return jobs || [];
+}
+
 function formatDate(dateString: string) {
   const date = new Date(dateString);
   const now = new Date();
@@ -49,6 +64,8 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   if (!job) {
     notFound();
   }
+
+  const similarJobs = await getSimilarJobs(id, 3);
 
   const salary = job.salary_min && job.salary_max
     ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
@@ -172,15 +189,15 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                   <span className="text-gray-500">Location:</span>
                   <span className="font-medium">{job.location}</span>
                 </div>
-                {job.salary && (
+                {salary && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Salary:</span>
-                    <span className="font-medium">{job.salary}</span>
+                    <span className="font-medium">{salary}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-500">Posted:</span>
-                  <span className="font-medium">{job.postedDate}</span>
+                  <span className="font-medium">{formatDate(job.created_at)}</span>
                 </div>
               </div>
             </div>
@@ -189,23 +206,27 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             <div className="bg-gray-50 rounded-xl p-6 fade-in fade-in-5">
               <h3 className="font-semibold mb-4">Similar Jobs</h3>
               <div className="space-y-3">
-                {mockJobs.slice(0, 3).filter(j => j.id !== job.id).map((similarJob) => (
-                  <Link 
-                    key={similarJob.id}
-                    href={`/jobs/${similarJob.id}`}
-                    className="block p-3 bg-white rounded-lg hover:shadow-sm transition-shadow"
-                  >
-                    <div className="font-medium text-sm text-gray-900 mb-1">
-                      {similarJob.title}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {similarJob.company} • {similarJob.location}
-                    </div>
-                  </Link>
-                ))}
+                {similarJobs.length > 0 ? (
+                  similarJobs.map((similarJob) => (
+                    <Link
+                      key={similarJob.id}
+                      href={`/jobs/${similarJob.id}`}
+                      className="block p-3 bg-white rounded-lg hover:shadow-sm transition-shadow"
+                    >
+                      <div className="font-medium text-sm text-gray-900 mb-1">
+                        {similarJob.title}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {similarJob.company?.company_name} • {similarJob.location}
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">No similar jobs found</p>
+                )}
               </div>
-              <Link 
-                href="/jobs" 
+              <Link
+                href="/jobs"
                 className="block text-blue-500 font-medium hover:underline text-sm mt-4"
               >
                 View All Jobs →
