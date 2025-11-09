@@ -364,7 +364,7 @@ export default function CandidateDashboard() {
             </Link>
 
             <Link
-              href="/dashboard/alerts"
+              href="/job-alerts"
               className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors"
             >
               <div className="bg-green-100 rounded-lg p-2">
