@@ -53,7 +53,7 @@ export default function CompanyProfilePage() {
         description: authCompany.description || '',
         website: authCompany.website || '',
         location: authCompany.location || '',
-        company_size: authCompany.company_size || '',
+        company_size: authCompany.size || '',
         logo_url: authCompany.logo_url || '',
       });
     }
@@ -202,7 +202,7 @@ export default function CompanyProfilePage() {
                         description: authCompany.description || '',
                         website: authCompany.website || '',
                         location: authCompany.location || '',
-                        company_size: authCompany.company_size || '',
+                        company_size: authCompany.size || '',
                         logo_url: authCompany.logo_url || '',
                       });
                     }

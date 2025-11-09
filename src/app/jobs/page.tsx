@@ -5,24 +5,7 @@ import { Filter, Search, X } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobCard from '@/components/JobCard';
-import { supabase } from '@/lib/supabase';
-
-interface Job {
-  id: string;
-  title: string;
-  description: string;
-  location: string;
-  job_type: string;
-  experience_level: string;
-  salary_min: number | null;
-  salary_max: number | null;
-  remote: boolean;
-  created_at: string;
-  company: {
-    company_name: string;
-    logo_url: string | null;
-  };
-}
+import { supabase, Job } from '@/lib/supabase';
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -79,7 +62,7 @@ export default function JobsPage() {
       filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.company.company_name.toLowerCase().includes(searchTerm.toLowerCase())
+        (job.company?.company_name || '').toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 

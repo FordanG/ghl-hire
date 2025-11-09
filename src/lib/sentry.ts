@@ -118,13 +118,14 @@ export function addBreadcrumb(breadcrumb: Sentry.Breadcrumb) {
 }
 
 /**
- * Start transaction for performance monitoring
+ * Start span for performance monitoring
+ * Note: startTransaction is deprecated in newer versions of Sentry
  */
-export function startTransaction(name: string, op: string) {
-  return Sentry.startTransaction({
+export function startSpan(name: string, op: string, callback: () => void) {
+  return Sentry.startSpan({
     name,
     op,
-  });
+  }, callback);
 }
 
 // Initialize Sentry if DSN is configured

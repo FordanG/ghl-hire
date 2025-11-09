@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCompany(null);
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     profile,
     company,

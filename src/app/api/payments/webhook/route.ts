@@ -99,9 +99,9 @@ async function handlePaymentSuccess(event: any) {
     if (planId && companyId) {
       const plan = getPlanById(planId);
 
-      // Create or update subscription
+      // Create or update subscription (all plans are monthly)
       const periodEnd = new Date();
-      periodEnd.setMonth(periodEnd.getMonth() + (plan.interval === 'year' ? 12 : 1));
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
 
       await supabase
         .from('subscriptions')

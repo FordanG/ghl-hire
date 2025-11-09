@@ -7,7 +7,7 @@ import {
   BookOpen,
   FileText,
   Video,
-  Tool,
+  Wrench,
   Download,
   Eye,
   Star,
@@ -37,7 +37,7 @@ const resourceTypes = [
   { value: 'all', label: 'All Resources', icon: BookOpen },
   { value: 'guide', label: 'Guides', icon: FileText },
   { value: 'template', label: 'Templates', icon: FileText },
-  { value: 'tool', label: 'Tools', icon: Tool },
+  { value: 'tool', label: 'Tools', icon: Wrench },
   { value: 'video', label: 'Videos', icon: Video },
   { value: 'course', label: 'Courses', icon: BookOpen },
   { value: 'ebook', label: 'eBooks', icon: BookOpen }
@@ -190,11 +190,11 @@ export default function ResourcesPage() {
                 <button
                   key={type.value}
                   onClick={() => setSelectedType(type.value)}
-                  className={\`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors flex items-center gap-2 \${
+                  className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors flex items-center gap-2 ${
                     selectedType === type.value
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }\`}
+                  }`}
                 >
                   <Icon className="w-4 h-4" />
                   {type.label}
@@ -211,11 +211,11 @@ export default function ResourcesPage() {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={\`px-4 py-2 rounded-full font-medium whitespace-nowrap transition-colors \${
+                className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category
                     ? 'bg-blue-100 text-blue-700'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
-                }\`}
+                }`}
               >
                 {category}
               </button>
