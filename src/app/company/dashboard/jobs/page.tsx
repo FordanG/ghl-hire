@@ -128,7 +128,7 @@ export default function JobPostingsPage() {
             {job.status === 'active' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
           <Link
-            href={`/company/dashboard/jobs/${job.id}/edit`}
+            href={`/edit-job/${job.id}`}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
             title="Edit job"
           >
@@ -185,7 +185,7 @@ export default function JobPostingsPage() {
             <p className="text-gray-600 mt-1">Manage your job listings and track their performance</p>
           </div>
           <Link
-            href="/company/dashboard/jobs/new"
+            href="/post-job"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -306,7 +306,7 @@ export default function JobPostingsPage() {
             </p>
             {(!searchTerm && statusFilter === 'all') && (
               <Link
-                href="/company/dashboard/jobs/new"
+                href="/post-job"
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />

@@ -1,419 +1,473 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Building2, 
-  DollarSign, 
-  Clock, 
-  FileText, 
-  Users, 
-  CheckCircle,
-  ArrowRight
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { AlertCircle, Briefcase, MapPin, DollarSign, CheckCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 export default function PostJobPage() {
+  const router = useRouter();
+  const { user, company, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [canPostJob, setCanPostJob] = useState(true);
+  const [jobCount, setJobCount] = useState(0);
+  const [jobLimit, setJobLimit] = useState(1);
+  const [planType, setPlanType] = useState('free');
   const [formData, setFormData] = useState({
     title: '',
-    company: '',
-    location: '',
-    type: 'Full-Time',
-    salary: '',
     description: '',
     requirements: '',
-    responsibilities: '',
-    skills: '',
-    email: '',
-    phone: '',
-    companySize: '',
-    website: ''
+    benefits: '',
+    location: '',
+    remote: false,
+    job_type: 'Full-Time',
+    experience_level: 'Mid Level',
+    salary_min: '',
+    salary_max: '',
+    status: 'draft' as 'draft' | 'active',
   });
 
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/signin?redirect=/post-job');
+    }
+
+    if (!authLoading && !company) {
+      router.push('/signup?redirect=/post-job');
+    }
+  }, [authLoading, user, company, router]);
+
+  useEffect(() => {
+    const checkJobLimit = async () => {
+      if (!company) return;
+
+      try {
+        // Get subscription info
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('company_id', company.id)
+          .single();
+
+        if (subscription) {
+          setPlanType(subscription.plan_type);
+          setJobLimit(subscription.job_post_limit);
+
+          // Count active jobs
+          const { data: jobs } = await supabase
+            .from('jobs')
+            .select('id')
+            .eq('company_id', company.id)
+            .in('status', ['draft', 'active']);
+
+          const count = jobs?.length || 0;
+          setJobCount(count);
+
+          // Check if can post more jobs
+          if (subscription.plan_type === 'premium') {
+            setCanPostJob(true);
+          } else {
+            setCanPostJob(count < subscription.job_post_limit);
+          }
+        }
+      } catch (err) {
+        console.error('Error checking job limit:', err);
+      }
+    };
+
+    checkJobLimit();
+  }, [company]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
+
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
+
+    if (error) setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, publishNow: boolean = false) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Job posted:', formData);
-    alert('Job posted successfully! (This is a demo)');
+
+    if (!company) {
+      setError('You must be logged in as an employer to post jobs');
+      return;
+    }
+
+    if (!canPostJob && publishNow) {
+      setError(`You've reached your job posting limit (${jobLimit}). Please upgrade your plan to post more jobs.`);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Validate required fields
+      if (!formData.title.trim() || !formData.description.trim() || !formData.location.trim()) {
+        setError('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+
+      // Validate salary range if provided
+      const salaryMin = formData.salary_min ? parseInt(formData.salary_min) : null;
+      const salaryMax = formData.salary_max ? parseInt(formData.salary_max) : null;
+
+      if (salaryMin && salaryMax && salaryMin > salaryMax) {
+        setError('Minimum salary cannot be greater than maximum salary');
+        setLoading(false);
+        return;
+      }
+
+      // Create job
+      const { data: job, error: insertError } = await supabase
+        .from('jobs')
+        .insert({
+          company_id: company.id,
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          requirements: formData.requirements.trim() || null,
+          benefits: formData.benefits.trim() || null,
+          location: formData.location.trim(),
+          remote: formData.remote,
+          job_type: formData.job_type,
+          experience_level: formData.experience_level,
+          salary_min: salaryMin,
+          salary_max: salaryMax,
+          status: publishNow ? 'active' : 'draft',
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      // Redirect to job preview or dashboard
+      if (publishNow) {
+        router.push(`/jobs/${job.id}`);
+      } else {
+        router.push('/company/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Job posting error:', err);
+      setError(err.message || 'Failed to post job. Please try again.');
+      setLoading(false);
+    }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!company) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col text-gray-900 bg-white">
       <Header />
-      
-      {/* Header Section */}
-      <section className="bg-blue-50 py-16">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h1 className="text-4xl font-semibold tracking-tight mb-4 fade-in fade-in-1">
-            Post a GoHighLevel Job
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto fade-in fade-in-2">
-            Connect with thousands of qualified GoHighLevel professionals. Our targeted platform ensures your job reaches the right candidates.
-          </p>
-        </div>
-      </section>
 
-      {/* Form Section */}
-      <section className="max-w-4xl mx-auto px-4 py-16">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Job Details */}
-          <div className="bg-white border border-gray-200 rounded-xl p-8 fade-in fade-in-3">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-blue-50 rounded-full p-2">
-                <FileText className="w-6 h-6 text-blue-500" />
-              </div>
-              <h2 className="text-xl font-semibold">Job Details</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Title *
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="e.g. GoHighLevel Specialist"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Name *
-                </label>
-                <input
-                  type="text"
-                  id="company"
-                  name="company"
-                  value={formData.company}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="Your company name"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                  Location *
-                </label>
-                <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="e.g. Remote, New York, NY"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Type *
-                </label>
-                <select
-                  id="type"
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                >
-                  <option value="Full-Time">Full-Time</option>
-                  <option value="Part-Time">Part-Time</option>
-                  <option value="Contract">Contract</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label htmlFor="salary" className="block text-sm font-medium text-gray-700 mb-2">
-                  Salary Range (Optional)
-                </label>
-                <input
-                  type="text"
-                  id="salary"
-                  name="salary"
-                  value={formData.salary}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="e.g. $60,000 - $80,000 or $75/hour"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Job Description */}
-          <div className="bg-white border border-gray-200 rounded-xl p-8 fade-in fade-in-4">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-blue-50 rounded-full p-2">
-                <FileText className="w-6 h-6 text-blue-500" />
-              </div>
-              <h2 className="text-xl font-semibold">Job Description</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-                  Job Description *
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  required
-                  rows={6}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="Describe the role, your company, and what makes this opportunity exciting..."
-                />
-              </div>
-
-              <div>
-                <label htmlFor="responsibilities" className="block text-sm font-medium text-gray-700 mb-2">
-                  Key Responsibilities *
-                </label>
-                <textarea
-                  id="responsibilities"
-                  name="responsibilities"
-                  value={formData.responsibilities}
-                  onChange={handleInputChange}
-                  required
-                  rows={5}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="List the main responsibilities, one per line..."
-                />
-              </div>
-
-              <div>
-                <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-2">
-                  Requirements *
-                </label>
-                <textarea
-                  id="requirements"
-                  name="requirements"
-                  value={formData.requirements}
-                  onChange={handleInputChange}
-                  required
-                  rows={5}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="List the required qualifications and experience, one per line..."
-                />
-              </div>
-
-              <div>
-                <label htmlFor="skills" className="block text-sm font-medium text-gray-700 mb-2">
-                  Required Skills *
-                </label>
-                <input
-                  type="text"
-                  id="skills"
-                  name="skills"
-                  value={formData.skills}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="e.g. GoHighLevel, Marketing Automation, CRM Management (comma separated)"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Company Information */}
-          <div className="bg-white border border-gray-200 rounded-xl p-8 fade-in fade-in-5">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-blue-50 rounded-full p-2">
-                <Building2 className="w-6 h-6 text-blue-500" />
-              </div>
-              <h2 className="text-xl font-semibold">Company Information</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Contact Email *
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="hiring@yourcompany.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number (Optional)
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Website (Optional)
-                </label>
-                <input
-                  type="url"
-                  id="website"
-                  name="website"
-                  value={formData.website}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                  placeholder="https://yourcompany.com"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="companySize" className="block text-sm font-medium text-gray-700 mb-2">
-                  Company Size (Optional)
-                </label>
-                <select
-                  id="companySize"
-                  name="companySize"
-                  value={formData.companySize}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
-                >
-                  <option value="">Select company size</option>
-                  <option value="1-10">1-10 employees</option>
-                  <option value="11-50">11-50 employees</option>
-                  <option value="51-200">51-200 employees</option>
-                  <option value="201-500">201-500 employees</option>
-                  <option value="500+">500+ employees</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Pricing Preview */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 fade-in fade-in-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-blue-100 rounded-full p-2">
-                <DollarSign className="w-6 h-6 text-blue-600" />
-              </div>
-              <h2 className="text-xl font-semibold">Pricing Summary</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg p-6 text-center">
-                <h3 className="font-semibold mb-2">Basic</h3>
-                <div className="text-2xl font-bold text-blue-600 mb-2">$299</div>
-                <div className="text-sm text-gray-500 mb-4">30-day posting</div>
-                <ul className="text-sm space-y-1">
-                  <li>✓ Standard placement</li>
-                  <li>✓ Basic applicant tracking</li>
-                  <li>✓ Email support</li>
-                </ul>
-              </div>
-
-              <div className="bg-blue-500 text-white rounded-lg p-6 text-center">
-                <h3 className="font-semibold mb-2">Professional</h3>
-                <div className="text-2xl font-bold mb-2">$599</div>
-                <div className="text-sm opacity-90 mb-4">60-day posting</div>
-                <ul className="text-sm space-y-1">
-                  <li>✓ Premium placement</li>
-                  <li>✓ AI candidate matching</li>
-                  <li>✓ Priority support</li>
-                </ul>
-              </div>
-
-              <div className="bg-white rounded-lg p-6 text-center">
-                <h3 className="font-semibold mb-2">Enterprise</h3>
-                <div className="text-2xl font-bold text-blue-600 mb-2">Custom</div>
-                <div className="text-sm text-gray-500 mb-4">Contact sales</div>
-                <ul className="text-sm space-y-1">
-                  <li>✓ Unlimited postings</li>
-                  <li>✓ Dedicated manager</li>
-                  <li>✓ Custom integrations</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="text-center fade-in fade-in-1">
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-500 text-white font-semibold text-lg rounded-lg hover:bg-blue-600 transition-colors shadow-lg"
-            >
-              Post Job - Start with Professional Plan
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <p className="text-sm text-gray-500 mt-3">
-              Your job will be reviewed and published within 24 hours
+      <div className="flex-1 px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
+          <div className="mb-8 fade-in fade-in-1">
+            <h1 className="text-3xl font-semibold tracking-tight mb-2">Post a New Job</h1>
+            <p className="text-gray-600">
+              Fill out the form below to create a new job listing for your company
             </p>
           </div>
-        </form>
-      </section>
 
-      {/* Benefits Section */}
-      <section className="bg-gray-50 py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold tracking-tight mb-4 fade-in fade-in-1">
-              Why Post on GHL Hire?
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center fade-in fade-in-2">
-              <div className="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-blue-500" />
+          {/* Job Limit Warning */}
+          {!canPostJob && (
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3 fade-in fade-in-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-yellow-800 font-medium">
+                  Job Posting Limit Reached
+                </p>
+                <p className="text-sm text-yellow-700 mt-1">
+                  You've used {jobCount} of {jobLimit} job posts on your {planType} plan.
+                  Upgrade to post more jobs or close existing ones.
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Targeted Audience</h3>
-              <p className="text-gray-600">
-                Reach 10,000+ GoHighLevel professionals actively looking for new opportunities.
-              </p>
             </div>
+          )}
 
-            <div className="text-center fade-in fade-in-3">
-              <div className="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-blue-500" />
+          {/* Current Plan Info */}
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 fade-in fade-in-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  Current Plan: <span className="capitalize">{planType}</span>
+                </p>
+                <p className="text-sm text-blue-700 mt-1">
+                  Job Posts: {jobCount} / {planType === 'premium' ? 'Unlimited' : jobLimit}
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Fast Results</h3>
-              <p className="text-gray-600">
-                Average time to first qualified application is just 48 hours.
-              </p>
-            </div>
-
-            <div className="text-center fade-in fade-in-4">
-              <div className="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-blue-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Quality Candidates</h3>
-              <p className="text-gray-600">
-                All candidates are pre-screened for GoHighLevel experience and expertise.
-              </p>
+              {planType !== 'premium' && (
+                <button
+                  onClick={() => router.push('/pricing')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Upgrade Plan
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 fade-in fade-in-1">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Job Posting Form */}
+          <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-8 fade-in fade-in-3">
+            {/* Basic Information */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <Briefcase className="w-5 h-5" />
+                Basic Information
+              </h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Title <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="title"
+                    name="title"
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="e.g., Senior GoHighLevel Developer"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Description <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    required
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={8}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="Describe the role, responsibilities, and what makes this opportunity unique..."
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formData.description.length} characters
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="requirements" className="block text-sm font-medium text-gray-700 mb-2">
+                    Requirements
+                  </label>
+                  <textarea
+                    id="requirements"
+                    name="requirements"
+                    value={formData.requirements}
+                    onChange={handleInputChange}
+                    rows={6}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="List the required skills, qualifications, and experience..."
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="benefits" className="block text-sm font-medium text-gray-700 mb-2">
+                    Benefits
+                  </label>
+                  <textarea
+                    id="benefits"
+                    name="benefits"
+                    value={formData.benefits}
+                    onChange={handleInputChange}
+                    rows={6}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="List the benefits, perks, and what makes your company great..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Location & Type */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Location & Type
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="location"
+                    name="location"
+                    type="text"
+                    required
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="e.g., San Francisco, CA"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="job_type" className="block text-sm font-medium text-gray-700 mb-2">
+                    Job Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="job_type"
+                    name="job_type"
+                    required
+                    value={formData.job_type}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                  >
+                    <option value="Full-Time">Full-Time</option>
+                    <option value="Part-Time">Part-Time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Freelance">Freelance</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="experience_level" className="block text-sm font-medium text-gray-700 mb-2">
+                    Experience Level
+                  </label>
+                  <select
+                    id="experience_level"
+                    name="experience_level"
+                    value={formData.experience_level}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                  >
+                    <option value="Entry Level">Entry Level</option>
+                    <option value="Mid Level">Mid Level</option>
+                    <option value="Senior Level">Senior Level</option>
+                    <option value="Lead">Lead</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center pt-8">
+                  <input
+                    id="remote"
+                    name="remote"
+                    type="checkbox"
+                    checked={formData.remote}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="remote" className="ml-2 block text-sm text-gray-700">
+                    Remote position
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Compensation */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Compensation
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="salary_min" className="block text-sm font-medium text-gray-700 mb-2">
+                    Minimum Salary (USD)
+                  </label>
+                  <input
+                    id="salary_min"
+                    name="salary_min"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={formData.salary_min}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="50000"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="salary_max" className="block text-sm font-medium text-gray-700 mb-2">
+                    Maximum Salary (USD)
+                  </label>
+                  <input
+                    id="salary_max"
+                    name="salary_max"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={formData.salary_max}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    placeholder="80000"
+                  />
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-500 mt-2">
+                Leave blank to hide salary information
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, false)}
+                disabled={loading}
+                className="flex-1 px-6 py-3 border border-gray-200 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save as Draft'}
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !canPostJob}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? 'Publishing...' : 'Publish Job'}
+                {!loading && <CheckCircle className="w-5 h-5" />}
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-500 text-center">
+              By posting a job, you agree to our Terms of Service and Community Guidelines
+            </p>
+          </form>
         </div>
-      </section>
+      </div>
 
       <Footer />
     </div>
