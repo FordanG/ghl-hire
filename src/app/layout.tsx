@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { AuthProvider } from "@/contexts/AuthContext";
+import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -74,6 +75,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <CookieConsent />
       </body>
       <GoogleAnalytics gaId="G-3CXJJSEKBQ" />
     </html>
