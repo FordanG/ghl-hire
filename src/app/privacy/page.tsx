@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import CookieSettingsButton from '@/components/CookieSettingsButton';
 
 export default function PrivacyPage() {
   return (
@@ -143,11 +144,7 @@ export default function PrivacyPage() {
           <section className="fade-in fade-in-5">
             <h2 className="text-2xl font-semibold mb-4">4. Cookies and Tracking Technologies</h2>
             <p className="text-gray-600 leading-relaxed mb-4">
-              We use cookies and similar tracking technologies to enhance your experience. You can manage cookie preferences through our <button className="text-blue-600 hover:underline" onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).showCookieSettings) {
-                  (window as any).showCookieSettings();
-                }
-              }}>Cookie Settings</button>.
+              We use cookies and similar tracking technologies to enhance your experience. You can manage cookie preferences through our <CookieSettingsButton />.
             </p>
 
             <h3 className="text-xl font-semibold mb-3 mt-4">4.1 Types of Cookies We Use</h3>
