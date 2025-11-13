@@ -100,53 +100,11 @@ CREATE TABLE IF NOT EXISTS saved_jobs (
 );
 
 -- =====================================================
--- JOB ALERTS TABLE
+-- NOTE: The following tables are defined in separate migrations:
+-- - job_alerts (see 004_job_alerts.sql)
+-- - subscriptions (see 011_subscriptions.sql)
+-- - notifications (see 007_notifications.sql)
 -- =====================================================
-CREATE TABLE IF NOT EXISTS job_alerts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
-    title TEXT NOT NULL,
-    keywords TEXT[],
-    location TEXT,
-    job_type TEXT,
-    frequency TEXT DEFAULT 'weekly' CHECK (frequency IN ('daily', 'weekly')),
-    is_active BOOLEAN DEFAULT true,
-    last_sent_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- =====================================================
--- SUBSCRIPTIONS TABLE (For Billing)
--- =====================================================
-CREATE TABLE IF NOT EXISTS subscriptions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
-    plan_type TEXT DEFAULT 'free' CHECK (plan_type IN ('free', 'basic', 'premium')),
-    stripe_customer_id TEXT,
-    stripe_subscription_id TEXT,
-    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'canceled', 'past_due', 'trialing')),
-    current_period_start TIMESTAMP WITH TIME ZONE,
-    current_period_end TIMESTAMP WITH TIME ZONE,
-    job_posts_used INTEGER DEFAULT 0,
-    job_post_limit INTEGER DEFAULT 1, -- Free: 1, Basic: 5, Premium: unlimited (-1)
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- =====================================================
--- NOTIFICATIONS TABLE
--- =====================================================
-CREATE TABLE IF NOT EXISTS notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    type TEXT NOT NULL, -- 'application_received', 'application_status', 'job_alert', 'payment_reminder'
-    title TEXT NOT NULL,
-    message TEXT NOT NULL,
-    link TEXT,
-    is_read BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
 
 -- =====================================================
 -- INDEXES FOR PERFORMANCE
@@ -170,10 +128,7 @@ CREATE INDEX idx_applications_applied_at ON applications(applied_at DESC);
 CREATE INDEX idx_saved_jobs_profile_id ON saved_jobs(profile_id);
 CREATE INDEX idx_saved_jobs_job_id ON saved_jobs(job_id);
 
--- Notifications indexes
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_is_read ON notifications(is_read);
-CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+-- NOTE: Indexes for job_alerts, subscriptions, and notifications are in their respective migration files
 
 -- =====================================================
 -- TRIGGERS FOR updated_at
@@ -201,11 +156,7 @@ CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON jobs
 CREATE TRIGGER update_applications_updated_at BEFORE UPDATE ON applications
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_job_alerts_updated_at BEFORE UPDATE ON job_alerts
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON subscriptions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- NOTE: Triggers for job_alerts, subscriptions, and notifications are in their respective migration files
 
 -- =====================================================
 -- TRIGGER TO INCREMENT APPLICATION COUNT

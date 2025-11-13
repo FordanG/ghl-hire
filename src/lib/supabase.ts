@@ -102,7 +102,10 @@ export type JobAlert = {
   keywords?: string[];
   location?: string;
   job_type?: string;
-  frequency: 'daily' | 'weekly';
+  experience_level?: string;
+  remote_only?: boolean;
+  salary_min?: number;
+  frequency: 'daily' | 'weekly' | 'instant';
   is_active: boolean;
   last_sent_at?: string;
   created_at: string;
@@ -112,26 +115,38 @@ export type JobAlert = {
 export type Subscription = {
   id: string;
   company_id: string;
-  plan_type: 'free' | 'basic' | 'premium';
-  stripe_customer_id?: string;
-  stripe_subscription_id?: string;
-  status: 'active' | 'canceled' | 'past_due' | 'trialing';
+  plan_type: 'free' | 'basic' | 'premium' | 'enterprise';
+  maya_customer_id?: string;
+  maya_subscription_id?: string;
+  maya_plan_id?: string;
+  status: 'active' | 'past_due' | 'canceled' | 'trialing' | 'incomplete' | 'incomplete_expired';
   current_period_start?: string;
   current_period_end?: string;
-  job_posts_used: number;
+  trial_end?: string;
+  cancel_at_period_end?: boolean;
+  canceled_at?: string;
+  ended_at?: string;
   job_post_limit: number;
+  featured_job_limit: number;
+  team_member_limit: number;
+  price_cents: number;
+  currency: string;
+  billing_interval: 'month' | 'year';
+  metadata?: Record<string, any>;
   created_at: string;
   updated_at: string;
 };
 
 export type Notification = {
   id: string;
-  user_id: string;
-  type: string;
+  profile_id: string;
+  type: 'application_received' | 'application_status_changed' | 'new_job_match' | 'job_alert' | 'message_received' | 'profile_viewed' | 'job_expired' | 'interview_scheduled' | 'saved_job_update' | 'system_announcement';
   title: string;
   message: string;
   link?: string;
+  data?: Record<string, any>;
   is_read: boolean;
+  read_at?: string;
   created_at: string;
 };
 

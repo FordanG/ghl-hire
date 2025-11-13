@@ -213,23 +213,24 @@ CREATE TRIGGER application_status_change_notification
 CREATE OR REPLACE FUNCTION notify_new_application() RETURNS TRIGGER AS $$
 DECLARE
     v_job_title TEXT;
+    v_company_user_id UUID;
     v_company_profile_id UUID;
     v_candidate_name TEXT;
 BEGIN
-    -- Get job details and company profile
+    -- Get job details, company user_id, and candidate name
     SELECT j.title, c.user_id, p.full_name
-    INTO v_job_title, v_company_profile_id, v_candidate_name
+    INTO v_job_title, v_company_user_id, v_candidate_name
     FROM jobs j
     JOIN companies c ON j.company_id = c.id
     JOIN profiles p ON p.id = NEW.profile_id
     WHERE j.id = NEW.job_id;
 
-    -- Get company's profile ID
+    -- Get company's profile ID from their user_id
     SELECT id INTO v_company_profile_id
     FROM profiles
-    WHERE user_id = v_company_profile_id;
+    WHERE user_id = v_company_user_id;
 
-    -- Notify employer
+    -- Notify employer if they have a profile
     IF v_company_profile_id IS NOT NULL THEN
         PERFORM create_notification(
             v_company_profile_id,
