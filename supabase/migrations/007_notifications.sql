@@ -1,6 +1,6 @@
 -- Notifications Table
 CREATE TABLE IF NOT EXISTS notifications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     type TEXT NOT NULL CHECK (type IN (
         'application_received',
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 -- Notification Preferences Table
 CREATE TABLE IF NOT EXISTS notification_preferences (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL UNIQUE,
 
     -- Email notifications

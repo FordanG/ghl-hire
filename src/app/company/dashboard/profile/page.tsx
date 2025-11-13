@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Building2,
   Globe,
@@ -11,177 +10,173 @@ import {
   Save,
   Upload,
   ExternalLink,
-  CheckCircle,
-  AlertCircle
+  Loader2,
+  Briefcase,
+  Mail
 } from 'lucide-react';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
+import { ToastContainer } from '@/components/ui/toast';
+import {
+  getCompanyProfile,
+  updateCompanyProfile,
+  uploadCompanyLogo,
+  calculateCompanyProfileCompletion,
+  type CompanyFormData
+} from '@/lib/actions/company-actions';
+import { Database } from '@/types/supabase';
+
+type Company = Database['public']['Tables']['companies']['Row'];
 
 export default function CompanyProfilePage() {
-  const router = useRouter();
-  const { user, company: authCompany, loading: authLoading, refreshProfile } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [formData, setFormData] = useState({
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState(0);
+
+  // Form state
+  const [formData, setFormData] = useState<CompanyFormData>({
     company_name: '',
-    description: '',
+    email: '',
     website: '',
-    location: '',
-    company_size: '',
-    logo_url: '',
+    description: '',
+    size: '',
+    industry: '',
+    location: ''
   });
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/signin');
-    }
+  // Auto-save
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-    if (!authLoading && !authCompany) {
-      router.push('/signup');
-    }
-  }, [authLoading, user, authCompany, router]);
+  const { toasts, removeToast, success, error: showError } = useToast();
 
+  // Load company profile on mount
   useEffect(() => {
-    if (authCompany) {
+    loadCompanyProfile();
+  }, []);
+
+  // Calculate profile completion when company changes
+  useEffect(() => {
+    if (company) {
+      const completion = calculateCompanyProfileCompletion(company);
+      setProfileCompletion(completion);
+    }
+  }, [company]);
+
+  const loadCompanyProfile = async () => {
+    setIsLoading(true);
+    const result = await getCompanyProfile();
+
+    if (result.success && result.data) {
+      setCompany(result.data);
       setFormData({
-        company_name: authCompany.company_name || '',
-        description: authCompany.description || '',
-        website: authCompany.website || '',
-        location: authCompany.location || '',
-        company_size: authCompany.size || '',
-        logo_url: authCompany.logo_url || '',
+        company_name: result.data.company_name,
+        email: result.data.email,
+        website: result.data.website || '',
+        description: result.data.description || '',
+        size: result.data.size || '',
+        industry: result.data.industry || '',
+        location: result.data.location || ''
       });
+    } else {
+      showError(result.error || 'Failed to load company profile');
     }
-  }, [authCompany]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    if (error) setError(null);
-    if (success) setSuccess(false);
-  };
-
-  const handleLogoUpload = async () => {
-    if (!logoFile || !authCompany) return;
-
-    setUploadingLogo(true);
-    setError(null);
-
-    try {
-      const fileExt = logoFile.name.split('.').pop();
-      const fileName = `${authCompany.id}-${Date.now()}.${fileExt}`;
-      const filePath = `logos/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('company_logos')
-        .upload(filePath, logoFile);
-
-      if (uploadError) {
-        throw uploadError;
-      }
-
-      const { data } = supabase.storage.from('company_logos').getPublicUrl(filePath);
-
-      setFormData(prev => ({
-        ...prev,
-        logo_url: data.publicUrl
-      }));
-
-      setLogoFile(null);
-      setSuccess(true);
-    } catch (err: any) {
-      console.error('Logo upload error:', err);
-      setError(err.message || 'Failed to upload logo');
-    } finally {
-      setUploadingLogo(false);
-    }
+    setIsLoading(false);
   };
 
   const handleSave = async () => {
-    if (!authCompany) {
-      setError('You must be logged in to update your company profile');
-      return;
-    }
+    setIsSaving(true);
 
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+    const result = await updateCompanyProfile(formData);
 
-    try {
-      // Validate required fields
-      if (!formData.company_name.trim()) {
-        setError('Company name is required');
-        setLoading(false);
-        return;
-      }
-
-      // Validate URL if provided
-      if (formData.website && !formData.website.startsWith('http')) {
-        setError('Website URL must start with http:// or https://');
-        setLoading(false);
-        return;
-      }
-
-      // Update company
-      const { error: updateError } = await supabase
-        .from('companies')
-        .update({
-          company_name: formData.company_name.trim(),
-          description: formData.description.trim() || null,
-          website: formData.website.trim() || null,
-          location: formData.location.trim() || null,
-          company_size: formData.company_size || null,
-          logo_url: formData.logo_url || null,
-        })
-        .eq('id', authCompany.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setSuccess(true);
+    if (result.success && result.data) {
+      setCompany(result.data);
       setIsEditing(false);
-      await refreshProfile();
-
-      // Scroll to top to show success message
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err: any) {
-      console.error('Company profile update error:', err);
-      setError(err.message || 'Failed to update profile. Please try again.');
-    } finally {
-      setLoading(false);
+      setLastSaved(new Date());
+      success('Company profile updated successfully!');
+    } else {
+      showError(result.error || 'Failed to update company profile');
     }
+
+    setIsSaving(false);
   };
 
-  if (authLoading) {
+  const handleAutoSave = useCallback(async () => {
+    if (!isEditing) return;
+
+    const result = await updateCompanyProfile(formData);
+
+    if (result.success && result.data) {
+      setCompany(result.data);
+      setLastSaved(new Date());
+    }
+  }, [formData, isEditing]);
+
+  // Trigger auto-save on form changes
+  useEffect(() => {
+    if (!isEditing) return;
+
+    // Clear existing timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save (3 seconds after last change)
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      handleAutoSave();
+    }, 3000);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [formData, isEditing, handleAutoSave]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const result = await uploadCompanyLogo(formData);
+
+    if (result.success && result.data) {
+      setCompany(result.data);
+      success('Company logo uploaded successfully!');
+    } else {
+      showError(result.error || 'Failed to upload logo');
+    }
+
+    setIsUploadingLogo(false);
+    e.target.value = ''; // Reset input
+  };
+
+  const updateFormData = (updates: Partial<CompanyFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  if (isLoading) {
     return (
       <CompanyDashboardLayout>
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
-          </div>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         </div>
       </CompanyDashboardLayout>
     );
   }
 
-  if (!authCompany) {
-    return null;
-  }
-
   return (
     <CompanyDashboardLayout>
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
+
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -190,34 +185,54 @@ export default function CompanyProfilePage() {
             <p className="text-gray-600 mt-1">Manage your company information and public profile</p>
           </div>
           <div className="flex items-center gap-3">
+            <div className="text-sm text-gray-600">
+              Profile {profileCompletion}% complete
+            </div>
+            <div className="w-24 bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${profileCompletion}%` }}
+              />
+            </div>
             {isEditing ? (
               <div className="flex gap-2">
+                {lastSaved && (
+                  <span className="text-xs text-gray-500 flex items-center">
+                    Saved {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
                 <button
                   onClick={() => {
                     setIsEditing(false);
-                    // Reset form data
-                    if (authCompany) {
+                    // Reset form data to company
+                    if (company) {
                       setFormData({
-                        company_name: authCompany.company_name || '',
-                        description: authCompany.description || '',
-                        website: authCompany.website || '',
-                        location: authCompany.location || '',
-                        company_size: authCompany.size || '',
-                        logo_url: authCompany.logo_url || '',
+                        company_name: company.company_name,
+                        email: company.email,
+                        website: company.website || '',
+                        description: company.description || '',
+                        size: company.size || '',
+                        industry: company.industry || '',
+                        location: company.location || ''
                       });
                     }
                   }}
                   className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  disabled={isSaving}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={loading}
+                  disabled={isSaving}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  {isSaving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             ) : (
@@ -232,63 +247,40 @@ export default function CompanyProfilePage() {
           </div>
         </div>
 
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-green-800">Company profile updated successfully!</p>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
-
         {/* Company Header Card */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
           <div className="flex items-start gap-6">
             <div className="flex-shrink-0">
-              {formData.logo_url ? (
-                <img
-                  src={formData.logo_url}
-                  alt="Company Logo"
-                  className="w-24 h-24 rounded-lg object-cover"
-                />
-              ) : (
-                <div className="w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Building2 className="w-12 h-12 text-blue-600" />
-                </div>
-              )}
+              <div className="relative">
+                {company?.logo_url ? (
+                  <img
+                    src={company.logo_url}
+                    alt={company.company_name}
+                    className="w-24 h-24 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Building2 className="w-12 h-12 text-blue-600" />
+                  </div>
+                )}
+                {isUploadingLogo && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 animate-spin text-white" />
+                  </div>
+                )}
+              </div>
               {isEditing && (
-                <div className="mt-2">
+                <label className="mt-2 text-sm text-blue-600 hover:text-blue-500 flex items-center gap-1 cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  Upload Logo
                   <input
                     type="file"
-                    id="logo"
-                    accept="image/*"
-                    onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                    onChange={handleLogoUpload}
+                    disabled={isUploadingLogo}
                     className="hidden"
                   />
-                  <label
-                    htmlFor="logo"
-                    className="text-sm text-blue-600 hover:text-blue-500 flex items-center gap-1 cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4" />
-                    {logoFile ? logoFile.name : 'Upload Logo'}
-                  </label>
-                  {logoFile && (
-                    <button
-                      onClick={handleLogoUpload}
-                      disabled={uploadingLogo}
-                      className="mt-1 text-xs text-green-600 hover:text-green-700 disabled:opacity-50"
-                    >
-                      {uploadingLogo ? 'Uploading...' : 'Save Logo'}
-                    </button>
-                  )}
-                </div>
+                </label>
               )}
             </div>
             <div className="flex-1">
@@ -300,23 +292,40 @@ export default function CompanyProfilePage() {
                   {isEditing ? (
                     <input
                       type="text"
-                      name="company_name"
                       value={formData.company_name}
-                      onChange={handleInputChange}
-                      required
+                      onChange={(e) => updateFormData({ company_name: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      required
                     />
                   ) : (
-                    <p className="text-lg font-semibold text-gray-900">{formData.company_name}</p>
+                    <p className="text-lg font-semibold text-gray-900">{company?.company_name}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => updateFormData({ email: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      required
+                    />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900">{company?.email}</span>
+                    </div>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Company Size</label>
                   {isEditing ? (
                     <select
-                      name="company_size"
-                      value={formData.company_size}
-                      onChange={handleInputChange}
+                      value={formData.size}
+                      onChange={(e) => updateFormData({ size: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                     >
                       <option value="">Select size</option>
@@ -330,50 +339,74 @@ export default function CompanyProfilePage() {
                   ) : (
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-900">{formData.company_size || 'Not specified'}</span>
+                      <span className="text-gray-900">{company?.size || 'Not specified'}</span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+                  {isEditing ? (
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.industry}
+                        onChange={(e) => updateFormData({ industry: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder="e.g., SaaS, Marketing Agency"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-900">{company?.industry || 'Not specified'}</span>
                     </div>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      placeholder="San Francisco, CA"
-                    />
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={(e) => updateFormData({ location: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder="San Francisco, CA"
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-900">{formData.location || 'Not specified'}</span>
+                      <span className="text-gray-900">{company?.location || 'Not specified'}</span>
                     </div>
                   )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
                   {isEditing ? (
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-                      placeholder="https://yourcompany.com"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-gray-400" />
+                      <input
+                        type="url"
+                        value={formData.website}
+                        onChange={(e) => updateFormData({ website: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        placeholder="https://yourcompany.com"
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-gray-400" />
-                      {formData.website ? (
+                      {company?.website ? (
                         <a
-                          href={formData.website}
+                          href={company.website}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 hover:underline flex items-center gap-1"
                         >
-                          {formData.website}
+                          {company.website}
                           <ExternalLink className="w-3 h-3" />
                         </a>
                       ) : (
@@ -392,21 +425,22 @@ export default function CompanyProfilePage() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Description</h3>
           {isEditing ? (
             <textarea
-              name="description"
               value={formData.description}
-              onChange={handleInputChange}
+              onChange={(e) => updateFormData({ description: e.target.value })}
               rows={8}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              placeholder="Tell candidates about your company, mission, culture, and what makes you unique..."
+              placeholder="Tell candidates about your company, mission, culture, and what makes you unique in the GoHighLevel ecosystem..."
             />
           ) : (
             <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {formData.description || 'No description provided'}
+              {company?.description || 'No description provided yet.'}
             </p>
           )}
-          <p className="text-sm text-gray-500 mt-2">
-            {formData.description.length} characters
-          </p>
+          {isEditing && (
+            <p className="text-sm text-gray-500 mt-2">
+              {(formData.description || '').length} characters
+            </p>
+          )}
         </div>
       </div>
     </CompanyDashboardLayout>

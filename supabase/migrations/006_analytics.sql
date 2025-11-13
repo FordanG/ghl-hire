@@ -1,6 +1,6 @@
 -- Job Analytics Table
 CREATE TABLE IF NOT EXISTS job_analytics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id UUID REFERENCES jobs(id) ON DELETE CASCADE NOT NULL,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     views_count INTEGER DEFAULT 0,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS job_analytics (
 
 -- Platform Analytics Table (daily aggregates)
 CREATE TABLE IF NOT EXISTS platform_analytics (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     date DATE NOT NULL DEFAULT CURRENT_DATE UNIQUE,
     total_jobs_posted INTEGER DEFAULT 0,
     total_applications INTEGER DEFAULT 0,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS platform_analytics (
 
 -- Application Source Tracking
 CREATE TABLE IF NOT EXISTS application_sources (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     application_id UUID REFERENCES applications(id) ON DELETE CASCADE NOT NULL,
     source TEXT, -- direct, job_alert, email, search, recommendation
     referrer TEXT,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS application_sources (
 
 -- Job View Events
 CREATE TABLE IF NOT EXISTS job_view_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id UUID REFERENCES jobs(id) ON DELETE CASCADE NOT NULL,
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     session_id TEXT,

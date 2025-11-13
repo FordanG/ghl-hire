@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Briefcase, Building2, MapPin, Clock, ArrowRight } from 'lucide-react';
 import { Job as DatabaseJob } from '@/lib/supabase';
 import { Job as MockJob } from '@/lib/mock-data';
+import { generateJobSlug } from '@/lib/utils';
 
 interface JobCardProps {
   job: (Partial<DatabaseJob> & { company_name?: string }) | MockJob;
@@ -32,6 +33,9 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
   const jobType = ('job_type' in job) ? job.job_type : ('type' in job) ? job.type : '';
   const postedDate = ('created_at' in job && job.created_at) ? formatDate(job.created_at) :
                      ('postedDate' in job) ? job.postedDate : '';
+
+  // Generate SEO-friendly slug
+  const jobSlug = generateJobSlug(job.title, job.id);
 
   return (
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 duration-150 ${className}`}>
@@ -66,7 +70,7 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
         }
         {job.description && job.description.length > 120 && (
           <Link
-            href={`/jobs/${job.id}`}
+            href={`/jobs/${jobSlug}`}
             className="text-blue-500 font-medium hover:underline cursor-pointer ml-1"
           >
             Read more
@@ -79,7 +83,7 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
           Posted {postedDate}
         </span>
         <Link
-          href={`/jobs/${job.id}`}
+          href={`/jobs/${jobSlug}`}
           className="inline-flex items-center gap-1 px-3 py-1.5 border border-blue-100 rounded-md text-blue-500 font-semibold text-sm hover:bg-blue-50 transition-colors"
         >
           Apply <ArrowRight className="w-4 h-4" />

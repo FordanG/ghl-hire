@@ -19,6 +19,7 @@ This document outlines the comprehensive roadmap for launching GHL Hire into pro
 ## Epic 1: Backend Infrastructure & Database
 
 ### P0-1: Supabase Setup & Configuration
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: None
@@ -27,13 +28,15 @@ This document outlines the comprehensive roadmap for launching GHL Hire into pro
 Set up Supabase project and configure database schema for production environment.
 
 **Acceptance Criteria**:
-- [ ] Create Supabase project (production & staging)
-- [ ] Configure environment variables (`.env.local` and `.env.example`)
-- [ ] Set up database connection and verify connectivity
-- [ ] Configure Supabase client in Next.js app
-- [ ] Test basic CRUD operations
+
+- [x] Create Supabase project (production & staging)
+- [x] Configure environment variables (`.env.local` and `.env.example`)
+- [x] Set up database connection and verify connectivity
+- [x] Configure Supabase client in Next.js app
+- [x] Test basic CRUD operations
 
 **Technical Notes**:
+
 - Store `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - Create `/src/lib/supabase.ts` client configuration
 - Consider edge runtime compatibility
@@ -41,6 +44,7 @@ Set up Supabase project and configure database schema for production environment
 ---
 
 ### P0-2: Database Schema Design & Migration
+
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-1
@@ -49,25 +53,27 @@ Set up Supabase project and configure database schema for production environment
 Design and implement comprehensive database schema for all entities.
 
 **Acceptance Criteria**:
-- [ ] Create `profiles` table (job seekers)
+
+- [x] Create `profiles` table (job seekers)
   - id, user_id (FK to auth.users), full_name, email, phone, location, bio, resume_url, skills, experience_years, linkedin_url, portfolio_url, created_at, updated_at
-- [ ] Create `companies` table (employers)
+- [x] Create `companies` table (employers)
   - id, user_id (FK to auth.users), company_name, email, logo_url, website, description, size, industry, location, created_at, updated_at
-- [ ] Create `jobs` table
+- [x] Create `jobs` table
   - id, company_id (FK), title, description, requirements, benefits, location, job_type (full-time/part-time/contract), experience_level, salary_min, salary_max, remote, status (draft/active/closed), views_count, created_at, updated_at, expires_at
-- [ ] Create `applications` table
+- [x] Create `applications` table
   - id, job_id (FK), profile_id (FK), cover_letter, resume_url, status (pending/reviewing/shortlisted/rejected/accepted), applied_at, updated_at
-- [ ] Create `saved_jobs` table
+- [x] Create `saved_jobs` table
   - id, profile_id (FK), job_id (FK), saved_at
-- [ ] Create `job_alerts` table
+- [x] Create `job_alerts` table
   - id, profile_id (FK), title, keywords, location, job_type, frequency (daily/weekly), is_active, created_at
-- [ ] Create `subscriptions` table (for billing)
+- [x] Create `subscriptions` table (for billing)
   - id, company_id (FK), plan_type (free/basic/premium), stripe_subscription_id, status, current_period_start, current_period_end, job_post_limit, created_at, updated_at
-- [ ] Create indexes for performance (job searches, application lookups, etc.)
-- [ ] Write and test database migrations
-- [ ] Add database triggers for updated_at timestamps
+- [x] Create indexes for performance (job searches, application lookups, etc.)
+- [x] Write and test database migrations
+- [x] Add database triggers for updated_at timestamps
 
 **Technical Notes**:
+
 - Use Supabase migration files
 - Consider partitioning for large tables (applications, jobs)
 - Add appropriate foreign key constraints and ON DELETE behaviors
@@ -75,6 +81,7 @@ Design and implement comprehensive database schema for all entities.
 ---
 
 ### P0-3: Row Level Security (RLS) Policies
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-2
@@ -83,18 +90,20 @@ Design and implement comprehensive database schema for all entities.
 Implement comprehensive Row Level Security policies to protect user data.
 
 **Acceptance Criteria**:
-- [ ] Enable RLS on all tables
-- [ ] Profiles: Users can read all, update/delete only their own
-- [ ] Companies: Users can read all, update/delete only their own
-- [ ] Jobs: Public can read active jobs, companies can CRUD their own
-- [ ] Applications: Job seekers can read/create their own, companies can read applications to their jobs
-- [ ] Saved jobs: Users can only access their own saved jobs
-- [ ] Job alerts: Users can only access their own alerts
-- [ ] Subscriptions: Companies can only read their own subscription data
-- [ ] Test all policies with different user roles
-- [ ] Document security model
+
+- [x] Enable RLS on all tables
+- [x] Profiles: Users can read all, update/delete only their own
+- [x] Companies: Users can read all, update/delete only their own
+- [x] Jobs: Public can read active jobs, companies can CRUD their own
+- [x] Applications: Job seekers can read/create their own, companies can read applications to their jobs
+- [x] Saved jobs: Users can only access their own saved jobs
+- [x] Job alerts: Users can only access their own alerts
+- [x] Subscriptions: Companies can only read their own subscription data
+- [x] Test all policies with different user roles
+- [x] Document security model
 
 **Technical Notes**:
+
 - Use `auth.uid()` in RLS policies
 - Consider policy for admin users (future)
 - Test edge cases (deleted users, expired subscriptions)
@@ -102,58 +111,77 @@ Implement comprehensive Row Level Security policies to protect user data.
 ---
 
 ### P1-4: Database Seed Data
+
 **Priority**: P1
 **Effort**: 2 days
 **Dependencies**: P0-2
+**Status**: ✅ COMPLETED (2025-11-13)
 
 **Description**:
 Create seed data for testing and initial production launch.
 
 **Acceptance Criteria**:
-- [ ] Create 20-30 sample job postings across various roles
-- [ ] Create 5-10 sample company profiles
-- [ ] Add realistic descriptions, requirements, and benefits
-- [ ] Include variety of job types (full-time, part-time, contract, remote, hybrid)
-- [ ] Create seed script that can be run on demand
-- [ ] Verify seed data displays correctly in UI
+
+- [x] Create 20-30 sample job postings across various roles
+- [x] Create 5-10 sample company profiles
+- [x] Add realistic descriptions, requirements, and benefits
+- [x] Include variety of job types (full-time, part-time, contract, remote, hybrid)
+- [x] Create seed script that can be run on demand
+- [x] Verify seed data displays correctly in UI
 
 **Technical Notes**:
+
 - Use realistic GHL-specific job titles and descriptions
 - Ensure data matches mock data structure for easy migration
-- Create a `/supabase/seed.sql` file
+- Created `/scripts/seed-database.ts` file
 
 ---
 
 ## Epic 2: Authentication & User Management
 
 ### P0-5: Supabase Authentication Setup
+
 **Priority**: P0
 **Effort**: 4 days
 **Dependencies**: P0-1
+**Status**: ✅ COMPLETED (2025-11-13)
 
 **Description**:
 Implement authentication flow with Supabase Auth.
 
 **Acceptance Criteria**:
-- [ ] Set up Supabase Auth providers (Email/Password, Google OAuth)
-- [ ] Create sign-up flow with user type selection (job seeker vs employer)
-- [ ] Create sign-in page with proper validation
-- [ ] Implement password reset functionality
-- [ ] Create email verification flow
-- [ ] Add authentication middleware for protected routes
-- [ ] Create user session management
-- [ ] Add sign-out functionality
-- [ ] Handle authentication errors gracefully
+
+- [x] Set up Supabase Auth providers (Email/Password)
+- [x] Create sign-up flow with user type selection (job seeker vs employer)
+- [x] Create sign-in page with proper validation
+- [x] Implement password reset functionality
+- [x] Create email verification flow (handled by Supabase)
+- [x] Add authentication middleware for protected routes
+- [x] Create user session management
+- [x] Add sign-out functionality (via AuthContext)
+- [x] Handle authentication errors gracefully
+
+**Implementation Details**:
+
+- Created custom auth UI with role selection (job seeker/employer)
+- Auth pages: `/auth/sign-in`, `/auth/sign-up`, `/auth/reset-password`, `/auth/update-password`
+- AuthContext provides user state, profile/company data, and userType
+- Session middleware redirects unauthenticated users to sign-in
+- Protected routes: `/dashboard`, `/company/dashboard`, `/post-job`
+- ✅ Sign-in redirects correctly based on user type (job seeker → `/dashboard`, employer → `/company/dashboard`)
 
 **Technical Notes**:
-- Use Supabase Auth UI components or custom implementation
-- Store user type in profile metadata during signup
+
+- Custom implementation for better UX and design consistency
+- Store user type in profile/company record during signup
+- Email/Password auth only (Google OAuth can be added later)
 - Configure redirect URLs for OAuth
 - Use Next.js middleware for route protection
 
 ---
 
 ### P0-6: User Profile Management (Job Seekers)
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-5, P0-2
@@ -162,16 +190,19 @@ Implement authentication flow with Supabase Auth.
 Build complete profile management for job seekers.
 
 **Acceptance Criteria**:
-- [ ] Replace mock data with real Supabase queries in `/dashboard/profile`
-- [ ] Create profile form with all fields (name, email, phone, location, bio, skills, experience)
-- [ ] Add file upload for resume (Supabase Storage)
-- [ ] Validate all form inputs
-- [ ] Show success/error messages
-- [ ] Auto-save drafts
-- [ ] Display profile completion percentage
-- [ ] Add LinkedIn and portfolio URL fields
+
+- [x] Replace mock data with real Supabase queries in `/dashboard/profile`
+- [x] Create profile form with all fields (name, email, phone, location, bio, skills, experience)
+- [x] Add file upload for resume (Supabase Storage)
+- [x] Validate all form inputs
+- [x] Show success/error messages
+- [x] Auto-save drafts
+- [x] Display profile completion percentage
+- [x] Add LinkedIn and portfolio URL fields
+- [x] Add profile photo upload (bonus feature)
 
 **Technical Notes**:
+
 - Use Supabase Storage for resume uploads
 - Implement optimistic UI updates
 - Add form validation with proper error messages
@@ -179,111 +210,331 @@ Build complete profile management for job seekers.
 
 ---
 
-### P0-7: Company Profile Management (Employers)
+### P0-7: Company Profile Management (Employers) ✅
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-5, P0-2
+**Status**: COMPLETE (2025-11-14)
 
 **Description**:
 Build complete profile management for employers.
 
 **Acceptance Criteria**:
-- [ ] Replace mock data with real Supabase queries in `/company/dashboard/profile`
-- [ ] Create company profile form (name, logo, website, description, size, industry, location)
-- [ ] Add file upload for company logo (Supabase Storage)
-- [ ] Validate all form inputs
-- [ ] Show success/error messages
-- [ ] Display profile on public company pages
+
+- [x] Replace mock data with real Supabase queries in `/company/dashboard/profile`
+- [x] Create company profile form (name, logo, website, description, size, industry, location)
+- [x] Add file upload for company logo (Supabase Storage)
+- [x] Validate all form inputs
+- [x] Show success/error messages
+- [ ] Display profile on public company pages (deferred to P0-8+)
+
+**Implementation Summary**:
+
+- Created `src/lib/actions/company-actions.ts` with server actions:
+  - `getCompanyProfile()` - Fetch company data
+  - `updateCompanyProfile()` - Update with validation
+  - `uploadCompanyLogo()` - Upload to Supabase Storage (5MB limit)
+  - `calculateCompanyProfileCompletion()` - Profile completion %
+- Refactored `/company/dashboard/profile/page.tsx`:
+  - Real-time Supabase integration
+  - Auto-save (3-second debounce)
+  - Profile completion indicator with progress bar
+  - Toast notifications
+  - Comprehensive validation (client + server)
+  - All 8 fields: name, email, size, industry, location, website, logo, description
+- Storage bucket `company-logos` with RLS policies
+- Type-safe with Database types in `src/types/supabase.ts`
 
 **Technical Notes**:
-- Use Supabase Storage for logo uploads
-- Implement image optimization
-- Add company verification badge (future)
+
+- ✅ Supabase Storage for logo uploads (JPEG, PNG, WebP, SVG)
+- ⏳ Image optimization (future enhancement)
+- ⏳ Company verification badge (future enhancement)
+
+**Documentation**: `documents/sessions/2025-11-14_p0-7-company-profile-implementation.md`
+
+---
+
+### P0-6.1: Projects Section for Job Seekers ⏳
+
+**Priority**: P0
+**Effort**: 2 days
+**Dependencies**: P0-6, P0-10
+**Status**: IN PROGRESS (2025-11-14)
+
+**Description**:
+Add Projects Section to job seeker profiles. Applicants can select up to 3 projects to showcase when applying to jobs, allowing employers to see concrete examples of their work.
+
+**Acceptance Criteria**:
+
+- [ ] Create `projects` table in database with relationship to profiles
+- [ ] Add projects management UI in job seeker profile page (`/dashboard/profile`)
+- [ ] Allow adding/editing/deleting projects (title, description, URL, technologies, image)
+- [ ] Limit to maximum 5 projects per profile
+- [ ] Add file upload for project screenshots/images (Supabase Storage)
+- [ ] Display projects in profile view with proper formatting
+- [ ] Add project selection UI in application modal (select up to 3 projects)
+- [ ] Show selected projects in employer's application view
+- [ ] Validate all project fields (title required, URL format, etc.)
+- [ ] Add success/error toast notifications
+
+**Database Schema**:
+
+```sql
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  url TEXT,
+  image_url TEXT,
+  technologies TEXT[], -- Array of technology tags
+  display_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Junction table for application-project relationship
+CREATE TABLE application_projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  application_id UUID REFERENCES applications(id) ON DELETE CASCADE NOT NULL,
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(application_id, project_id)
+);
+
+-- Add constraint for max 5 projects per profile (enforced in app logic)
+-- Add constraint for max 3 projects per application (enforced in app logic)
+```
+
+**Implementation Plan**:
+
+1. Create database migration for `projects` and `application_projects` tables
+2. Generate TypeScript types
+3. Create `src/lib/actions/project-actions.ts` with CRUD operations:
+   - `getProjects(profileId)` - Fetch all projects for a profile
+   - `createProject(data)` - Create new project
+   - `updateProject(id, data)` - Update existing project
+   - `deleteProject(id)` - Delete project
+   - `uploadProjectImage(file)` - Upload to Supabase Storage
+   - `getApplicationProjects(applicationId)` - Get projects for an application
+4. Create `src/components/ProjectsSection.tsx` component for profile page
+5. Update `/dashboard/profile/page.tsx` to include projects management
+6. Update `ApplyJobModal.tsx` to allow project selection (checkboxes, max 3)
+7. Update `/company/dashboard/applications/page.tsx` to display selected projects
+8. Add RLS policies for projects table
+9. Create Supabase Storage bucket `project-images` with RLS policies
+
+**Technical Notes**:
+
+- Use Supabase Storage for project images (JPEG, PNG, WebP, max 5MB)
+- Projects are optional but recommended for better applications
+- Technologies field stored as TEXT[] for easy filtering/searching later
+- Display order allows users to prioritize which projects show first
+- When deleting a project, it's removed from all applications (CASCADE)
+- Add drag-and-drop reordering (future enhancement)
+- Consider adding project templates/examples (future enhancement)
+
+**UI/UX Considerations**:
+
+- Clean card-based layout for projects
+- "Add Project" button with modal/inline form
+- Edit/Delete actions on each project card
+- Visual indicators for projects with images
+- Technology tags displayed as badges
+- In application modal, show project cards with checkboxes
+- Limit visual: "Select up to 3 projects (X/3 selected)"
+- In employer view, show projects in a grid or list with images and descriptions
+
+**Files to Create/Modify**:
+
+- `supabase/migrations/016_projects_table.sql` (NEW)
+- `src/types/supabase.ts` (regenerate)
+- `src/lib/actions/project-actions.ts` (NEW)
+- `src/components/ProjectsSection.tsx` (NEW)
+- `src/components/ProjectCard.tsx` (NEW)
+- `src/components/ApplyJobModal.tsx` (UPDATE)
+- `src/app/dashboard/profile/page.tsx` (UPDATE)
+- `src/app/company/dashboard/applications/page.tsx` (UPDATE)
 
 ---
 
 ## Epic 3: Core Job Board Functionality
 
-### P0-8: Job Listing Page with Real Data
+### P0-8: Job Listing Page with Real Data ✅
+
 **Priority**: P0
 **Effort**: 4 days
 **Dependencies**: P0-2
+**Status**: ✅ Complete (2025-11-14)
 
 **Description**:
 Replace mock data with real database queries on jobs listing page.
 
 **Acceptance Criteria**:
-- [ ] Query jobs from Supabase database in `/jobs/page.tsx`
-- [ ] Implement pagination (20 jobs per page)
-- [ ] Add filters: job type, location, experience level, remote/on-site
-- [ ] Add search functionality (by title, description, company)
-- [ ] Sort options: newest, oldest, most viewed
-- [ ] Display job count
-- [ ] Show "No results" state
-- [ ] Implement loading states
-- [ ] Optimize query performance
+
+- [x] Query jobs from Supabase database in `/jobs/page.tsx`
+- [x] Implement pagination (20 jobs per page)
+- [x] Add filters: job type, location, experience level, remote/on-site
+- [x] Add search functionality (by title, description, company)
+- [x] Sort options: newest, oldest, most viewed
+- [x] Display job count
+- [x] Show "No results" state
+- [x] Implement loading states
+- [x] Optimize query performance
+
+**Implementation Summary**:
+
+- Server-side pagination with Supabase `.range()` (20 jobs per page)
+- Debounced search input (300ms) prevents excessive API calls
+- All filters applied server-side for optimal performance:
+  - Job type (exact match)
+  - Experience level (exact match)
+  - Location (case-insensitive ILIKE search)
+  - Remote/on-site (boolean filter)
+  - Minimum salary (greater than or equal)
+- Search functionality across title and description (case-insensitive OR query)
+- Sort options: newest, oldest, most viewed, salary (high/low)
+- Smart pagination UI with ellipsis for large page counts
+- Accurate job count: "Showing X-Y of Z jobs"
+- Filter changes automatically reset to page 1
+- Comprehensive empty states and loading indicators
 
 **Technical Notes**:
-- Use Supabase `.range()` for pagination
-- Consider full-text search with Supabase
-- Add debounce for search input
-- Cache results with Next.js
+
+- ✅ Supabase `.range()` for pagination
+- ✅ Full-text search with ILIKE queries (OR operator)
+- ✅ 300ms debounce for search input
+- ✅ Server-side filtering and sorting
+- ✅ Count query with `{ count: 'exact' }` for accurate pagination
+
+**Documentation**: `documents/sessions/2025-11-14_p0-8-job-listing-page-implementation.md`
 
 ---
 
-### P0-9: Job Detail Page with Real Data
+### P0-9: Job Detail Page with Real Data ✅
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-2, P0-8
+**Status**: ✅ Complete (2025-11-14)
 
 **Description**:
 Display complete job information from database on job detail pages.
 
 **Acceptance Criteria**:
-- [ ] Query job data from Supabase in `/jobs/[id]/page.tsx`
-- [ ] Display all job details (description, requirements, benefits, company info)
-- [ ] Show company logo and profile link
-- [ ] Display related jobs from same company
-- [ ] Increment view count on page load
-- [ ] Add share functionality (copy link, LinkedIn, Twitter)
-- [ ] Handle job not found (404) gracefully
-- [ ] Add structured data (JSON-LD) for SEO
+
+- [x] Query job data from Supabase in `/jobs/[id]/page.tsx`
+- [x] Display all job details (description, requirements, benefits, company info)
+- [x] Show company logo and profile link
+- [x] Display related jobs from same company
+- [x] Increment view count on page load
+- [x] Add share functionality (copy link, LinkedIn, Twitter)
+- [x] Handle job not found (404) gracefully
+- [x] Add structured data (JSON-LD) for SEO
+
+**Implementation Summary**:
+
+- **View Count Tracking**: Atomic database function increments views on page load
+  - Created `increment_job_views()` PostgreSQL function
+  - Fire-and-forget pattern (non-blocking)
+  - Accessible to authenticated and anonymous users
+- **Smart Related Jobs**: Prioritizes jobs from same company
+  - Queries company jobs first
+  - Falls back to recent jobs to fill list
+  - Dynamic title: "More from [Company]" or "Related Jobs"
+  - Visual indicator for same-company jobs
+- **Social Share Functionality**: Multi-platform sharing
+  - Copy link to clipboard (with confirmation)
+  - Share to LinkedIn
+  - Share to Twitter/X
+  - Native share API (mobile)
+  - Dropdown menu with backdrop
+- **SEO Optimization**: Comprehensive metadata and structured data
+  - Dynamic Open Graph tags (Facebook, LinkedIn)
+  - Twitter Card tags
+  - Canonical URLs
+  - Schema.org JobPosting JSON-LD
+  - Eligible for Google Jobs rich results
+- **404 Handling**: Next.js notFound() for missing jobs
 
 **Technical Notes**:
-- Use dynamic routes with `generateStaticParams` for SSG
-- Consider ISR (Incremental Static Regeneration)
-- Add meta tags for social sharing
+
+- ✅ Dynamic routes with async metadata generation
+- ✅ Schema.org JobPosting structured data
+- ✅ Open Graph and Twitter Card meta tags
+- ✅ Atomic view count increment
+- ⏳ ISR (future enhancement)
+
+**Documentation**: `documents/sessions/2025-11-14_p0-9-job-detail-page-implementation.md`
 
 ---
 
-### P0-10: Job Application System
+### P0-10: Job Application System ✅
+
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-5, P0-9, P0-2
+**Status**: ✅ COMPLETE
 
 **Description**:
 Build complete job application flow for job seekers.
 
 **Acceptance Criteria**:
-- [ ] Create application form (cover letter, resume upload)
-- [ ] Save application to `applications` table
-- [ ] Prevent duplicate applications
-- [ ] Send confirmation email to applicant
-- [ ] Notify employer of new application
-- [ ] Show application status in job seeker dashboard
-- [ ] Allow withdrawing application
-- [ ] Display applications in employer dashboard
-- [ ] Add application filtering and sorting for employers
 
-**Technical Notes**:
-- Use Supabase Storage for resume uploads
-- Implement email notifications with Supabase Edge Functions
-- Add rate limiting to prevent spam applications
-- Consider application analytics
+- ✅ Create application form (cover letter, resume upload)
+- ✅ Save application to `applications` table
+- ✅ Prevent duplicate applications
+- ⏳ Send confirmation email to applicant (future enhancement)
+- ⏳ Notify employer of new application (future enhancement)
+- ✅ Show application status in job seeker dashboard
+- ⏳ Allow withdrawing application (future enhancement)
+- ✅ Display applications in employer dashboard
+- ✅ Add application filtering and sorting for employers
+
+**Implementation Details**:
+
+- ✅ Application modal with cover letter input (`src/components/ApplyJobModal.tsx`)
+- ✅ Resume upload to Supabase Storage (bucket: `resumes`)
+- ✅ Uses existing profile resume or allows new upload
+- ✅ Duplicate application prevention at database level
+- ✅ Job seeker applications dashboard at `/dashboard/applications`
+- ✅ Employer applications dashboard at `/company/dashboard/applications`
+- ✅ Application status management (pending → reviewing → shortlisted → accepted/rejected)
+- ✅ Search and filter by status, job, company
+- ✅ Application count tracking on jobs table
+- ✅ View candidate details, cover letters, and resumes
+
+**Technical Implementation**:
+
+- Uses Supabase Storage for resume uploads
+- Real-time application data fetching from Supabase
+- Optimistic UI updates with error handling
+- Status badges and filtering by application state
+- Shows applicant information (name, email, phone, location, experience)
+- Links to LinkedIn and portfolio profiles
+
+**Files Created/Modified**:
+
+- `src/components/ApplyJobModal.tsx` - Application form modal
+- `src/app/jobs/[id]/JobDetailClient.tsx` - Apply button and saved jobs
+- `src/app/dashboard/applications/page.tsx` - Job seeker applications dashboard
+- `src/app/company/dashboard/applications/page.tsx` - Employer applications dashboard
+- `src/contexts/AuthContext.tsx` - Authentication state management
+- Database schema already includes `applications` table with triggers
+
+**Future Enhancements**:
+
+- Email notifications (confirmation + employer alerts)
+- Application withdrawal feature
+- Application analytics and insights
+- Rate limiting for spam prevention
 
 ---
 
 ### P0-11: Job Posting for Employers
+
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-5, P0-7, P0-2
@@ -292,6 +543,7 @@ Build complete job application flow for job seekers.
 Build job posting functionality for employers.
 
 **Acceptance Criteria**:
+
 - [ ] Create job posting form in `/post-job`
 - [ ] Add all job fields (title, description, requirements, benefits, location, type, experience, salary range)
 - [ ] Add rich text editor for descriptions
@@ -304,6 +556,7 @@ Build job posting functionality for employers.
 - [ ] Enforce job post limits based on subscription
 
 **Technical Notes**:
+
 - Consider using React Hook Form for complex form state
 - Add autosave for drafts
 - Use optimistic UI updates
@@ -312,6 +565,7 @@ Build job posting functionality for employers.
 ---
 
 ### P1-12: Saved Jobs Feature
+
 **Priority**: P1
 **Effort**: 2 days
 **Dependencies**: P0-5, P0-8
@@ -320,6 +574,7 @@ Build job posting functionality for employers.
 Allow job seekers to save jobs for later.
 
 **Acceptance Criteria**:
+
 - [ ] Add "Save" button to job cards and detail pages
 - [ ] Save/unsave jobs in database
 - [ ] Display saved jobs in `/dashboard/saved`
@@ -328,6 +583,7 @@ Allow job seekers to save jobs for later.
 - [ ] Show count of saved jobs
 
 **Technical Notes**:
+
 - Use optimistic UI updates
 - Add heart/bookmark icon animation
 - Consider bulk actions (remove multiple)
@@ -335,6 +591,7 @@ Allow job seekers to save jobs for later.
 ---
 
 ### P1-13: Job Alerts System
+
 **Priority**: P1
 **Effort**: 4 days
 **Dependencies**: P0-5, P0-2
@@ -343,6 +600,7 @@ Allow job seekers to save jobs for later.
 Allow job seekers to create custom job alerts.
 
 **Acceptance Criteria**:
+
 - [ ] Create alert creation form in `/dashboard/alerts`
 - [ ] Configure alert criteria (keywords, location, job type)
 - [ ] Set frequency (daily, weekly)
@@ -354,6 +612,7 @@ Allow job seekers to create custom job alerts.
 - [ ] Add unsubscribe link in emails
 
 **Technical Notes**:
+
 - Use Supabase cron jobs for scheduled checks
 - Batch email sends to avoid rate limits
 - Add email templates with Resend or SendGrid
@@ -364,6 +623,7 @@ Allow job seekers to create custom job alerts.
 ## Epic 4: Payment & Subscription System
 
 ### P0-14: Stripe Integration Setup
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-1
@@ -372,6 +632,7 @@ Allow job seekers to create custom job alerts.
 Set up Stripe for payment processing and subscription management.
 
 **Acceptance Criteria**:
+
 - [ ] Create Stripe account and get API keys
 - [ ] Configure Stripe products and pricing
   - Free plan: 1 job post, basic features
@@ -384,6 +645,7 @@ Set up Stripe for payment processing and subscription management.
 - [ ] Test in Stripe test mode
 
 **Technical Notes**:
+
 - Use Stripe Checkout for simplicity
 - Store subscription data in Supabase
 - Handle webhook signatures securely
@@ -392,6 +654,7 @@ Set up Stripe for payment processing and subscription management.
 ---
 
 ### P0-15: Subscription Management for Employers
+
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-14, P0-7
@@ -400,6 +663,7 @@ Set up Stripe for payment processing and subscription management.
 Build subscription management system for employers.
 
 **Acceptance Criteria**:
+
 - [ ] Create pricing page at `/pricing` (or add to `/employers`)
 - [ ] Implement subscription checkout flow
 - [ ] Create billing page in `/company/dashboard/billing`
@@ -412,6 +676,7 @@ Build subscription management system for employers.
 - [ ] Enforce job post limits based on plan
 
 **Technical Notes**:
+
 - Use Stripe Checkout Sessions
 - Handle proration for plan changes
 - Add grace period for failed payments
@@ -420,6 +685,7 @@ Build subscription management system for employers.
 ---
 
 ### P1-16: Payment Receipt & Invoicing
+
 **Priority**: P1
 **Effort**: 2 days
 **Dependencies**: P0-15
@@ -428,6 +694,7 @@ Build subscription management system for employers.
 Provide payment receipts and invoices to customers.
 
 **Acceptance Criteria**:
+
 - [ ] Send receipt email after successful payment
 - [ ] Display invoices in billing dashboard
 - [ ] Allow downloading invoices as PDF
@@ -435,6 +702,7 @@ Provide payment receipts and invoices to customers.
 - [ ] Add update payment method functionality
 
 **Technical Notes**:
+
 - Use Stripe's built-in invoice system
 - Consider Stripe Customer Portal for self-service
 
@@ -443,6 +711,7 @@ Provide payment receipts and invoices to customers.
 ## Epic 5: AI Features (OpenAI Integration)
 
 ### P1-17: OpenAI Setup & Configuration
+
 **Priority**: P1
 **Effort**: 2 days
 **Dependencies**: P0-1
@@ -451,6 +720,7 @@ Provide payment receipts and invoices to customers.
 Set up OpenAI API for AI-powered features.
 
 **Acceptance Criteria**:
+
 - [ ] Create OpenAI account and get API key
 - [ ] Add OpenAI SDK to project
 - [ ] Create `/src/lib/openai.ts` configuration
@@ -459,7 +729,8 @@ Set up OpenAI API for AI-powered features.
 - [ ] Implement rate limiting and error handling
 
 **Technical Notes**:
-- Use GPT-4 or GPT-4-turbo for quality
+
+- Use GPT-4 or GPT-4.1 for quality
 - Consider caching responses
 - Add retry logic for failed requests
 - Monitor API usage and costs
@@ -467,6 +738,7 @@ Set up OpenAI API for AI-powered features.
 ---
 
 ### P1-18: AI Job Description Enhancement
+
 **Priority**: P1
 **Effort**: 3 days
 **Dependencies**: P1-17, P0-11
@@ -475,6 +747,7 @@ Set up OpenAI API for AI-powered features.
 Help employers write better job descriptions with AI.
 
 **Acceptance Criteria**:
+
 - [ ] Add "Enhance with AI" button to job posting form
 - [ ] Generate improved job descriptions based on basic input
 - [ ] Suggest requirements and qualifications
@@ -484,6 +757,7 @@ Help employers write better job descriptions with AI.
 - [ ] Show character counts and recommendations
 
 **Technical Notes**:
+
 - Use streaming responses for better UX
 - Provide clear prompts to OpenAI
 - Add user feedback mechanism
@@ -492,6 +766,7 @@ Help employers write better job descriptions with AI.
 ---
 
 ### P2-19: AI Job Matching
+
 **Priority**: P2
 **Effort**: 5 days
 **Dependencies**: P1-17, P0-6, P0-8
@@ -500,6 +775,7 @@ Help employers write better job descriptions with AI.
 Provide AI-powered job recommendations to job seekers.
 
 **Acceptance Criteria**:
+
 - [ ] Analyze job seeker profile (skills, experience, preferences)
 - [ ] Generate personalized job recommendations
 - [ ] Display recommended jobs on dashboard
@@ -509,6 +785,7 @@ Provide AI-powered job recommendations to job seekers.
 - [ ] Improve recommendations based on feedback
 
 **Technical Notes**:
+
 - Use embeddings for semantic matching
 - Consider batch processing for efficiency
 - Store match scores in database
@@ -517,6 +794,7 @@ Provide AI-powered job recommendations to job seekers.
 ---
 
 ### P2-20: AI Resume Analysis
+
 **Priority**: P2
 **Effort**: 4 days
 **Dependencies**: P1-17, P0-6
@@ -525,6 +803,7 @@ Provide AI-powered job recommendations to job seekers.
 Help job seekers improve their profiles with AI analysis.
 
 **Acceptance Criteria**:
+
 - [ ] Parse uploaded resume
 - [ ] Extract skills, experience, and education
 - [ ] Provide profile improvement suggestions
@@ -534,6 +813,7 @@ Help job seekers improve their profiles with AI analysis.
 - [ ] Show profile strength score
 
 **Technical Notes**:
+
 - Use GPT-4 Vision for PDF parsing or structured extraction
 - Validate extracted data before saving
 - Provide actionable suggestions
@@ -544,6 +824,7 @@ Help job seekers improve their profiles with AI analysis.
 ## Epic 6: Email & Notifications
 
 ### P0-21: Email Service Setup
+
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: P0-1
@@ -552,6 +833,7 @@ Help job seekers improve their profiles with AI analysis.
 Set up transactional email service.
 
 **Acceptance Criteria**:
+
 - [ ] Choose email provider (Resend, SendGrid, or Supabase built-in)
 - [ ] Set up email domain and authentication (SPF, DKIM)
 - [ ] Create email templates
@@ -567,6 +849,7 @@ Set up transactional email service.
 - [ ] Add unsubscribe functionality
 
 **Technical Notes**:
+
 - Use React Email for template design
 - Ensure mobile responsiveness
 - Add email tracking (opens, clicks)
@@ -575,6 +858,7 @@ Set up transactional email service.
 ---
 
 ### P1-22: In-App Notifications System
+
 **Priority**: P1
 **Effort**: 4 days
 **Dependencies**: P0-5, P0-2
@@ -583,6 +867,7 @@ Set up transactional email service.
 Build in-app notification system for users.
 
 **Acceptance Criteria**:
+
 - [ ] Create `notifications` table in database
 - [ ] Add notification bell icon in header
 - [ ] Show unread count badge
@@ -594,6 +879,7 @@ Build in-app notification system for users.
 - [ ] Add "View all notifications" page
 
 **Technical Notes**:
+
 - Use Supabase Realtime for instant updates
 - Implement notification batching
 - Add push notifications (future)
@@ -604,6 +890,7 @@ Build in-app notification system for users.
 ## Epic 7: Analytics & Reporting
 
 ### P1-23: Job Analytics for Employers
+
 **Priority**: P1
 **Effort**: 4 days
 **Dependencies**: P0-7, P0-11
@@ -612,6 +899,7 @@ Build in-app notification system for users.
 Provide analytics dashboard for employers.
 
 **Acceptance Criteria**:
+
 - [ ] Track job views over time
 - [ ] Show application funnel (views → applications)
 - [ ] Display top-performing jobs
@@ -622,6 +910,7 @@ Provide analytics dashboard for employers.
 - [ ] Compare job performance
 
 **Technical Notes**:
+
 - Store analytics events in separate table
 - Consider using PostHog or Plausible for advanced analytics
 - Use charts library (Recharts, Chart.js)
@@ -630,6 +919,7 @@ Provide analytics dashboard for employers.
 ---
 
 ### P1-24: Application Tracking for Employers
+
 **Priority**: P1
 **Effort**: 3 days
 **Dependencies**: P0-10, P1-23
@@ -638,6 +928,7 @@ Provide analytics dashboard for employers.
 Build application management interface for employers.
 
 **Acceptance Criteria**:
+
 - [ ] Display all applications in `/company/dashboard/applications`
 - [ ] Filter by job, status, date
 - [ ] Sort applications
@@ -648,6 +939,7 @@ Build application management interface for employers.
 - [ ] Send status update emails to applicants
 
 **Technical Notes**:
+
 - Implement optimistic UI updates
 - Add keyboard shortcuts for efficiency
 - Consider ATS (Applicant Tracking System) features
@@ -656,6 +948,7 @@ Build application management interface for employers.
 ---
 
 ### P2-25: Platform Analytics Dashboard (Admin)
+
 **Priority**: P2
 **Effort**: 5 days
 **Dependencies**: P1-23
@@ -664,6 +957,7 @@ Build application management interface for employers.
 Create admin dashboard for platform analytics.
 
 **Acceptance Criteria**:
+
 - [ ] Create admin role and authentication
 - [ ] Display key metrics: total jobs, applications, users, revenue
 - [ ] Show growth charts over time
@@ -674,6 +968,7 @@ Create admin dashboard for platform analytics.
 - [ ] Export reports
 
 **Technical Notes**:
+
 - Create separate admin layout
 - Use role-based access control
 - Consider using Metabase or similar for advanced analytics
@@ -684,6 +979,7 @@ Create admin dashboard for platform analytics.
 ## Epic 8: SEO & Marketing
 
 ### P0-26: SEO Optimization
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-8, P0-9
@@ -692,6 +988,7 @@ Create admin dashboard for platform analytics.
 Optimize application for search engines.
 
 **Acceptance Criteria**:
+
 - [ ] Add meta tags to all pages (title, description, keywords)
 - [ ] Implement dynamic Open Graph tags
 - [ ] Add Twitter Card meta tags
@@ -704,6 +1001,7 @@ Optimize application for search engines.
 - [ ] Test with Google Search Console
 
 **Technical Notes**:
+
 - Use Next.js Metadata API
 - Generate sitemap dynamically
 - Use schema.org JobPosting type
@@ -712,6 +1010,7 @@ Optimize application for search engines.
 ---
 
 ### P1-27: Landing Pages for Key Job Types
+
 **Priority**: P1
 **Effort**: 3 days
 **Dependencies**: P0-26
@@ -720,6 +1019,7 @@ Optimize application for search engines.
 Create dedicated landing pages for popular job searches.
 
 **Acceptance Criteria**:
+
 - [ ] Create pages:
   - `/jobs/ghl-specialist`
   - `/jobs/ghl-developer`
@@ -732,6 +1032,7 @@ Create dedicated landing pages for popular job searches.
 - [ ] Generate sitemap entries
 
 **Technical Notes**:
+
 - Use dynamic routes with pre-rendering
 - Add unique content for each page
 - Monitor performance in Google Analytics
@@ -740,6 +1041,7 @@ Create dedicated landing pages for popular job searches.
 ---
 
 ### P1-28: Blog/Resources Section
+
 **Priority**: P1
 **Effort**: 5 days
 **Dependencies**: P0-1
@@ -748,6 +1050,7 @@ Create dedicated landing pages for popular job searches.
 Create blog/resources section for content marketing.
 
 **Acceptance Criteria**:
+
 - [ ] Set up blog structure in `/resources` or `/blog`
 - [ ] Create blog post template
 - [ ] Add markdown support for blog posts
@@ -759,6 +1062,7 @@ Create blog/resources section for content marketing.
 - [ ] Create 5-10 initial blog posts about GHL careers
 
 **Technical Notes**:
+
 - Use MDX for rich content
 - Implement ISR for blog posts
 - Add comments (optional)
@@ -769,6 +1073,7 @@ Create blog/resources section for content marketing.
 ## Epic 9: Mobile Responsiveness & Accessibility
 
 ### P0-29: Mobile Optimization
+
 **Priority**: P0
 **Effort**: 4 days
 **Dependencies**: All frontend work
@@ -777,6 +1082,7 @@ Create blog/resources section for content marketing.
 Ensure excellent mobile experience across all pages.
 
 **Acceptance Criteria**:
+
 - [ ] Test all pages on mobile devices (iOS and Android)
 - [ ] Fix layout issues on small screens
 - [ ] Optimize touch targets (minimum 44x44px)
@@ -788,6 +1094,7 @@ Ensure excellent mobile experience across all pages.
 - [ ] Test landscape orientation
 
 **Technical Notes**:
+
 - Use Chrome DevTools mobile emulation
 - Test on real devices
 - Consider mobile-first approach
@@ -796,6 +1103,7 @@ Ensure excellent mobile experience across all pages.
 ---
 
 ### P1-30: Accessibility (WCAG 2.1 AA)
+
 **Priority**: P1
 **Effort**: 3 days
 **Dependencies**: All frontend work
@@ -804,6 +1112,7 @@ Ensure excellent mobile experience across all pages.
 Ensure application is accessible to all users.
 
 **Acceptance Criteria**:
+
 - [ ] Add proper ARIA labels
 - [ ] Ensure keyboard navigation works
 - [ ] Test with screen readers (NVDA, JAWS)
@@ -815,6 +1124,7 @@ Ensure application is accessible to all users.
 - [ ] Document accessibility features
 
 **Technical Notes**:
+
 - Use semantic HTML
 - Test focus order
 - Provide text alternatives for images
@@ -825,6 +1135,7 @@ Ensure application is accessible to all users.
 ## Epic 10: Security & Performance
 
 ### P0-31: Security Hardening
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: All backend work
@@ -833,6 +1144,7 @@ Ensure application is accessible to all users.
 Implement security best practices.
 
 **Acceptance Criteria**:
+
 - [ ] Enable HTTPS (SSL certificate)
 - [ ] Configure security headers (CSP, HSTS, X-Frame-Options)
 - [ ] Implement rate limiting for API routes
@@ -846,6 +1158,7 @@ Implement security best practices.
 - [ ] Run security audit with npm audit
 
 **Technical Notes**:
+
 - Use helmet.js for security headers
 - Implement rate limiting with Upstash or similar
 - Add file type validation
@@ -854,6 +1167,7 @@ Implement security best practices.
 ---
 
 ### P0-32: Performance Optimization
+
 **Priority**: P0
 **Effort**: 4 days
 **Dependencies**: All frontend work
@@ -862,6 +1176,7 @@ Implement security best practices.
 Optimize application performance for production.
 
 **Acceptance Criteria**:
+
 - [ ] Achieve Lighthouse score >90 for all metrics
 - [ ] Implement image optimization (Next.js Image)
 - [ ] Add lazy loading for images and components
@@ -875,6 +1190,7 @@ Optimize application performance for production.
 - [ ] Compress static assets
 
 **Technical Notes**:
+
 - Use Next.js Image component
 - Implement ISR and SSG where possible
 - Use dynamic imports for heavy components
@@ -884,6 +1200,7 @@ Optimize application performance for production.
 ---
 
 ### P1-33: Monitoring & Error Tracking
+
 **Priority**: P1
 **Effort**: 2 days
 **Dependencies**: P0-31
@@ -892,6 +1209,7 @@ Optimize application performance for production.
 Set up monitoring and error tracking.
 
 **Acceptance Criteria**:
+
 - [ ] Set up error tracking (Sentry)
 - [ ] Configure performance monitoring
 - [ ] Add uptime monitoring (UptimeRobot, Pingdom)
@@ -902,6 +1220,7 @@ Set up monitoring and error tracking.
 - [ ] Set up status page
 
 **Technical Notes**:
+
 - Integrate Sentry with source maps
 - Monitor Supabase usage
 - Track Stripe webhook failures
@@ -912,6 +1231,7 @@ Set up monitoring and error tracking.
 ## Epic 11: Legal & Compliance
 
 ### P0-34: Terms of Service & Privacy Policy
+
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: None
@@ -920,6 +1240,7 @@ Set up monitoring and error tracking.
 Create legal documents and ensure compliance.
 
 **Acceptance Criteria**:
+
 - [ ] Write Terms of Service (or use template + customize)
 - [ ] Write Privacy Policy (GDPR, CCPA compliant)
 - [ ] Add cookie consent banner
@@ -930,6 +1251,7 @@ Create legal documents and ensure compliance.
 - [ ] Create content moderation guidelines
 
 **Technical Notes**:
+
 - Use legal template service (Termly, iubenda)
 - Implement cookie consent with CookieYes or similar
 - Add data export feature in user settings
@@ -938,6 +1260,7 @@ Create legal documents and ensure compliance.
 ---
 
 ### P1-35: Content Moderation System
+
 **Priority**: P1
 **Effort**: 3 days
 **Dependencies**: P0-11
@@ -946,6 +1269,7 @@ Create legal documents and ensure compliance.
 Implement content moderation for job postings.
 
 **Acceptance Criteria**:
+
 - [ ] Add admin review queue for new job posts
 - [ ] Flag inappropriate content automatically
 - [ ] Allow users to report jobs
@@ -956,6 +1280,7 @@ Implement content moderation for job postings.
 - [ ] Log all moderation actions
 
 **Technical Notes**:
+
 - Consider using OpenAI Moderation API
 - Implement simple keyword filtering
 - Add manual review for flagged content
@@ -966,6 +1291,7 @@ Implement content moderation for job postings.
 ## Epic 12: Testing & Quality Assurance
 
 ### P0-36: End-to-End Testing
+
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: All major features
@@ -974,6 +1300,7 @@ Implement content moderation for job postings.
 Implement comprehensive testing for critical user flows.
 
 **Acceptance Criteria**:
+
 - [ ] Set up Playwright or Cypress
 - [ ] Write tests for authentication flows
 - [ ] Test job posting workflow
@@ -985,6 +1312,7 @@ Implement comprehensive testing for critical user flows.
 - [ ] Document test coverage
 
 **Technical Notes**:
+
 - Use test database for E2E tests
 - Mock external APIs where appropriate
 - Run tests on every PR
@@ -993,6 +1321,7 @@ Implement comprehensive testing for critical user flows.
 ---
 
 ### P1-37: Unit & Integration Testing
+
 **Priority**: P1
 **Effort**: 5 days
 **Dependencies**: All features
@@ -1001,6 +1330,7 @@ Implement comprehensive testing for critical user flows.
 Add unit and integration tests for core functionality.
 
 **Acceptance Criteria**:
+
 - [ ] Set up Jest and React Testing Library
 - [ ] Write tests for utility functions
 - [ ] Test React components
@@ -1012,6 +1342,7 @@ Add unit and integration tests for core functionality.
 - [ ] Aim for >60% code coverage
 
 **Technical Notes**:
+
 - Mock Supabase client for tests
 - Use testing-library best practices
 - Run tests in CI/CD pipeline
@@ -1020,6 +1351,7 @@ Add unit and integration tests for core functionality.
 ---
 
 ### P0-38: User Acceptance Testing (UAT)
+
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-36
@@ -1028,6 +1360,7 @@ Add unit and integration tests for core functionality.
 Conduct thorough user acceptance testing before launch.
 
 **Acceptance Criteria**:
+
 - [ ] Create UAT test plan
 - [ ] Recruit beta testers (5-10 job seekers, 3-5 employers)
 - [ ] Test all critical user flows
@@ -1038,6 +1371,7 @@ Conduct thorough user acceptance testing before launch.
 - [ ] Get sign-off from stakeholders
 
 **Technical Notes**:
+
 - Use staging environment
 - Provide test accounts and data
 - Use UserTesting or similar for additional feedback
@@ -1048,6 +1382,7 @@ Conduct thorough user acceptance testing before launch.
 ## Epic 13: Deployment & DevOps
 
 ### P0-39: Production Environment Setup
+
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: None
@@ -1056,6 +1391,7 @@ Conduct thorough user acceptance testing before launch.
 Set up production hosting and infrastructure.
 
 **Acceptance Criteria**:
+
 - [ ] Choose hosting provider (Vercel recommended for Next.js)
 - [ ] Set up production environment
 - [ ] Configure custom domain (ghlhire.com)
@@ -1067,6 +1403,7 @@ Set up production hosting and infrastructure.
 - [ ] Set up staging environment
 
 **Technical Notes**:
+
 - Use Vercel for easy Next.js deployment
 - Configure preview deployments for PRs
 - Use Vercel Edge Functions for API routes
@@ -1075,6 +1412,7 @@ Set up production hosting and infrastructure.
 ---
 
 ### P0-40: CI/CD Pipeline
+
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: P0-39, P0-36
@@ -1083,6 +1421,7 @@ Set up production hosting and infrastructure.
 Set up automated deployment pipeline.
 
 **Acceptance Criteria**:
+
 - [ ] Set up GitHub Actions or Vercel CI
 - [ ] Run linter on every commit
 - [ ] Run tests on every PR
@@ -1093,6 +1432,7 @@ Set up automated deployment pipeline.
 - [ ] Add rollback capability
 
 **Technical Notes**:
+
 - Use Vercel's built-in CI/CD if using Vercel
 - Add branch protection rules
 - Set up deployment previews
@@ -1101,6 +1441,7 @@ Set up automated deployment pipeline.
 ---
 
 ### P0-41: Database Backup & Recovery
+
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: P0-2
@@ -1109,6 +1450,7 @@ Set up automated deployment pipeline.
 Implement database backup and recovery procedures.
 
 **Acceptance Criteria**:
+
 - [ ] Enable Supabase automatic backups (daily)
 - [ ] Test backup restoration process
 - [ ] Document backup schedule
@@ -1119,6 +1461,7 @@ Implement database backup and recovery procedures.
 - [ ] Set up backup notifications
 
 **Technical Notes**:
+
 - Use Supabase built-in backups (Pro plan)
 - Consider additional backup to S3
 - Test restoration quarterly
@@ -1129,6 +1472,7 @@ Implement database backup and recovery procedures.
 ## Epic 14: Launch Preparation
 
 ### P0-42: Launch Checklist & Go-Live Plan
+
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: All P0 stories
@@ -1137,6 +1481,7 @@ Implement database backup and recovery procedures.
 Create comprehensive launch checklist and execution plan.
 
 **Acceptance Criteria**:
+
 - [ ] Complete pre-launch checklist
   - All P0 stories completed
   - Security audit passed
@@ -1154,6 +1499,7 @@ Create comprehensive launch checklist and execution plan.
 - [ ] Schedule launch communication
 
 **Technical Notes**:
+
 - Plan for gradual rollout if possible
 - Have team on standby for launch day
 - Monitor error rates closely
@@ -1162,6 +1508,7 @@ Create comprehensive launch checklist and execution plan.
 ---
 
 ### P1-43: Marketing Site Launch
+
 **Priority**: P1
 **Effort**: 3 days
 **Dependencies**: P0-42
@@ -1170,6 +1517,7 @@ Create comprehensive launch checklist and execution plan.
 Launch marketing and promotional activities.
 
 **Acceptance Criteria**:
+
 - [ ] Announce on social media (LinkedIn, Twitter)
 - [ ] Post in GHL community groups
 - [ ] Send launch email to beta users
@@ -1180,6 +1528,7 @@ Launch marketing and promotional activities.
 - [ ] Respond to user feedback
 
 **Technical Notes**:
+
 - Prepare social media graphics
 - Create launch video/demo
 - Set up social media accounts
@@ -1188,6 +1537,7 @@ Launch marketing and promotional activities.
 ---
 
 ### P1-44: Customer Support Setup
+
 **Priority**: P1
 **Effort**: 2 days
 **Dependencies**: P0-42
@@ -1196,6 +1546,7 @@ Launch marketing and promotional activities.
 Set up customer support infrastructure.
 
 **Acceptance Criteria**:
+
 - [ ] Set up support email (support@ghlhire.com)
 - [ ] Create help center/FAQ page
 - [ ] Set up support ticket system (Intercom, Zendesk, or simple email)
@@ -1206,6 +1557,7 @@ Set up customer support infrastructure.
 - [ ] Train support team
 
 **Technical Notes**:
+
 - Start with simple email support
 - Consider Intercom for scale
 - Add search functionality to help center
@@ -1214,6 +1566,7 @@ Set up customer support infrastructure.
 ---
 
 ### P2-45: Onboarding Flow Optimization
+
 **Priority**: P2
 **Effort**: 3 days
 **Dependencies**: P0-5, P0-6, P0-7
@@ -1222,6 +1575,7 @@ Set up customer support infrastructure.
 Create guided onboarding for new users.
 
 **Acceptance Criteria**:
+
 - [ ] Create welcome tour for job seekers
 - [ ] Create welcome tour for employers
 - [ ] Add progress indicators
@@ -1232,6 +1586,7 @@ Create guided onboarding for new users.
 - [ ] Optimize based on user behavior
 
 **Technical Notes**:
+
 - Use react-joyride or similar for tours
 - Keep onboarding concise
 - Allow skipping
@@ -1242,37 +1597,49 @@ Create guided onboarding for new users.
 ## Estimated Timeline
 
 ### Phase 1: Foundation (Weeks 1-4)
+
 **Focus**: Backend infrastructure, database, authentication
+
 - P0-1 through P0-7
 - P0-21 (Email setup)
 - P0-39 (Environment setup)
 
 ### Phase 2: Core Features (Weeks 5-8)
+
 **Focus**: Job board functionality, applications
+
 - P0-8 through P0-13
 - P0-26 (SEO basics)
 - P0-29 (Mobile optimization)
 
 ### Phase 3: Payments & AI (Weeks 9-11)
+
 **Focus**: Subscription system, AI features
+
 - P0-14 through P0-16
 - P1-17 through P1-19
 - P1-22 through P1-24
 
 ### Phase 4: Polish & Testing (Weeks 12-13)
+
 **Focus**: Testing, security, performance
+
 - P0-31 through P0-32
 - P0-34 (Legal)
 - P0-36 through P0-38
 - P1-33 (Monitoring)
 
 ### Phase 5: Launch (Week 14)
+
 **Focus**: Final checks and go-live
+
 - P0-40 through P0-42
 - P1-43 through P1-44
 
 ### Post-Launch (Ongoing)
+
 **Focus**: Optimization and P2 features
+
 - P2-19, P2-20, P2-25
 - P1-27, P1-28
 - P1-30, P1-35
@@ -1283,6 +1650,7 @@ Create guided onboarding for new users.
 ## Success Metrics
 
 ### Launch Targets (Month 1)
+
 - 50+ active job postings
 - 200+ registered job seekers
 - 10+ registered employers
@@ -1290,6 +1658,7 @@ Create guided onboarding for new users.
 - 5+ paid subscriptions
 
 ### 3-Month Targets
+
 - 200+ active jobs
 - 1,000+ job seekers
 - 50+ employers
@@ -1298,6 +1667,7 @@ Create guided onboarding for new users.
 - $2,000+ MRR
 
 ### 6-Month Targets
+
 - 500+ active jobs
 - 5,000+ job seekers
 - 150+ employers
@@ -1310,24 +1680,31 @@ Create guided onboarding for new users.
 ## Risk Assessment
 
 ### High Risk
+
 1. **Payment Integration Issues**: Stripe integration complexity
+
    - Mitigation: Extensive testing, fallback to manual payments initially
 
 2. **User Acquisition**: Difficulty attracting initial users
+
    - Mitigation: Early beta program, GHL community outreach, influencer partnerships
 
 3. **Data Quality**: Poor quality job postings or spam
    - Mitigation: Manual review initially, automated moderation later
 
 ### Medium Risk
+
 1. **Technical Scalability**: Database or server performance issues
+
    - Mitigation: Load testing, CDN, database optimization
 
 2. **Competition**: Other job boards or GHL launching their own
    - Mitigation: Focus on niche, build community, unique features
 
 ### Low Risk
+
 1. **Email Deliverability**: Emails going to spam
+
    - Mitigation: Proper domain authentication, reputable provider
 
 2. **SEO Performance**: Slow organic traffic growth

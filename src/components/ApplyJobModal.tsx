@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { getProjects, attachProjectsToApplication, type Project } from '@/lib/actions/project-actions';
+import ProjectCard from './ProjectCard';
 
 interface ApplyJobModalProps {
   job: any;
@@ -18,6 +21,59 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
   const [success, setSuccess] = useState(false);
   const [coverLetter, setCoverLetter] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(true);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    setMounted(true);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  // Load user's projects
+  useEffect(() => {
+    const loadProjects = async () => {
+      if (!profile?.id) return;
+
+      setLoadingProjects(true);
+      const { projects: userProjects, error } = await getProjects(profile.id);
+
+      if (!error && userProjects) {
+        setProjects(userProjects);
+      }
+
+      setLoadingProjects(false);
+    };
+
+    loadProjects();
+  }, [profile?.id]);
+
+  // Handle backdrop click
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  // Handle project selection
+  const handleProjectSelect = (projectId: string, selected: boolean) => {
+    if (selected) {
+      // Add project if less than 3 selected
+      if (selectedProjectIds.length < 3) {
+        setSelectedProjectIds([...selectedProjectIds, projectId]);
+      }
+    } else {
+      // Remove project
+      setSelectedProjectIds(selectedProjectIds.filter(id => id !== projectId));
+    }
+  };
+
+  if (!mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +122,7 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
       }
 
       // Create application
-      const { error: insertError } = await supabase
+      const { data: application, error: insertError } = await supabase
         .from('applications')
         .insert({
           job_id: job.id,
@@ -74,10 +130,25 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
           cover_letter: coverLetter || null,
           resume_url: resumeUrl,
           status: 'pending',
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
         throw insertError;
+      }
+
+      // Attach selected projects to application
+      if (application && selectedProjectIds.length > 0) {
+        const { error: projectError } = await attachProjectsToApplication(
+          application.id,
+          selectedProjectIds
+        );
+
+        if (projectError) {
+          console.error('Failed to attach projects:', projectError);
+          // Don't fail the application if projects fail to attach
+        }
       }
 
       setSuccess(true);
@@ -92,25 +163,32 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
     }
   };
 
-  if (success) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg max-w-md w-full p-8 text-center">
-          <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-          </div>
-          <h3 className="text-2xl font-semibold mb-2">Application Submitted!</h3>
-          <p className="text-gray-600">
-            Your application has been successfully submitted. The employer will review it and get back to you soon.
-          </p>
+  const modalContent = success ? (
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
+      style={{ zIndex: 9999 }}
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-white rounded-lg max-w-md w-full p-8 text-center shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-10 h-10 text-green-600" />
         </div>
+        <h3 className="text-2xl font-semibold mb-2 text-gray-900">Application Submitted!</h3>
+        <p className="text-gray-600">
+          Your application has been successfully submitted. The employer will review it and get back to you soon.
+        </p>
       </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    </div>
+  ) : (
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999] p-4"
+      style={{ zIndex: 9999 }}
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <div>
@@ -160,7 +238,7 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
               value={coverLetter}
               onChange={(e) => setCoverLetter(e.target.value)}
               rows={8}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-gray-900"
               placeholder="Tell the employer why you're a great fit for this role..."
             />
             <p className="text-sm text-gray-500 mt-1">
@@ -203,6 +281,40 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
             </div>
           </div>
 
+          {/* Projects Section */}
+          {loadingProjects ? (
+            <div className="text-center py-4 text-gray-500">Loading projects...</div>
+          ) : projects.length > 0 ? (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Showcase Projects <span className="text-gray-500">(Optional - Select up to 3)</span>
+              </label>
+              <p className="text-sm text-gray-600 mb-3">
+                Selected: {selectedProjectIds.length}/3 projects
+              </p>
+              <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+                {projects.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    isSelectable={true}
+                    isSelected={selectedProjectIds.includes(project.id)}
+                    onSelect={handleProjectSelect}
+                  />
+                ))}
+              </div>
+              {projects.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  No projects added yet. Add projects in your{' '}
+                  <a href="/dashboard/profile" className="text-blue-600 hover:underline">
+                    profile
+                  </a>{' '}
+                  to showcase them with applications.
+                </p>
+              )}
+            </div>
+          ) : null}
+
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button
@@ -224,4 +336,6 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

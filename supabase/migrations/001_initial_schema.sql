@@ -2,14 +2,14 @@
 -- Migration: 001_initial_schema
 -- Description: Initial database schema for GHL Hire platform
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Enable UUID extension (pgcrypto for gen_random_uuid)
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- =====================================================
 -- PROFILES TABLE (Job Seekers)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
     full_name TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 -- COMPANIES TABLE (Employers)
 -- =====================================================
 CREATE TABLE IF NOT EXISTS companies (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
     company_name TEXT NOT NULL,
     email TEXT NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS companies (
 -- JOBS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS jobs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 -- APPLICATIONS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS applications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     job_id UUID REFERENCES jobs(id) ON DELETE CASCADE NOT NULL,
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     cover_letter TEXT,
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS applications (
 -- SAVED JOBS TABLE
 -- =====================================================
 CREATE TABLE IF NOT EXISTS saved_jobs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     job_id UUID REFERENCES jobs(id) ON DELETE CASCADE NOT NULL,
     saved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

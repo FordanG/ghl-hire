@@ -1,6 +1,6 @@
 -- Content Reports Table
 CREATE TABLE IF NOT EXISTS content_reports (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reporter_profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     content_type TEXT NOT NULL CHECK (content_type IN ('job', 'profile', 'application', 'blog_post', 'comment')),
     content_id UUID NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS content_reports (
 
 -- Moderation Actions Table
 CREATE TABLE IF NOT EXISTS moderation_actions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_id UUID REFERENCES content_reports(id) ON DELETE CASCADE,
     moderator_profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL NOT NULL,
     action_type TEXT NOT NULL CHECK (action_type IN (
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS moderation_actions (
 
 -- Admin Roles Table (for managing admin access)
 CREATE TABLE IF NOT EXISTS admin_roles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL UNIQUE,
     role TEXT NOT NULL DEFAULT 'moderator' CHECK (role IN ('admin', 'moderator', 'support')),
     permissions JSONB DEFAULT '[]'::jsonb,

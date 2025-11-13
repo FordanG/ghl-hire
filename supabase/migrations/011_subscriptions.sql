@@ -1,6 +1,6 @@
 -- Subscriptions Table
 CREATE TABLE IF NOT EXISTS subscriptions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL UNIQUE,
     plan_type TEXT NOT NULL DEFAULT 'free' CHECK (plan_type IN ('free', 'basic', 'premium', 'enterprise')),
 
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 
 -- Payment Transactions Table
 CREATE TABLE IF NOT EXISTS payment_transactions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
 
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
 
 -- Invoices Table
 CREATE TABLE IF NOT EXISTS invoices (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID REFERENCES companies(id) ON DELETE CASCADE NOT NULL,
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE SET NULL,
 

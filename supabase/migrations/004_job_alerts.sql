@@ -1,6 +1,6 @@
 -- Job Alerts Table
 CREATE TABLE IF NOT EXISTS job_alerts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
     keywords TEXT[],

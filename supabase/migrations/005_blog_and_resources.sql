@@ -1,6 +1,6 @@
 -- Blog Posts Table
 CREATE TABLE IF NOT EXISTS blog_posts (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
     excerpt TEXT NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 
 -- Resources Table
 CREATE TABLE IF NOT EXISTS resources (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
     description TEXT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS resources (
 
 -- Blog Comments Table
 CREATE TABLE IF NOT EXISTS blog_comments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     blog_post_id UUID REFERENCES blog_posts(id) ON DELETE CASCADE NOT NULL,
     profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     content TEXT NOT NULL,

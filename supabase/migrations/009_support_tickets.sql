@@ -1,6 +1,6 @@
 -- Support Tickets Table
 CREATE TABLE IF NOT EXISTS support_tickets (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     ticket_number TEXT UNIQUE NOT NULL,
     subject TEXT NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS support_tickets (
 
 -- Ticket Messages Table
 CREATE TABLE IF NOT EXISTS ticket_messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ticket_id UUID REFERENCES support_tickets(id) ON DELETE CASCADE NOT NULL,
     profile_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
     message TEXT NOT NULL,

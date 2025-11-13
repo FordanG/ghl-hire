@@ -1,36 +1,142 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar, ExternalLink } from 'lucide-react';
+import { Metadata } from 'next';
+import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar, ExternalLink, Share2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobDetailClient from './JobDetailClient';
+import ShareButtons from './ShareButtons';
 import { supabase } from '@/lib/supabase';
+import { extractJobIdFromSlug, generateJobSlug } from '@/lib/utils';
 
 interface JobDetailPageProps {
   params: Promise<{
-    id: string;
+    id: string; // This is actually the slug now
   }>;
 }
 
-async function getJob(id: string) {
-  const { data: job, error } = await supabase
-    .from('jobs')
-    .select(`
-      *,
-      company:companies(*)
-    `)
-    .eq('id', id)
-    .single();
+// Generate metadata for SEO and social sharing
+export async function generateMetadata({ params }: JobDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const job = await getJob(id);
 
-  if (error || !job) {
+  if (!job) {
+    return {
+      title: 'Job Not Found | GHL Hire',
+    };
+  }
+
+  const title = `${job.title} at ${job.company?.company_name || 'Company'} | GHL Hire`;
+  const description = job.description.length > 155
+    ? job.description.substring(0, 155) + '...'
+    : job.description;
+
+  const salary = job.salary_min && job.salary_max
+    ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
+    : null;
+
+  // Generate SEO-friendly slug for URLs
+  const jobSlug = generateJobSlug(job.title, job.id);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: `https://ghlhire.com/jobs/${jobSlug}`,
+      siteName: 'GHL Hire',
+      images: job.company?.logo_url ? [
+        {
+          url: job.company.logo_url,
+          width: 1200,
+          height: 630,
+          alt: `${job.company.company_name} logo`,
+        }
+      ] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: job.company?.logo_url ? [job.company.logo_url] : [],
+    },
+    alternates: {
+      canonical: `https://ghlhire.com/jobs/${jobSlug}`,
+    },
+  };
+}
+
+async function getJob(slugOrId: string) {
+  // Extract the short ID from the slug
+  const shortId = extractJobIdFromSlug(slugOrId);
+
+  // Use the custom database function to find the job by slug
+  const { data, error } = await supabase
+    .rpc('find_job_by_slug', { slug_prefix: shortId });
+
+  if (error || !data || data.length === 0) {
+    console.error('Error finding job:', error);
     return null;
   }
 
-  return job;
+  // Transform the flat result into the expected nested structure
+  const job = data[0];
+  return {
+    id: job.id,
+    title: job.title,
+    description: job.description,
+    requirements: job.requirements,
+    benefits: job.benefits,
+    salary_min: job.salary_min,
+    salary_max: job.salary_max,
+    salary_currency: job.salary_currency,
+    location: job.location,
+    remote: job.remote,
+    job_type: job.job_type,
+    experience_level: job.experience_level,
+    company_id: job.company_id,
+    status: job.status,
+    is_featured: job.is_featured,
+    views_count: job.views_count,
+    applications_count: job.applications_count,
+    expires_at: job.expires_at,
+    created_at: job.created_at,
+    updated_at: job.updated_at,
+    company: {
+      company_name: job.company_name,
+      description: job.company_description,
+      logo_url: job.company_logo_url,
+      website: job.company_website,
+      company_size: job.company_size,
+      industry: job.company_industry,
+    },
+  };
 }
 
-async function getSimilarJobs(currentJobId: string, limit: number = 3) {
-  const { data: jobs, error } = await supabase
+async function getSimilarJobs(currentJobId: string, companyId: string, limit: number = 3) {
+  // First try to get jobs from the same company
+  const { data: companyJobs, error: companyError } = await supabase
+    .from('jobs')
+    .select(`
+      *,
+      company:companies(company_name)
+    `)
+    .eq('status', 'active')
+    .eq('company_id', companyId)
+    .neq('id', currentJobId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  // If we have enough jobs from the same company, return them
+  if (companyJobs && companyJobs.length >= limit) {
+    return companyJobs;
+  }
+
+  // Otherwise, get other recent jobs to fill the list
+  const remaining = limit - (companyJobs?.length || 0);
+  const { data: otherJobs, error: otherError } = await supabase
     .from('jobs')
     .select(`
       *,
@@ -38,10 +144,16 @@ async function getSimilarJobs(currentJobId: string, limit: number = 3) {
     `)
     .eq('status', 'active')
     .neq('id', currentJobId)
+    .neq('company_id', companyId)
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(remaining);
 
-  return jobs || [];
+  return [...(companyJobs || []), ...(otherJobs || [])];
+}
+
+async function incrementViewCount(jobId: string) {
+  // Increment the view count
+  await supabase.rpc('increment_job_views', { job_id: jobId });
 }
 
 function formatDate(dateString: string) {
@@ -65,14 +177,70 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     notFound();
   }
 
-  const similarJobs = await getSimilarJobs(id, 3);
+  // Increment view count (fire and forget - don't await to avoid blocking page load)
+  incrementViewCount(job.id);
+
+  const similarJobs = await getSimilarJobs(job.id, job.company_id, 3);
 
   const salary = job.salary_min && job.salary_max
     ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
     : null;
 
+  // Generate JSON-LD structured data for job posting
+  const jobPostingSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.description,
+    datePosted: job.created_at,
+    validThrough: job.expires_at || undefined,
+    employmentType: job.job_type === 'Full-Time' ? 'FULL_TIME' :
+                    job.job_type === 'Part-Time' ? 'PART_TIME' :
+                    job.job_type === 'Contract' ? 'CONTRACTOR' :
+                    job.job_type === 'Freelance' ? 'CONTRACTOR' : undefined,
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: job.company?.company_name || 'Company',
+      sameAs: job.company?.website || undefined,
+      logo: job.company?.logo_url || undefined,
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: job.location,
+        addressCountry: 'US',
+      }
+    },
+    baseSalary: job.salary_min && job.salary_max ? {
+      '@type': 'MonetaryAmount',
+      currency: job.salary_currency || 'USD',
+      value: {
+        '@type': 'QuantitativeValue',
+        minValue: job.salary_min,
+        maxValue: job.salary_max,
+        unitText: 'YEAR',
+      }
+    } : undefined,
+    experienceRequirements: job.experience_level ? {
+      '@type': 'OccupationalExperienceRequirements',
+      monthsOfExperience: job.experience_level === 'Entry Level' ? 0 :
+                          job.experience_level === 'Mid Level' ? 24 :
+                          job.experience_level === 'Senior Level' ? 60 :
+                          job.experience_level === 'Lead' ? 84 : 0,
+    } : undefined,
+    workHours: job.remote ? 'Remote' : undefined,
+    jobLocationType: job.remote ? 'TELECOMMUTE' : undefined,
+  };
+
   return (
     <div className="min-h-screen flex flex-col text-gray-900 bg-white">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
+      />
+
       <Header />
       
       {/* Job Header */}
@@ -121,7 +289,10 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           </div>
 
           {/* Action Buttons */}
-          <JobDetailClient job={job} />
+          <div className="flex flex-col gap-3 fade-in fade-in-5">
+            <JobDetailClient job={job} />
+            <ShareButtons job={job} />
+          </div>
         </div>
 
         {/* Job Content */}
@@ -199,30 +370,50 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                   <span className="text-gray-500">Posted:</span>
                   <span className="font-medium">{formatDate(job.created_at)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Views:</span>
+                  <span className="font-medium">{job.views_count.toLocaleString()}</span>
+                </div>
+                {job.applications_count > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Applications:</span>
+                    <span className="font-medium">{job.applications_count}</span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Similar Jobs */}
             <div className="bg-gray-50 rounded-xl p-6 fade-in fade-in-5">
-              <h3 className="font-semibold mb-4">Similar Jobs</h3>
+              <h3 className="font-semibold mb-4">
+                {similarJobs.length > 0 && similarJobs[0].company_id === job.company_id
+                  ? `More from ${job.company?.company_name}`
+                  : 'Related Jobs'}
+              </h3>
               <div className="space-y-3">
                 {similarJobs.length > 0 ? (
-                  similarJobs.map((similarJob) => (
-                    <Link
-                      key={similarJob.id}
-                      href={`/jobs/${similarJob.id}`}
-                      className="block p-3 bg-white rounded-lg hover:shadow-sm transition-shadow"
-                    >
+                  similarJobs.map((similarJob) => {
+                    const similarJobSlug = generateJobSlug(similarJob.title, similarJob.id);
+                    return (
+                      <Link
+                        key={similarJob.id}
+                        href={`/jobs/${similarJobSlug}`}
+                        className="block p-3 bg-white rounded-lg hover:shadow-sm transition-shadow"
+                      >
                       <div className="font-medium text-sm text-gray-900 mb-1">
                         {similarJob.title}
                       </div>
                       <div className="text-xs text-gray-500">
                         {similarJob.company?.company_name} • {similarJob.location}
                       </div>
+                      {similarJob.company_id === job.company_id && (
+                        <div className="text-xs text-blue-600 mt-1">Same company</div>
+                      )}
                     </Link>
-                  ))
+                    );
+                  })
                 ) : (
-                  <p className="text-sm text-gray-500">No similar jobs found</p>
+                  <p className="text-sm text-gray-500">No related jobs found</p>
                 )}
               </div>
               <Link

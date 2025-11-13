@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { updateSession } from '@/lib/supabase/middleware';
 
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimit = new Map<string, { count: number; resetTime: number }>();
@@ -110,15 +111,15 @@ setInterval(() => {
 /**
  * Main middleware function
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Apply rate limiting
   const rateLimitResponse = rateLimiter(request);
   if (rateLimitResponse) {
     return rateLimitResponse;
   }
 
-  // Clone the response
-  const response = NextResponse.next();
+  // Update Supabase session first
+  let response = await updateSession(request);
 
   // Apply security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {

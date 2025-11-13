@@ -88,7 +88,7 @@ export default function SettingsPage() {
                       <input
                         type="text"
                         defaultValue={mockProfile.name}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
                     <div>
@@ -96,7 +96,7 @@ export default function SettingsPage() {
                       <input
                         type="email"
                         defaultValue={mockProfile.email}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
                     <div>
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                       <input
                         type="tel"
                         defaultValue={mockProfile.phone}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
                     <div>
@@ -112,7 +112,7 @@ export default function SettingsPage() {
                       <input
                         type="text"
                         defaultValue={mockProfile.location}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
                   </div>
@@ -126,7 +126,7 @@ export default function SettingsPage() {
                       <div className="relative">
                         <input
                           type={showPassword ? 'text' : 'password'}
-                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                          className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                         />
                         <button
                           type="button"
@@ -145,14 +145,14 @@ export default function SettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                       <input
                         type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
                       <input
                         type="password"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
                   </div>
@@ -269,7 +269,7 @@ export default function SettingsPage() {
                       <select
                         value={settings.profileVisibility}
                         onChange={(e) => setSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       >
                         <option value="public">Public - Visible to all employers</option>
                         <option value="limited">Limited - Only to employers I apply to</option>

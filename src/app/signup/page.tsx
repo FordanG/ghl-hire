@@ -80,57 +80,35 @@ export default function SignUpPage() {
       }
 
       if (data.user) {
-        // Create profile or company based on user type
-        if (userType === 'jobseeker') {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: data.user.id,
-              full_name: formData.fullName,
-              email: formData.email,
-              phone: formData.phone || null,
-              location: formData.location || null,
-            });
+        // Create profile or company using API route (bypasses RLS)
+        const profileResponse = await fetch('/api/auth/create-profile', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: data.user.id,
+            role: userType,
+            fullName: formData.fullName,
+            companyName: formData.companyName,
+            email: formData.email,
+            phone: formData.phone,
+            location: formData.location,
+          }),
+        });
 
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            setError('Account created but profile setup failed. Please contact support.');
-            setLoading(false);
-            return;
-          }
-        } else {
-          // Create company profile and subscription
-          const { data: companyData, error: companyError } = await supabase
-            .from('companies')
-            .insert({
-              user_id: data.user.id,
-              company_name: formData.companyName || formData.fullName,
-              email: formData.email,
-              location: formData.location || null,
-            })
-            .select()
-            .single();
+        const profileData = await profileResponse.json();
 
-          if (companyError) {
-            console.error('Company creation error:', companyError);
-            setError('Account created but company setup failed. Please contact support.');
-            setLoading(false);
-            return;
-          }
-
-          // Create free subscription
-          if (companyData) {
-            await supabase
-              .from('subscriptions')
-              .insert({
-                company_id: companyData.id,
-                plan_type: 'free',
-                status: 'active',
-                job_post_limit: 1,
-                job_posts_used: 0,
-              });
-          }
+        if (!profileResponse.ok) {
+          console.error('Profile creation error:', {
+            status: profileResponse.status,
+            statusText: profileResponse.statusText,
+            data: profileData
+          });
+          setError(profileData.error || 'Account created but profile setup failed. Please contact support.');
+          setLoading(false);
+          return;
         }
+
+        console.log('Profile created successfully:', profileData);
 
         setSuccess(true);
         setTimeout(() => {
