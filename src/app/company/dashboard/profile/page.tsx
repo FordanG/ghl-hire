@@ -21,9 +21,9 @@ import {
   getCompanyProfile,
   updateCompanyProfile,
   uploadCompanyLogo,
-  calculateCompanyProfileCompletion,
   type CompanyFormData
 } from '@/lib/actions/company-actions';
+import { calculateCompanyProfileCompletion } from '@/lib/utils/company-utils';
 import { Database } from '@/types/supabase';
 
 type Company = Database['public']['Tables']['companies']['Row'];
