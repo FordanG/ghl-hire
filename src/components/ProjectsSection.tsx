@@ -128,7 +128,7 @@ export default function ProjectsSection({ profileId }: ProjectsSectionProps) {
 
       const projectData = {
         ...formData,
-        image_url: imageUrl
+        image_url: imageUrl ?? undefined
       }
 
       if (editingProject) {

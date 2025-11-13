@@ -296,7 +296,7 @@ async function seedDatabase() {
   try {
     // Step 1: Create auth users and companies
     console.log('1️⃣  Creating companies and auth users...')
-    const createdCompanies = []
+    const createdCompanies: Database['public']['Tables']['companies']['Row'][] = []
 
     for (const company of companies) {
       // Create auth user for company
@@ -318,12 +318,14 @@ async function seedDatabase() {
       console.log(`  ✅ Created auth user for: ${company.company_name}`)
 
       // Create company profile
+      const companyInsert: Database['public']['Tables']['companies']['Insert'] = {
+        user_id: authUser.user.id,
+        ...company
+      }
+
       const { data: companyData, error: companyError } = await supabase
         .from('companies')
-        .insert({
-          user_id: authUser.user.id,
-          ...company
-        })
+        .insert(companyInsert)
         .select()
         .single()
 
@@ -340,7 +342,7 @@ async function seedDatabase() {
 
     // Step 2: Create job seeker auth users and profiles
     console.log('2️⃣  Creating job seeker profiles...')
-    const createdProfiles = []
+    const createdProfiles: Database['public']['Tables']['profiles']['Row'][] = []
 
     for (const jobSeeker of jobSeekers) {
       // Create auth user
@@ -360,12 +362,14 @@ async function seedDatabase() {
       }
 
       // Create profile
+      const profileInsert: Database['public']['Tables']['profiles']['Insert'] = {
+        user_id: authUser.user.id,
+        ...jobSeeker
+      }
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          user_id: authUser.user.id,
-          ...jobSeeker
-        })
+        .insert(profileInsert)
         .select()
         .single()
 
@@ -382,19 +386,21 @@ async function seedDatabase() {
 
     // Step 3: Create jobs
     console.log('3️⃣  Creating job postings...')
-    const createdJobs = []
+    const createdJobs: Database['public']['Tables']['jobs']['Row'][] = []
 
     // Assign jobs to companies (distribute evenly)
     for (let i = 0; i < jobsTemplate.length; i++) {
       const company = createdCompanies[i % createdCompanies.length]
       const jobData = jobsTemplate[i]
 
+      const jobInsert: Database['public']['Tables']['jobs']['Insert'] = {
+        company_id: company.id,
+        ...jobData
+      }
+
       const { data: job, error: jobError } = await supabase
         .from('jobs')
-        .insert({
-          company_id: company.id,
-          ...jobData
-        })
+        .insert(jobInsert)
         .select()
         .single()
 
