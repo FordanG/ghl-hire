@@ -2,14 +2,22 @@
 -- Migration: 003_seed_data
 -- Description: Initial seed data for development and testing
 
--- Note: This assumes test user IDs. In production, these should be replaced with actual user IDs
--- For now, we'll use placeholder UUIDs that you'll need to replace after creating test users
+-- =====================================================
+-- IMPORTANT: SEED DATA IS COMMENTED OUT BY DEFAULT
+-- =====================================================
+-- This seed data requires auth users to exist first.
+-- To use this seed data:
+-- 1. Create test users in Supabase Auth (via dashboard or API)
+-- 2. Replace the placeholder user_id values below with real auth.users IDs
+-- 3. Uncomment the INSERT statements
+-- 4. Run the SQL manually via Supabase SQL Editor
 
+-- Alternatively, create seed data dynamically after user signup in your application
+
+/*
 -- =====================================================
 -- SEED COMPANIES
 -- =====================================================
--- You'll need to create auth users first and replace these UUIDs
-
 INSERT INTO companies (id, user_id, company_name, email, website, description, size, industry, location, is_verified) VALUES
 ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '00000000-0000-0000-0000-000000000001', 'SaaS Agency Pro', 'contact@saasagencypro.com', 'https://saasagencypro.com', 'Leading GoHighLevel agency specializing in SaaS automation and white-label solutions for growing businesses.', '11-50', 'Marketing Automation', 'Remote', true),
 ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', '00000000-0000-0000-0000-000000000002', 'AutomatePro', 'hello@automatepro.io', 'https://automatepro.io', 'We build custom automation solutions for agencies using GoHighLevel API integrations.', '1-10', 'Software Development', 'United States', true),
@@ -249,7 +257,8 @@ INSERT INTO subscriptions (company_id, plan_type, status, job_post_limit) VALUES
 ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a14', 'free', 'active', 1),
 ('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a15', 'premium', 'active', -1);
 
--- Note: After running this migration, you'll need to:
+-- Note: After uncommenting and running this seed data, you'll need to:
 -- 1. Create actual auth users in Supabase
 -- 2. Update the user_id fields in companies table with real auth.users IDs
 -- 3. For local development, you can create test users and update these records
+*/

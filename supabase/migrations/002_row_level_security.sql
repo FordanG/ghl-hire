@@ -11,9 +11,8 @@ ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_jobs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE job_alerts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- NOTE: RLS is enabled for job_alerts, subscriptions, and notifications in their respective migration files
 
 -- =====================================================
 -- PROFILES POLICIES
@@ -166,82 +165,8 @@ CREATE POLICY "Users can delete their saved jobs"
     );
 
 -- =====================================================
--- JOB ALERTS POLICIES
+-- NOTE: RLS policies for the following tables are in their respective migrations:
+-- - job_alerts (see 004_job_alerts.sql)
+-- - subscriptions (see 011_subscriptions.sql)
+-- - notifications (see 007_notifications.sql)
 -- =====================================================
-
--- Users can view their own alerts
-CREATE POLICY "Users can view their own alerts"
-    ON job_alerts FOR SELECT
-    USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
-
--- Users can create alerts
-CREATE POLICY "Users can create alerts"
-    ON job_alerts FOR INSERT
-    WITH CHECK (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
-
--- Users can update their own alerts
-CREATE POLICY "Users can update their own alerts"
-    ON job_alerts FOR UPDATE
-    USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
-
--- Users can delete their own alerts
-CREATE POLICY "Users can delete their own alerts"
-    ON job_alerts FOR DELETE
-    USING (
-        profile_id IN (SELECT id FROM profiles WHERE user_id = auth.uid())
-    );
-
--- =====================================================
--- SUBSCRIPTIONS POLICIES
--- =====================================================
-
--- Companies can view their own subscription
-CREATE POLICY "Companies can view their own subscription"
-    ON subscriptions FOR SELECT
-    USING (
-        company_id IN (SELECT id FROM companies WHERE user_id = auth.uid())
-    );
-
--- System can insert subscriptions (done via backend/trigger)
-CREATE POLICY "Companies can have subscriptions created"
-    ON subscriptions FOR INSERT
-    WITH CHECK (
-        company_id IN (SELECT id FROM companies WHERE user_id = auth.uid())
-    );
-
--- System can update subscriptions (done via webhooks)
-CREATE POLICY "Companies can have subscriptions updated"
-    ON subscriptions FOR UPDATE
-    USING (
-        company_id IN (SELECT id FROM companies WHERE user_id = auth.uid())
-    );
-
--- =====================================================
--- NOTIFICATIONS POLICIES
--- =====================================================
-
--- Users can view their own notifications
-CREATE POLICY "Users can view their own notifications"
-    ON notifications FOR SELECT
-    USING (user_id = auth.uid());
-
--- System can insert notifications (done via triggers/functions)
-CREATE POLICY "System can insert notifications"
-    ON notifications FOR INSERT
-    WITH CHECK (true);
-
--- Users can update their own notifications (mark as read)
-CREATE POLICY "Users can update their own notifications"
-    ON notifications FOR UPDATE
-    USING (user_id = auth.uid());
-
--- Users can delete their own notifications
-CREATE POLICY "Users can delete their own notifications"
-    ON notifications FOR DELETE
-    USING (user_id = auth.uid());

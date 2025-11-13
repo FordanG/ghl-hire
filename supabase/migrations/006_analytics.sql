@@ -153,7 +153,55 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION aggregate_platform_analytics() RETURNS void AS $$
 DECLARE
     v_date DATE := CURRENT_DATE;
+    v_jobs_posted INTEGER;
+    v_applications INTEGER;
+    v_new_profiles INTEGER;
+    v_new_companies INTEGER;
+    v_total_profiles INTEGER;
+    v_total_companies INTEGER;
+    v_active_jobs INTEGER;
+    v_page_views BIGINT;
 BEGIN
+    -- Count jobs posted today
+    SELECT COUNT(*) INTO v_jobs_posted
+    FROM jobs
+    WHERE created_at::date = v_date;
+
+    -- Count applications submitted today
+    SELECT COUNT(*) INTO v_applications
+    FROM applications
+    WHERE applied_at::date = v_date;
+
+    -- Count new profiles created today
+    SELECT COUNT(*) INTO v_new_profiles
+    FROM profiles
+    WHERE created_at::date = v_date;
+
+    -- Count new companies created today
+    SELECT COUNT(*) INTO v_new_companies
+    FROM companies
+    WHERE created_at::date = v_date;
+
+    -- Count total active profiles
+    SELECT COUNT(*) INTO v_total_profiles
+    FROM profiles
+    WHERE is_available = true;
+
+    -- Count total active companies
+    SELECT COUNT(*) INTO v_total_companies
+    FROM companies;
+
+    -- Count currently active jobs
+    SELECT COUNT(*) INTO v_active_jobs
+    FROM jobs
+    WHERE status = 'active';
+
+    -- Sum page views from job analytics for today
+    SELECT COALESCE(SUM(views_count), 0) INTO v_page_views
+    FROM job_analytics
+    WHERE date = v_date;
+
+    -- Insert or update platform analytics
     INSERT INTO platform_analytics (
         date,
         total_jobs_posted,
@@ -163,21 +211,16 @@ BEGIN
         total_employers,
         total_active_jobs,
         total_page_views
-    )
-    SELECT
+    ) VALUES (
         v_date,
-        COUNT(DISTINCT CASE WHEN j.created_at::date = v_date THEN j.id END) as jobs_posted,
-        COUNT(DISTINCT CASE WHEN a.created_at::date = v_date THEN a.id END) as applications,
-        COUNT(DISTINCT CASE WHEN p.created_at::date = v_date THEN p.id END) as new_users,
-        COUNT(DISTINCT CASE WHEN p.user_type = 'job_seeker' THEN p.id END) as job_seekers,
-        COUNT(DISTINCT CASE WHEN c.id IS NOT NULL THEN c.user_id END) as employers,
-        COUNT(DISTINCT CASE WHEN j.status = 'active' THEN j.id END) as active_jobs,
-        COALESCE(SUM(ja.views_count), 0) as page_views
-    FROM jobs j
-    LEFT JOIN applications a ON true
-    LEFT JOIN profiles p ON true
-    LEFT JOIN companies c ON true
-    LEFT JOIN job_analytics ja ON ja.date = v_date
+        v_jobs_posted,
+        v_applications,
+        v_new_profiles + v_new_companies,
+        v_total_profiles,
+        v_total_companies,
+        v_active_jobs,
+        v_page_views
+    )
     ON CONFLICT (date) DO UPDATE SET
         total_jobs_posted = EXCLUDED.total_jobs_posted,
         total_applications = EXCLUDED.total_applications,
