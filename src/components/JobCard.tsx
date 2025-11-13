@@ -35,7 +35,7 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
                      ('postedDate' in job) ? job.postedDate : '';
 
   // Generate SEO-friendly slug
-  const jobSlug = generateJobSlug(job.title, job.id);
+  const jobSlug = generateJobSlug(job.title || '', job.id || '');
 
   return (
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 duration-150 ${className}`}>
