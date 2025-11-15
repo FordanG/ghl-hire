@@ -4,7 +4,7 @@
 
 -- Create projects table
 CREATE TABLE IF NOT EXISTS projects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS projects (
 
 -- Create junction table for application-project relationship
 CREATE TABLE IF NOT EXISTS application_projects (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id UUID REFERENCES applications(id) ON DELETE CASCADE NOT NULL,
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
