@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Building2, 
-  Bell, 
-  Shield, 
-  Users, 
-  Eye, 
+import { useState, useEffect } from 'react';
+import {
+  Building2,
+  Bell,
+  Shield,
+  Users,
+  Eye,
   EyeOff,
   Save,
   Trash2,
@@ -14,14 +14,24 @@ import {
   AlertTriangle,
   Plus,
   Edit,
-  UserX
+  UserX,
+  Loader2
 } from 'lucide-react';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
-import { mockCompanyProfile } from '@/lib/company-data';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CompanySettingsPage() {
+  const { company, user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<'account' | 'notifications' | 'team' | 'privacy' | 'billing'>('account');
   const [showPassword, setShowPassword] = useState(false);
+  const [companyData, setCompanyData] = useState({
+    companyName: '',
+    industry: '',
+    email: '',
+    phone: '',
+    website: '',
+    location: ''
+  });
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -32,6 +42,20 @@ export default function CompanySettingsPage() {
     dataSharing: true,
     apiAccess: false
   });
+
+  // Populate form with real company data
+  useEffect(() => {
+    if (company && user) {
+      setCompanyData({
+        companyName: company.company_name || '',
+        industry: company.industry || '',
+        email: company.email || user.email || '',
+        phone: '', // Phone not in company schema currently
+        website: company.website || '',
+        location: company.location || ''
+      });
+    }
+  }, [company, user]);
 
   const [teamMembers] = useState([
     {
@@ -73,6 +97,16 @@ export default function CompanySettingsPage() {
     console.log('Saving settings:', settings);
   };
 
+  if (loading) {
+    return (
+      <CompanyDashboardLayout>
+        <div className="p-6 flex items-center justify-center min-h-[400px]">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        </div>
+      </CompanyDashboardLayout>
+    );
+  }
+
   return (
     <CompanyDashboardLayout>
       <div className="p-6">
@@ -91,6 +125,7 @@ export default function CompanySettingsPage() {
                 const Icon = tab.icon;
                 return (
                   <button
+                    type="button"
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as 'account' | 'notifications' | 'team' | 'privacy' | 'billing')}
                     className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -115,34 +150,46 @@ export default function CompanySettingsPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Information</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                      <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
                       <input
+                        id="companyName"
                         type="text"
-                        defaultValue={mockCompanyProfile.name}
+                        value={companyData.companyName}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, companyName: e.target.value }))}
+                        placeholder="Enter company name"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
+                      <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">Industry</label>
                       <input
+                        id="industry"
                         type="text"
-                        defaultValue={mockCompanyProfile.industry}
+                        value={companyData.industry}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, industry: e.target.value }))}
+                        placeholder="Enter industry"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                      <label htmlFor="companyEmail" className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                       <input
+                        id="companyEmail"
                         type="email"
-                        defaultValue={mockCompanyProfile.email}
+                        value={companyData.email}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="Enter email address"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                      <label htmlFor="companyPhone" className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                       <input
+                        id="companyPhone"
                         type="tel"
-                        defaultValue={mockCompanyProfile.phone}
+                        value={companyData.phone}
+                        onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
+                        placeholder="Enter phone number"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                     </div>
@@ -153,15 +200,18 @@ export default function CompanySettingsPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Change Password</h3>
                   <div className="space-y-4 max-w-md">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                       <div className="relative">
                         <input
+                          id="currentPassword"
                           type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter current password"
                           className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
+                          title={showPassword ? 'Hide password' : 'Show password'}
                           className="absolute inset-y-0 right-0 pr-3 flex items-center"
                         >
                           {showPassword ? (
@@ -173,16 +223,20 @@ export default function CompanySettingsPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                       <input
+                        id="newPassword"
                         type="password"
+                        placeholder="Enter new password"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
                       <input
+                        id="confirmPassword"
                         type="password"
+                        placeholder="Confirm new password"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       />
                     </div>
@@ -191,6 +245,7 @@ export default function CompanySettingsPage() {
 
                 <div className="flex justify-end">
                   <button
+                    type="button"
                     onClick={handleSaveSettings}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
@@ -217,6 +272,7 @@ export default function CompanySettingsPage() {
                           checked={settings.applicationAlerts}
                           onChange={(e) => setSettings(prev => ({ ...prev, applicationAlerts: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Toggle new application alerts"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -233,6 +289,7 @@ export default function CompanySettingsPage() {
                           checked={settings.weeklyReports}
                           onChange={(e) => setSettings(prev => ({ ...prev, weeklyReports: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Toggle weekly reports"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -249,6 +306,7 @@ export default function CompanySettingsPage() {
                           checked={settings.marketingEmails}
                           onChange={(e) => setSettings(prev => ({ ...prev, marketingEmails: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Toggle marketing communications"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -270,6 +328,7 @@ export default function CompanySettingsPage() {
                           checked={settings.pushNotifications}
                           onChange={(e) => setSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Toggle mobile notifications"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -284,7 +343,7 @@ export default function CompanySettingsPage() {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-semibold text-gray-900">Team Members</h3>
-                    <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <button type="button" className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                       <Plus className="w-4 h-4" />
                       Invite Member
                     </button>
@@ -315,10 +374,10 @@ export default function CompanySettingsPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors">
+                          <button type="button" title="Edit team member" className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors">
                             <Edit className="w-4 h-4" />
                           </button>
-                          <button className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition-colors">
+                          <button type="button" title="Remove team member" className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition-colors">
                             <UserX className="w-4 h-4" />
                           </button>
                         </div>
@@ -365,10 +424,12 @@ export default function CompanySettingsPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Company Profile Visibility</h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Profile Visibility</label>
+                      <label htmlFor="profileVisibility" className="block text-sm font-medium text-gray-700 mb-2">Profile Visibility</label>
                       <select
+                        id="profileVisibility"
                         value={settings.profileVisibility}
                         onChange={(e) => setSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
+                        aria-label="Profile visibility setting"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                       >
                         <option value="public">Public - Visible to all candidates</option>
@@ -393,6 +454,7 @@ export default function CompanySettingsPage() {
                           checked={settings.dataSharing}
                           onChange={(e) => setSettings(prev => ({ ...prev, dataSharing: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Toggle data sharing"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -409,13 +471,14 @@ export default function CompanySettingsPage() {
                           checked={settings.apiAccess}
                           onChange={(e) => setSettings(prev => ({ ...prev, apiAccess: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Toggle API access"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
                     </div>
 
                     <div className="pt-4 border-t border-gray-200">
-                      <button className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                      <button type="button" className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
                         <Download className="w-4 h-4" />
                         Export Company Data
                       </button>
@@ -444,6 +507,7 @@ export default function CompanySettingsPage() {
             {activeTab !== 'billing' && (
               <div className="mt-8 flex justify-end">
                 <button
+                  type="button"
                   onClick={handleSaveSettings}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
@@ -465,11 +529,11 @@ export default function CompanySettingsPage() {
             These actions are permanent and cannot be undone. Please proceed with caution.
           </p>
           <div className="flex gap-4">
-            <button className="inline-flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors">
+            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors">
               <Download className="w-4 h-4" />
               Export All Data
             </button>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+            <button type="button" className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
               <Trash2 className="w-4 h-4" />
               Delete Company Account
             </button>

@@ -4,8 +4,26 @@ import { Job as DatabaseJob } from '@/lib/supabase';
 import { Job as MockJob } from '@/lib/mock-data';
 import { generateJobSlug } from '@/lib/utils';
 
+// Type for jobs fetched with company join from Supabase
+interface JobWithCompany {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  job_type: string;
+  salary_min: number | null;
+  salary_max: number | null;
+  remote: boolean | null;
+  created_at: string | null;
+  company: {
+    id: string;
+    company_name: string;
+    logo_url: string | null;
+  } | null;
+}
+
 interface JobCardProps {
-  job: (Partial<DatabaseJob> & { company_name?: string }) | MockJob;
+  job: (Partial<DatabaseJob> & { company_name?: string }) | MockJob | JobWithCompany;
   className?: string;
 }
 

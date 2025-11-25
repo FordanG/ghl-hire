@@ -1,24 +1,33 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  User, 
-  Bell, 
-  Shield, 
-  CreditCard, 
-  Eye, 
+import { useState, useEffect } from 'react';
+import {
+  User,
+  Bell,
+  Shield,
+  CreditCard,
+  Eye,
   EyeOff,
   Save,
   Trash2,
   Download,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { mockProfile } from '@/lib/dashboard-data';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsPage() {
+  const { user, profile } = useAuth();
   const [activeTab, setActiveTab] = useState<'account' | 'notifications' | 'privacy' | 'billing'>('account');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [accountData, setAccountData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    location: ''
+  });
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -30,6 +39,17 @@ export default function SettingsPage() {
     dataSharing: false
   });
 
+  useEffect(() => {
+    if (profile && user) {
+      setAccountData({
+        fullName: profile.full_name || '',
+        email: user.email || '',
+        phone: profile.phone || '',
+        location: profile.location || ''
+      });
+    }
+  }, [profile, user]);
+
   const tabs = [
     { id: 'account', name: 'Account', icon: User },
     { id: 'notifications', name: 'Notifications', icon: Bell },
@@ -37,10 +57,27 @@ export default function SettingsPage() {
     { id: 'billing', name: 'Billing', icon: CreditCard }
   ];
 
-  const handleSaveSettings = () => {
-    // Save settings logic here
-    console.log('Saving settings:', settings);
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    // Save settings logic here - would integrate with profile actions
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setLoading(false);
   };
+
+  const isLoading = !profile && !user;
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading settings...</span>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -61,6 +98,7 @@ export default function SettingsPage() {
                 return (
                   <button
                     key={tab.id}
+                    type="button"
                     onClick={() => setActiveTab(tab.id as 'account' | 'notifications' | 'privacy' | 'billing')}
                     className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                       isActive
@@ -87,7 +125,8 @@ export default function SettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                       <input
                         type="text"
-                        defaultValue={mockProfile.name}
+                        value={accountData.fullName}
+                        onChange={(e) => setAccountData(prev => ({ ...prev, fullName: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
@@ -95,7 +134,8 @@ export default function SettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                       <input
                         type="email"
-                        defaultValue={mockProfile.email}
+                        value={accountData.email}
+                        onChange={(e) => setAccountData(prev => ({ ...prev, email: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
@@ -103,7 +143,8 @@ export default function SettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                       <input
                         type="tel"
-                        defaultValue={mockProfile.phone}
+                        value={accountData.phone}
+                        onChange={(e) => setAccountData(prev => ({ ...prev, phone: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
@@ -111,7 +152,8 @@ export default function SettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
                       <input
                         type="text"
-                        defaultValue={mockProfile.location}
+                        value={accountData.location}
+                        onChange={(e) => setAccountData(prev => ({ ...prev, location: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       />
                     </div>
@@ -160,10 +202,12 @@ export default function SettingsPage() {
 
                 <div className="flex justify-end">
                   <button
+                    type="button"
                     onClick={handleSaveSettings}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
-                    <Save className="w-4 h-4" />
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                     Save Changes
                   </button>
                 </div>
@@ -186,6 +230,7 @@ export default function SettingsPage() {
                           checked={settings.emailNotifications}
                           onChange={(e) => setSettings(prev => ({ ...prev, emailNotifications: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Job alerts toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -197,7 +242,7 @@ export default function SettingsPage() {
                         <p className="text-sm text-gray-600">Updates on your job applications</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
+                        <input type="checkbox" className="sr-only peer" defaultChecked aria-label="Application updates toggle" />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
                     </div>
@@ -213,6 +258,7 @@ export default function SettingsPage() {
                           checked={settings.weeklyDigest}
                           onChange={(e) => setSettings(prev => ({ ...prev, weeklyDigest: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Weekly digest toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -229,6 +275,7 @@ export default function SettingsPage() {
                           checked={settings.marketingEmails}
                           onChange={(e) => setSettings(prev => ({ ...prev, marketingEmails: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Marketing communications toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -250,6 +297,7 @@ export default function SettingsPage() {
                           checked={settings.pushNotifications}
                           onChange={(e) => setSettings(prev => ({ ...prev, pushNotifications: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Push notifications toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -269,6 +317,7 @@ export default function SettingsPage() {
                       <select
                         value={settings.profileVisibility}
                         onChange={(e) => setSettings(prev => ({ ...prev, profileVisibility: e.target.value }))}
+                        aria-label="Profile visibility"
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900"
                       >
                         <option value="public">Public - Visible to all employers</option>
@@ -288,6 +337,7 @@ export default function SettingsPage() {
                           checked={settings.contactInfoVisible}
                           onChange={(e) => setSettings(prev => ({ ...prev, contactInfoVisible: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Contact info visibility toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -304,6 +354,7 @@ export default function SettingsPage() {
                           checked={settings.searchable}
                           onChange={(e) => setSettings(prev => ({ ...prev, searchable: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Searchable profile toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
@@ -325,13 +376,14 @@ export default function SettingsPage() {
                           checked={settings.dataSharing}
                           onChange={(e) => setSettings(prev => ({ ...prev, dataSharing: e.target.checked }))}
                           className="sr-only peer"
+                          aria-label="Data sharing toggle"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                       </label>
                     </div>
 
                     <div className="pt-4 border-t border-gray-200">
-                      <button className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                      <button type="button" className="inline-flex items-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
                         <Download className="w-4 h-4" />
                         Download My Data
                       </button>
@@ -350,7 +402,7 @@ export default function SettingsPage() {
                       <h4 className="font-medium text-blue-900">Free Plan</h4>
                       <p className="text-sm text-blue-700">Basic job search features</p>
                     </div>
-                    <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                       Upgrade Plan
                     </button>
                   </div>
@@ -359,7 +411,7 @@ export default function SettingsPage() {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
                   <p className="text-gray-600 mb-4">No payment method on file</p>
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button type="button" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                     Add Payment Method
                   </button>
                 </div>
@@ -378,10 +430,12 @@ export default function SettingsPage() {
             {activeTab !== 'billing' && (
               <div className="mt-8 flex justify-end">
                 <button
+                  type="button"
                   onClick={handleSaveSettings}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  <Save className="w-4 h-4" />
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Save Changes
                 </button>
               </div>
@@ -398,7 +452,7 @@ export default function SettingsPage() {
           <p className="text-red-700 mb-4">
             These actions are permanent and cannot be undone. Please proceed with caution.
           </p>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+          <button type="button" className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
             <Trash2 className="w-4 h-4" />
             Delete Account
           </button>

@@ -4,13 +4,48 @@ import { Search, Users, Briefcase, CheckCircle, Rocket, ShieldCheck, Target } fr
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobCard from '@/components/JobCard';
-import { featuredJobs } from '@/lib/mock-data';
+import { createClient } from '@/lib/supabase/server';
 
-export default function Home() {
+async function getFeaturedJobs() {
+  const supabase = await createClient();
+
+  const { data: jobs, error } = await supabase
+    .from('jobs')
+    .select(`
+      id,
+      title,
+      description,
+      location,
+      job_type,
+      salary_min,
+      salary_max,
+      remote,
+      created_at,
+      company:companies (
+        id,
+        company_name,
+        logo_url
+      )
+    `)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(6);
+
+  if (error) {
+    console.error('Error fetching featured jobs:', error);
+    return [];
+  }
+
+  return jobs || [];
+}
+
+export default async function Home() {
+  const featuredJobs = await getFeaturedJobs();
+
   return (
     <div className="min-h-screen flex flex-col text-gray-900 bg-white">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="max-w-4xl mx-auto text-center pt-20 pb-16 px-4 bg-white">
         <h1 className="text-4xl md:text-5xl font-semibold tracking-tight leading-tight mb-4 fade-in fade-in-1">
@@ -20,14 +55,14 @@ export default function Home() {
           Welcome to <span className="font-semibold text-gray-900">GHL Hire</span>, the dedicated career platform connecting talented professionals with exciting opportunities in the GoHighLevel ecosystem. Whether you&apos;re a seasoned GHL expert or looking to break in, we&apos;re your gateway to career growth in marketing automation and CRM.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4 fade-in fade-in-3">
-          <Link 
-            href="/jobs" 
+          <Link
+            href="/jobs"
             className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-blue-500 text-white font-semibold text-base shadow hover:bg-blue-600 transition-colors outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
           >
             Browse Jobs
           </Link>
-          <Link 
-            href="/employers" 
+          <Link
+            href="/employers"
             className="inline-flex items-center justify-center px-5 py-3 rounded-md border border-gray-200 font-semibold text-base hover:bg-blue-50 hover:border-blue-500 transition-colors outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 text-gray-900"
           >
             For Employers
@@ -41,22 +76,36 @@ export default function Home() {
           <h2 className="text-2xl font-semibold tracking-tight fade-in fade-in-1">
             Latest Job Openings
           </h2>
-          <Link 
-            href="/jobs" 
+          <Link
+            href="/jobs"
             className="text-blue-500 font-medium hover:underline transition-colors fade-in fade-in-2"
           >
             View All Jobs
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredJobs.map((job, index) => (
-            <JobCard 
-              key={job.id} 
-              job={job} 
-              className={`fade-in fade-in-${index + 3}`}
-            />
-          ))}
-        </div>
+        {featuredJobs.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredJobs.map((job, index) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                className={`fade-in fade-in-${Math.min(index + 3, 6)}`}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <Briefcase className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Jobs Yet</h3>
+            <p className="text-gray-600 mb-4">Be the first to post a job on GHL Hire!</p>
+            <Link
+              href="/post-job"
+              className="inline-flex items-center justify-center px-5 py-3 rounded-md bg-blue-500 text-white font-semibold text-base shadow hover:bg-blue-600 transition-colors"
+            >
+              Post a Job
+            </Link>
+          </div>
+        )}
       </section>
 
       <div className="max-w-6xl mx-auto border-t border-gray-200"></div>
@@ -201,8 +250,8 @@ export default function Home() {
           <p className="text-gray-500 mb-6">
             Thousands of professionals and companies are already building their futures on GHL Hire. Your next opportunity in the GoHighLevel ecosystem starts here.
           </p>
-          <Link 
-            href="/jobs" 
+          <Link
+            href="/jobs"
             className="inline-flex items-center justify-center px-6 py-3 rounded-md bg-blue-500 text-white font-semibold text-base shadow hover:bg-blue-600 transition-colors outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
           >
             Get Started
