@@ -83,6 +83,22 @@ const nextConfig: NextConfig = {
     return config;
   },
 
+  // Redirects for URL consistency
+  async redirects() {
+    return [
+      {
+        source: '/sign-up',
+        destination: '/signup',
+        permanent: true,
+      },
+      {
+        source: '/sign-in',
+        destination: '/signin',
+        permanent: true,
+      },
+    ];
+  },
+
   // Headers for caching and security
   async headers() {
     return [
