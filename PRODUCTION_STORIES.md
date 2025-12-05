@@ -256,28 +256,47 @@ Build complete profile management for employers.
 
 ---
 
-### P0-6.1: Projects Section for Job Seekers ⏳
+### P0-6.1: Projects Section for Job Seekers ✅
 
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: P0-6, P0-10
-**Status**: IN PROGRESS (2025-11-14)
+**Status**: COMPLETE (2025-12-05)
 
 **Description**:
 Add Projects Section to job seeker profiles. Applicants can select up to 3 projects to showcase when applying to jobs, allowing employers to see concrete examples of their work.
 
 **Acceptance Criteria**:
 
-- [ ] Create `projects` table in database with relationship to profiles
-- [ ] Add projects management UI in job seeker profile page (`/dashboard/profile`)
-- [ ] Allow adding/editing/deleting projects (title, description, URL, technologies, image)
-- [ ] Limit to maximum 5 projects per profile
-- [ ] Add file upload for project screenshots/images (Supabase Storage)
-- [ ] Display projects in profile view with proper formatting
-- [ ] Add project selection UI in application modal (select up to 3 projects)
-- [ ] Show selected projects in employer's application view
-- [ ] Validate all project fields (title required, URL format, etc.)
-- [ ] Add success/error toast notifications
+- [x] Create `projects` table in database with relationship to profiles
+- [x] Add projects management UI in job seeker profile page (`/dashboard/profile`)
+- [x] Allow adding/editing/deleting projects (title, description, URL, technologies, image)
+- [x] Limit to maximum 5 projects per profile
+- [x] Add file upload for project screenshots/images (Supabase Storage)
+- [x] Display projects in profile view with proper formatting
+- [x] Add project selection UI in application modal (select up to 3 projects)
+- [x] Show selected projects in employer's application view
+- [x] Validate all project fields (title required, URL format, etc.)
+- [x] Add success/error toast notifications
+
+**Implementation Summary**:
+
+- **Database**: `projects` and `application_projects` tables created with RLS policies
+- **Server Actions** (`src/lib/actions/project-actions.ts`):
+  - `getProjects()` - Fetch all projects for a profile
+  - `createProject()` - Create new project (max 5 per profile)
+  - `updateProject()` - Update existing project
+  - `deleteProject()` - Delete project and associated image
+  - `uploadProjectImage()` - Upload to Supabase Storage
+  - `getApplicationProjects()` - Get projects for an application
+  - `attachProjectsToApplication()` - Attach up to 3 projects
+  - `reorderProjects()` - Reorder display order
+- **Components**:
+  - `ProjectsSection.tsx` - Full CRUD UI for projects with image upload
+  - `ProjectCard.tsx` - Selectable project card component
+- **Profile Page** (`/dashboard/profile`): Integrated ProjectsSection
+- **Apply Modal** (`ApplyJobModal.tsx`): Project selection (max 3) during application
+- **Employer View** (`/company/dashboard/applications`): Displays attached projects with images, descriptions, technologies, and links
 
 **Database Schema**:
 
@@ -533,34 +552,48 @@ Build complete job application flow for job seekers.
 
 ---
 
-### P0-11: Job Posting for Employers
+### P0-11: Job Posting for Employers ✅
 
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-5, P0-7, P0-2
+**Status**: COMPLETE (2025-12-05)
 
 **Description**:
 Build job posting functionality for employers.
 
 **Acceptance Criteria**:
 
-- [ ] Create job posting form in `/post-job`
-- [ ] Add all job fields (title, description, requirements, benefits, location, type, experience, salary range)
-- [ ] Add rich text editor for descriptions
-- [ ] Save as draft functionality
-- [ ] Publish job (set to active)
-- [ ] Edit existing jobs
-- [ ] Close/archive jobs
-- [ ] Preview job before publishing
-- [ ] Set expiration date
-- [ ] Enforce job post limits based on subscription
+- [x] Create job posting form in `/post-job`
+- [x] Add all job fields (title, description, requirements, benefits, location, type, experience, salary range)
+- [ ] Add rich text editor for descriptions (deferred - using plain textarea)
+- [x] Save as draft functionality
+- [x] Publish job (set to active)
+- [x] Edit existing jobs (`/edit-job/[id]`)
+- [x] Close/archive jobs
+- [ ] Preview job before publishing (deferred)
+- [ ] Set expiration date (deferred)
+- [x] Enforce job post limits based on subscription
+
+**Implementation Summary**:
+
+- Created `/post-job/page.tsx` - Full job posting form with all fields
+- Created `/edit-job/[id]/page.tsx` - Edit existing jobs with status management
+- Created `/company/dashboard/jobs/page.tsx` - Job management dashboard with:
+  - List, search, filter jobs
+  - Toggle status (active/closed)
+  - Duplicate jobs
+  - Delete jobs
+  - View job stats (applications, views)
+- Subscription limit enforcement with plan display
+- All core job CRUD operations working
 
 **Technical Notes**:
 
-- Consider using React Hook Form for complex form state
-- Add autosave for drafts
-- Use optimistic UI updates
-- Validate subscription limits before allowing publish
+- Using plain textarea for descriptions (rich text editor can be added later)
+- Autosave not implemented (can be added as enhancement)
+- Uses optimistic UI updates
+- Validates subscription limits before allowing publish
 
 ---
 
@@ -622,65 +655,98 @@ Allow job seekers to create custom job alerts.
 
 ## Epic 4: Payment & Subscription System
 
-### P0-14: Stripe Integration Setup
+### P0-14: Maya Payment Integration Setup ✅
 
 **Priority**: P0
 **Effort**: 3 days
 **Dependencies**: P0-1
+**Status**: COMPLETE (2025-12-05)
 
 **Description**:
-Set up Stripe for payment processing and subscription management.
+Set up Maya (PayMaya) for payment processing and subscription management in the Philippines.
 
 **Acceptance Criteria**:
 
-- [ ] Create Stripe account and get API keys
-- [ ] Configure Stripe products and pricing
+- [ ] Create Maya Business account and get API keys (user action required)
+- [x] Configure Maya products and pricing
   - Free plan: 1 job post, basic features
-  - Basic plan: $49.99/month, 5 job posts, priority support
-  - Premium plan: $149.99/month, unlimited posts, featured listings, analytics
-- [ ] Install Stripe SDK in project
-- [ ] Create `/src/lib/stripe.ts` configuration
-- [ ] Set up webhook endpoint for Stripe events
-- [ ] Add Stripe environment variables
-- [ ] Test in Stripe test mode
+  - Basic plan: ₱2,499/month, 5 job posts, priority support
+  - Premium plan: ₱7,499/month, unlimited posts, featured listings, analytics
+- [x] Install Maya SDK/API client in project
+- [x] Create `/src/lib/payments/maya.ts` configuration
+- [x] Set up webhook endpoint for Maya events
+- [ ] Add Maya environment variables (user action required)
+- [ ] Test in Maya sandbox mode (user action required)
+
+**Implementation Summary**:
+
+- **Maya Client** (`src/lib/payments/maya.ts`):
+  - MayaClient class with checkout, subscription, and webhook methods
+  - Subscription plans configuration with PHP pricing
+  - Helper functions for amount formatting
+  - Plan limit checking utilities
+- **API Endpoints**:
+  - `POST /api/payments/create-checkout` - Create Maya checkout sessions
+  - `POST /api/payments/webhook` - Handle Maya webhook events
+  - `GET /api/user/company` - Get company with subscription data
+- **Webhook Handlers**: Payment success/failed, subscription created/renewed/canceled/expired
 
 **Technical Notes**:
 
-- Use Stripe Checkout for simplicity
-- Store subscription data in Supabase
-- Handle webhook signatures securely
-- Consider Stripe Customer Portal for subscription management
+- Uses Maya Checkout API for payment processing
+- Stores subscription data in Supabase (`subscriptions` table with maya_* fields)
+- Webhook signature verification implemented
+- Currency: Philippine Peso (PHP)
 
 ---
 
-### P0-15: Subscription Management for Employers
+### P0-15: Subscription Management for Employers ✅
 
 **Priority**: P0
 **Effort**: 5 days
 **Dependencies**: P0-14, P0-7
+**Status**: COMPLETE (2025-12-05)
 
 **Description**:
-Build subscription management system for employers.
+Build subscription management system for employers using Maya payments.
 
 **Acceptance Criteria**:
 
-- [ ] Create pricing page at `/pricing` (or add to `/employers`)
-- [ ] Implement subscription checkout flow
-- [ ] Create billing page in `/company/dashboard/billing`
-- [ ] Display current plan and usage
-- [ ] Add upgrade/downgrade functionality
-- [ ] Add cancel subscription option
-- [ ] Show payment history
-- [ ] Handle failed payments
-- [ ] Sync subscription status with Stripe webhooks
-- [ ] Enforce job post limits based on plan
+- [x] Create pricing page at `/pricing`
+- [x] Implement subscription checkout flow with Maya
+- [x] Create billing page in `/company/dashboard/billing`
+- [x] Display current plan and usage
+- [ ] Add upgrade/downgrade functionality (future enhancement)
+- [ ] Add cancel subscription option (UI exists, needs backend)
+- [x] Show payment history (UI ready, uses mock data until real payments)
+- [x] Handle failed payments (webhook handler implemented)
+- [x] Sync subscription status with Maya webhooks
+- [x] Enforce job post limits based on plan
+
+**Implementation Summary**:
+
+- **Pricing Page** (`/pricing`):
+  - Three plans: Free (₱0), Basic (₱2,499/mo), Premium (₱7,499/mo)
+  - Plan comparison with features list
+  - Checkout flow redirects to Maya
+  - FAQ section
+- **Billing Dashboard** (`/company/dashboard/billing`):
+  - Current plan and usage display
+  - Payment method management (UI)
+  - Billing history table
+  - Plan upgrade/downgrade cards
+  - Cancel subscription option
+- **Checkout Flow Pages**:
+  - `/company/billing/success` - Payment success confirmation
+  - `/company/billing/failed` - Payment failure with retry options
+  - `/company/billing/canceled` - User canceled payment
 
 **Technical Notes**:
 
-- Use Stripe Checkout Sessions
-- Handle proration for plan changes
-- Add grace period for failed payments
-- Show clear usage indicators (X of Y jobs posted)
+- Uses Maya Checkout API for payment processing
+- Webhook handlers update subscription status automatically
+- Plan limits enforced in `/post-job` page
+- Database: `subscriptions`, `payment_transactions`, `invoices` tables
 
 ---
 
@@ -703,8 +769,9 @@ Provide payment receipts and invoices to customers.
 
 **Technical Notes**:
 
-- Use Stripe's built-in invoice system
-- Consider Stripe Customer Portal for self-service
+- Use Maya's receipt/invoice webhooks
+- Store invoice data in `invoices` table
+- Generate PDF receipts using a library like jsPDF or react-pdf
 
 ---
 
@@ -823,37 +890,62 @@ Help job seekers improve their profiles with AI analysis.
 
 ## Epic 6: Email & Notifications
 
-### P0-21: Email Service Setup
+### P0-21: Email Service Setup ✅
 
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: P0-1
+**Status**: COMPLETE (2025-12-05)
 
 **Description**:
 Set up transactional email service.
 
 **Acceptance Criteria**:
 
-- [ ] Choose email provider (Resend, SendGrid, or Supabase built-in)
-- [ ] Set up email domain and authentication (SPF, DKIM)
-- [ ] Create email templates
-  - Welcome email
-  - Email verification
-  - Password reset
-  - Application confirmation
-  - New application notification (employer)
-  - Job alert notification
-  - Payment confirmation
-- [ ] Configure environment variables
-- [ ] Test email delivery
-- [ ] Add unsubscribe functionality
+- [x] Choose email provider (Resend)
+- [ ] Set up email domain and authentication (SPF, DKIM) - user action required
+- [x] Create email templates
+  - [x] Welcome email
+  - [x] Email verification
+  - [x] Password reset
+  - [x] Application confirmation
+  - [x] New application notification (employer)
+  - [x] Job alert notification
+  - [ ] Payment confirmation (future enhancement)
+- [x] Configure environment variables structure
+- [ ] Test email delivery - user action required
+- [x] Add unsubscribe functionality (links in templates)
+
+**Implementation Summary**:
+
+- **Resend Client** (`src/lib/email/resend.ts`):
+  - Email sending function with error handling
+  - 7 email templates with GHL Hire branding
+  - HTML templates with responsive design
+- **Notification Functions** (`src/lib/email/notifications.ts`):
+  - `sendWelcomeEmail()` - Welcome new users
+  - `sendApplicationSubmittedEmail()` - Confirm to candidate
+  - `sendNewApplicationEmail()` - Notify employer
+  - `sendApplicationStatusEmail()` - Status change updates
+  - `sendJobAlertEmail()` - Job alert matches
+  - `sendPasswordResetEmail()` - Password reset
+  - `sendEmailVerification()` - Email verification
+  - Email logging to `email_logs` table
+  - User preference checking before sending
+- **API Endpoints**:
+  - `POST /api/email/application-submitted` - Triggered on new application
+  - `POST /api/email/application-status` - Triggered on status change
+- **Integration**:
+  - ApplyJobModal sends emails after successful application
+  - Company applications page sends emails on status update
+- **Documentation**: `documents/setup/2025-12-05_email-setup.md`
 
 **Technical Notes**:
 
-- Use React Email for template design
-- Ensure mobile responsiveness
-- Add email tracking (opens, clicks)
-- Handle bounces and complaints
+- Using Resend API (installed: `resend@6.4.2`)
+- HTML templates with inline CSS for email client compatibility
+- Supabase SMTP configuration guide included for auth emails
+- Email logs stored in database for monitoring
 
 ---
 
@@ -1230,32 +1322,57 @@ Set up monitoring and error tracking.
 
 ## Epic 11: Legal & Compliance
 
-### P0-34: Terms of Service & Privacy Policy
+### P0-34: Terms of Service & Privacy Policy ✅
 
 **Priority**: P0
 **Effort**: 2 days
 **Dependencies**: None
+**Status**: COMPLETE (2025-12-05)
 
 **Description**:
 Create legal documents and ensure compliance.
 
 **Acceptance Criteria**:
 
-- [ ] Write Terms of Service (or use template + customize)
-- [ ] Write Privacy Policy (GDPR, CCPA compliant)
-- [ ] Add cookie consent banner
-- [ ] Create data processing agreement
-- [ ] Add legal links to footer
-- [ ] Ensure GDPR compliance (data export, deletion)
-- [ ] Add "Report Job" functionality
-- [ ] Create content moderation guidelines
+- [x] Write Terms of Service (or use template + customize)
+- [x] Write Privacy Policy (GDPR, CCPA compliant)
+- [x] Add cookie consent banner
+- [ ] Create data processing agreement (recommended for B2B clients)
+- [x] Add legal links to footer
+- [x] Ensure GDPR compliance (data export, deletion)
+- [ ] Add "Report Job" functionality (moved to P1-35)
+- [ ] Create content moderation guidelines (moved to P1-35)
+
+**Implementation Summary**:
+
+- **Terms of Service** (`/terms`): Comprehensive ToS covering:
+  - User accounts and responsibilities (Job Seekers & Employers)
+  - Job posting and application rules
+  - Subscription plans and Maya payments
+  - Prohibited uses and content moderation
+  - Intellectual property rights
+  - Limitation of liability and disclaimer
+  - Philippine jurisdiction and governing law
+- **Privacy Policy** (`/privacy`): GDPR/CCPA compliant policy covering:
+  - Information collection (direct, automatic, third-party)
+  - Data usage purposes (service delivery, improvement, communication, legal)
+  - Third-party service providers (Supabase, Maya, Resend, OpenAI, Vercel)
+  - User rights (access, correction, deletion, portability, opt-out)
+  - GDPR and CCPA specific rights
+  - Data retention policies
+  - International data transfers
+- **Cookie Consent** (`CookieConsent.tsx`): Full GDPR-compliant banner with:
+  - Accept All / Reject All options
+  - Customizable preferences (Essential, Analytics, Marketing)
+  - Persistent preferences in localStorage
+  - Google Analytics consent integration
+- **Cookie Settings Button**: Allows reopening preferences from Privacy Policy page
 
 **Technical Notes**:
 
-- Use legal template service (Termly, iubenda)
-- Implement cookie consent with CookieYes or similar
-- Add data export feature in user settings
-- Consider hiring lawyer for review
+- Custom cookie consent implementation (no external dependency)
+- Maya/PayMaya referenced as payment processor
+- Consider hiring lawyer for final review before production launch
 
 ---
 

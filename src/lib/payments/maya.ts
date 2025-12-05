@@ -240,13 +240,15 @@ export const mayaClient = new MayaClient();
 
 /**
  * Subscription Plans Configuration
+ * Prices are in Philippine Peso (PHP) centavos
  */
 export const subscriptionPlans = {
   free: {
     id: 'free',
     name: 'Free Plan',
     price: 0,
-    currency: 'USD',
+    priceDisplay: 0,
+    currency: 'PHP',
     interval: 'month' as const,
     features: [
       '1 job posting',
@@ -262,14 +264,16 @@ export const subscriptionPlans = {
   basic: {
     id: 'basic',
     name: 'Basic Plan',
-    price: 4999, // $49.99 in cents
-    currency: 'USD',
+    price: 249900, // ₱2,499.00 in centavos
+    priceDisplay: 2499,
+    currency: 'PHP',
     interval: 'month' as const,
     features: [
       '5 active job postings',
       'Advanced applicant tracking',
       'Priority email support',
       'Basic analytics',
+      '1 featured job listing',
     ],
     limits: {
       jobPosts: 5,
@@ -280,13 +284,14 @@ export const subscriptionPlans = {
   premium: {
     id: 'premium',
     name: 'Premium Plan',
-    price: 14999, // $149.99 in cents
-    currency: 'USD',
+    price: 749900, // ₱7,499.00 in centavos
+    priceDisplay: 7499,
+    currency: 'PHP',
     interval: 'month' as const,
     features: [
       'Unlimited job postings',
       'Advanced analytics & insights',
-      'Featured job listings',
+      '5 featured job listings',
       'Priority support',
       'AI-powered tools',
       'Unlimited team members',
@@ -304,17 +309,31 @@ export const subscriptionPlans = {
  */
 
 /**
- * Format amount for Maya (convert dollars to cents)
+ * Format amount for Maya (convert pesos to centavos)
  */
 export function formatAmountForMaya(amount: number): number {
   return Math.round(amount * 100);
 }
 
 /**
- * Format amount for display (convert cents to dollars)
+ * Format amount for display (convert centavos to pesos)
  */
-export function formatAmountForDisplay(amountInCents: number): string {
-  return `$${(amountInCents / 100).toFixed(2)}`;
+export function formatAmountForDisplay(amountInCentavos: number, currency: string = 'PHP'): string {
+  const amount = amountInCentavos / 100;
+  if (currency === 'PHP') {
+    return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+  return `$${amount.toFixed(2)}`;
+}
+
+/**
+ * Format price for display (already in pesos/dollars)
+ */
+export function formatPriceForDisplay(amount: number, currency: string = 'PHP'): string {
+  if (currency === 'PHP') {
+    return `₱${amount.toLocaleString('en-PH')}`;
+  }
+  return `$${amount}`;
 }
 
 /**

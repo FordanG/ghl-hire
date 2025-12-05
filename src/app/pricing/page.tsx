@@ -11,6 +11,7 @@ const plans = [
     id: 'free',
     name: 'Free',
     price: 0,
+    currency: 'PHP',
     interval: 'forever',
     description: 'Perfect for trying out GHL Hire',
     icon: Zap,
@@ -36,7 +37,8 @@ const plans = [
   {
     id: 'basic',
     name: 'Basic',
-    price: 49.99,
+    price: 2499,
+    currency: 'PHP',
     interval: 'month',
     description: 'Great for small teams and growing companies',
     icon: TrendingUp,
@@ -62,7 +64,8 @@ const plans = [
   {
     id: 'premium',
     name: 'Premium',
-    price: 149.99,
+    price: 7499,
+    currency: 'PHP',
     interval: 'month',
     description: 'For companies serious about hiring top GHL talent',
     icon: Sparkles,
@@ -220,7 +223,7 @@ export default function PricingPage() {
 
                   <div className="mb-6">
                     <span className="text-5xl font-bold text-gray-900">
-                      ${displayPrice.toFixed(0)}
+                      {plan.currency === 'PHP' ? '₱' : '$'}{displayPrice.toLocaleString()}
                     </span>
                     {plan.price > 0 && (
                       <span className="text-gray-600">

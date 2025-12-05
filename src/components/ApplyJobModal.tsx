@@ -151,6 +151,15 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
         }
       }
 
+      // Send email notifications (fire and forget - don't block UI)
+      if (application) {
+        fetch('/api/email/application-submitted', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ applicationId: application.id }),
+        }).catch(err => console.error('Failed to send notification emails:', err));
+      }
+
       setSuccess(true);
       setTimeout(() => {
         onSuccess();

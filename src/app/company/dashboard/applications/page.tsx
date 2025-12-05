@@ -14,11 +14,22 @@ import {
   Star,
   FileText,
   Download,
-  AlertCircle
+  AlertCircle,
+  ExternalLink,
+  FolderOpen
 } from 'lucide-react';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+
+interface Project {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  image_url: string | null;
+  technologies: string[] | null;
+}
 
 interface Application {
   id: string;
@@ -45,6 +56,9 @@ interface Application {
     linkedin_url: string | null;
     portfolio_url: string | null;
   };
+  application_projects?: {
+    project: Project;
+  }[];
 }
 
 export default function ApplicationsPage() {
@@ -92,6 +106,16 @@ export default function ApplicationsPage() {
               experience_years,
               linkedin_url,
               portfolio_url
+            ),
+            application_projects(
+              project:projects(
+                id,
+                title,
+                description,
+                url,
+                image_url,
+                technologies
+              )
             )
           `)
           .eq('job.company_id', company.id)
@@ -152,6 +176,14 @@ export default function ApplicationsPage() {
           app.id === applicationId ? { ...app, status: newStatus } : app
         )
       );
+
+      // Send email notification to candidate (fire and forget)
+      fetch('/api/email/application-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ applicationId, newStatus }),
+      }).catch(err => console.error('Failed to send status notification:', err));
+
     } catch (error) {
       console.error('Error updating application status:', error);
       alert('Failed to update application status');
@@ -317,6 +349,55 @@ export default function ApplicationsPage() {
                           <p className="text-sm text-gray-700 line-clamp-3">
                             {application.cover_letter}
                           </p>
+                        </div>
+                      )}
+
+                      {/* Projects Section */}
+                      {application.application_projects && application.application_projects.length > 0 && (
+                        <div className="mb-3 p-3 bg-blue-50 rounded-lg">
+                          <p className="text-sm text-blue-800 font-medium mb-2 flex items-center gap-1">
+                            <FolderOpen className="w-4 h-4" />
+                            Showcase Projects ({application.application_projects.length})
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {application.application_projects.map((ap) => (
+                              <div key={ap.project.id} className="bg-white rounded-lg p-3 border border-blue-200">
+                                {ap.project.image_url && (
+                                  <img
+                                    src={ap.project.image_url}
+                                    alt={ap.project.title}
+                                    className="w-full h-24 object-cover rounded-md mb-2"
+                                  />
+                                )}
+                                <h4 className="font-medium text-gray-900 text-sm mb-1">{ap.project.title}</h4>
+                                {ap.project.description && (
+                                  <p className="text-xs text-gray-600 line-clamp-2 mb-2">{ap.project.description}</p>
+                                )}
+                                {ap.project.technologies && ap.project.technologies.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-2">
+                                    {ap.project.technologies.slice(0, 3).map((tech, idx) => (
+                                      <span key={idx} className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                                        {tech}
+                                      </span>
+                                    ))}
+                                    {ap.project.technologies.length > 3 && (
+                                      <span className="text-xs text-gray-500">+{ap.project.technologies.length - 3}</span>
+                                    )}
+                                  </div>
+                                )}
+                                {ap.project.url && (
+                                  <a
+                                    href={ap.project.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center text-xs text-blue-600 hover:text-blue-800"
+                                  >
+                                    View Project <ExternalLink className="ml-1 w-3 h-3" />
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
 
