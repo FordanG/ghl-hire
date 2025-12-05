@@ -1,15 +1,36 @@
 import Link from 'next/link';
-import { 
-  Users, 
-  Target, 
-  Clock, 
-  TrendingUp, 
-  Shield, 
-  CheckCircle, 
+import { Metadata } from 'next';
+import {
+  Users,
+  Target,
+  Clock,
+  TrendingUp,
+  Shield,
+  CheckCircle,
   Star
 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+
+export const metadata: Metadata = {
+  title: 'For Employers - Hire GoHighLevel Talent',
+  description: 'Connect with pre-vetted GoHighLevel professionals. From automation specialists to API developers, find the perfect talent for your agency or SaaS company. 95% match success rate.',
+  keywords: ['hire GHL experts', 'GoHighLevel recruitment', 'GHL talent pool', 'marketing automation hiring'],
+  openGraph: {
+    title: 'For Employers - Hire GoHighLevel Talent',
+    description: 'Connect with pre-vetted GoHighLevel professionals for your agency or SaaS company.',
+    type: 'website',
+    url: 'https://ghlhire.com/employers',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'For Employers - Hire GoHighLevel Talent',
+    description: 'Connect with pre-vetted GoHighLevel professionals for your agency or SaaS company.',
+  },
+  alternates: {
+    canonical: 'https://ghlhire.com/employers',
+  },
+};
 
 export default function EmployersPage() {
   return (

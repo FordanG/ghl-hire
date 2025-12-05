@@ -1,7 +1,20 @@
+import { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import CookieSettingsButton from '@/components/CookieSettingsButton';
+
+export const metadata: Metadata = {
+  title: 'Privacy Policy - GHL Hire',
+  description: 'GHL Hire Privacy Policy. Learn how we collect, use, and protect your personal information on our GoHighLevel job board platform.',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: 'https://ghlhire.com/privacy',
+  },
+};
 
 export default function PrivacyPage() {
   return (

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, LogOut, Building, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import NotificationBell from './NotificationBell';
 
 export default function Header() {
   const { user, userType, profile, company, signOut, loading } = useAuth();
@@ -83,11 +84,13 @@ export default function Header() {
           )}
 
           {!loading && user && (
-            <div className="relative user-menu">
-              <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
-                className="user-menu-button flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
-              >
+            <>
+              <NotificationBell />
+              <div className="relative user-menu">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="user-menu-button flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
+                >
                 {userType === 'jobseeker' && profile && (
                   <>
                     <User className="w-5 h-5" />
@@ -135,7 +138,8 @@ export default function Header() {
                   </button>
                 </div>
               )}
-            </div>
+              </div>
+            </>
           )}
         </nav>
 

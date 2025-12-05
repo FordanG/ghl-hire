@@ -1,6 +1,19 @@
+import { Metadata } from 'next';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Terms of Service - GHL Hire',
+  description: 'GHL Hire Terms of Service. Read our terms and conditions for using the GoHighLevel job board platform.',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  alternates: {
+    canonical: 'https://ghlhire.com/terms',
+  },
+};
 
 export default function TermsPage() {
   return (

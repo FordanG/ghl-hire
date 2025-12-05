@@ -7,18 +7,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch all active jobs for sitemap
   const { data: jobs } = await supabase
     .from('jobs')
-    .select('id, updated_at')
+    .select('id, updated_at, title')
     .eq('status', 'active')
     .order('updated_at', { ascending: false })
 
-  const jobUrls = (jobs || []).map((job) => ({
-    url: `${baseUrl}/jobs/${job.id}`,
-    lastModified: new Date(job.updated_at),
-    changeFrequency: 'daily' as const,
-    priority: 0.8,
-  }))
+  // Generate SEO-friendly job URLs
+  const jobUrls = (jobs || []).map((job) => {
+    // Create URL-friendly slug from title
+    const slug = job.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .substring(0, 50);
+    const shortId = job.id.substring(0, 8);
 
-  return [
+    return {
+      url: `${baseUrl}/jobs/${slug}-${shortId}`,
+      lastModified: new Date(job.updated_at),
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    };
+  })
+
+  // Static pages
+  const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -30,6 +42,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'hourly',
       priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/employers`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
     },
     {
       url: `${baseUrl}/signin`,
@@ -55,6 +79,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'yearly',
       priority: 0.3,
     },
-    ...jobUrls,
   ]
+
+  return [...staticPages, ...jobUrls]
 }

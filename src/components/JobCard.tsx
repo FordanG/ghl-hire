@@ -3,6 +3,7 @@ import { Briefcase, Building2, MapPin, Clock, ArrowRight } from 'lucide-react';
 import { Job as DatabaseJob } from '@/lib/supabase';
 import { Job as MockJob } from '@/lib/mock-data';
 import { generateJobSlug } from '@/lib/utils';
+import SaveJobButton from './SaveJobButton';
 
 // Type for jobs fetched with company join from Supabase
 interface JobWithCompany {
@@ -57,13 +58,16 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
 
   return (
     <div className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 duration-150 ${className}`}>
-      <div className="flex items-center gap-3">
-        <div className="bg-blue-50 rounded-full p-2">
-          <Briefcase className="w-6 h-6 text-blue-500" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="bg-blue-50 rounded-full p-2 flex-shrink-0">
+            <Briefcase className="w-6 h-6 text-blue-500" />
+          </div>
+          <span className="text-base font-semibold tracking-tight text-gray-900 line-clamp-2">
+            {job.title}
+          </span>
         </div>
-        <span className="text-base font-semibold tracking-tight text-gray-900">
-          {job.title}
-        </span>
+        <SaveJobButton jobId={job.id || ''} size="sm" />
       </div>
 
       <div className="flex flex-wrap gap-3 text-sm text-gray-500">
@@ -96,13 +100,13 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
         )}
       </p>
 
-      <div className="flex items-center justify-between">
-        <span className="text-blue-500 font-medium">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-blue-500 font-medium text-sm">
           Posted {postedDate}
         </span>
         <Link
           href={`/jobs/${jobSlug}`}
-          className="inline-flex items-center gap-1 px-3 py-1.5 border border-blue-100 rounded-md text-blue-500 font-semibold text-sm hover:bg-blue-50 transition-colors"
+          className="inline-flex items-center justify-center gap-1 px-4 py-2 min-h-[44px] min-w-[44px] border border-blue-100 rounded-md text-blue-500 font-semibold text-sm hover:bg-blue-50 transition-colors"
         >
           Apply <ArrowRight className="w-4 h-4" />
         </Link>

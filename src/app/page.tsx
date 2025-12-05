@@ -1,10 +1,46 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Metadata } from 'next';
 import { Search, Users, Briefcase, CheckCircle, Rocket, ShieldCheck, Target } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobCard from '@/components/JobCard';
 import { createClient } from '@/lib/supabase/server';
+
+// Organization JSON-LD schema for homepage
+const organizationSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'GHL Hire',
+  description: 'The premier job board connecting GoHighLevel professionals with career opportunities in marketing automation and CRM.',
+  url: 'https://ghlhire.com',
+  logo: 'https://ghlhire.com/logo.png',
+  sameAs: [
+    'https://twitter.com/ghlhire',
+    'https://linkedin.com/company/ghlhire',
+  ],
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'customer service',
+    email: 'support@ghlhire.com',
+  },
+};
+
+// WebSite schema for search functionality
+const websiteSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'GHL Hire',
+  url: 'https://ghlhire.com',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: 'https://ghlhire.com/jobs?search={search_term_string}',
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
 
 async function getFeaturedJobs() {
   const supabase = await createClient();
@@ -44,6 +80,16 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen flex flex-col text-gray-900 bg-white">
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+
       <Header />
 
       {/* Hero Section */}

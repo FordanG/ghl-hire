@@ -303,21 +303,21 @@ export default function PricingPage() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-12 text-white text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to hire top GHL talent?</h2>
-          <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
+        <div className="mt-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 sm:p-12 text-white text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to hire top GHL talent?</h2>
+          <p className="text-blue-100 text-base sm:text-lg mb-8 max-w-2xl mx-auto">
             Join hundreds of companies finding and hiring the best GoHighLevel professionals
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4">
             <Link
               href="/signup"
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="bg-white text-blue-600 px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center"
             >
               Start Free Trial
             </Link>
             <Link
               href="/contact"
-              className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-400 transition-colors"
+              className="bg-blue-500 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-400 transition-colors flex items-center justify-center"
             >
               Contact Sales
             </Link>
