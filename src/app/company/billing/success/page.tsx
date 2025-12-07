@@ -1,15 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function PaymentSuccessPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [verifying, setVerifying] = useState(true);
 
   useEffect(() => {
