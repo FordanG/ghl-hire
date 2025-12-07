@@ -30,6 +30,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (role === 'jobseeker') {
+      // Check if profile already exists
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select()
+        .eq('user_id', userId)
+        .single();
+
+      if (existingProfile) {
+        console.log('Profile already exists for user:', userId);
+        return NextResponse.json({ success: true, profile: existingProfile });
+      }
+
       // Create job seeker profile
       const { data, error } = await supabaseAdmin
         .from('profiles')
@@ -53,6 +65,18 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ success: true, profile: data });
     } else if (role === 'employer') {
+      // Check if company already exists
+      const { data: existingCompany } = await supabaseAdmin
+        .from('companies')
+        .select()
+        .eq('user_id', userId)
+        .single();
+
+      if (existingCompany) {
+        console.log('Company already exists for user:', userId);
+        return NextResponse.json({ success: true, company: existingCompany });
+      }
+
       // Create company profile
       const { data: companyData, error: companyError } = await supabaseAdmin
         .from('companies')
