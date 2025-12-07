@@ -1,12 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors. We'll fix these as part of code quality improvements.
-    ignoreDuringBuilds: true,
-  },
-
   // Performance Optimizations
   compress: true, // Enable gzip compression
 
@@ -47,41 +41,8 @@ const nextConfig: NextConfig = {
   // Production source maps (smaller, faster)
   productionBrowserSourceMaps: false,
 
-  // Webpack optimizations
-  webpack: (config, { dev, isServer }) => {
-    // Production optimizations
-    if (!dev && !isServer) {
-      config.optimization = {
-        ...config.optimization,
-        moduleIds: 'deterministic',
-        runtimeChunk: 'single',
-        splitChunks: {
-          chunks: 'all',
-          cacheGroups: {
-            default: false,
-            vendors: false,
-            // Vendor chunk for node_modules
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /node_modules/,
-              priority: 20,
-            },
-            // Common chunk for code used across pages
-            common: {
-              name: 'common',
-              minChunks: 2,
-              chunks: 'all',
-              priority: 10,
-              reuseExistingChunk: true,
-              enforce: true,
-            },
-          },
-        },
-      };
-    }
-    return config;
-  },
+  // Use Turbopack (default in Next.js 16)
+  turbopack: {},
 
   // Redirects for URL consistency
   async redirects() {
