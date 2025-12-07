@@ -55,11 +55,11 @@ export default function ApplicationsPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/auth/sign-in');
+      router.push('/signin');
     }
 
     if (!authLoading && !profile) {
-      router.push('/auth/sign-up');
+      router.push('/signup');
     }
   }, [authLoading, user, profile, router]);
 

@@ -47,7 +47,7 @@ export async function updateSession(request: NextRequest) {
   // If user is not logged in and trying to access protected route, redirect to sign-in
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
-    url.pathname = '/auth/sign-in'
+    url.pathname = '/signin'
     url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }

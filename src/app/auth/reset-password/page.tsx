@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
             </span>
           </Link>
           <Link
-            href="/auth/sign-in"
+            href="/signin"
             className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
             Back to <span className="text-blue-500 font-medium">Sign in</span>
@@ -110,7 +110,7 @@ export default function ResetPasswordPage() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-500">
                 Remember your password?{' '}
-                <Link href="/auth/sign-in" className="text-blue-500 font-medium hover:underline">
+                <Link href="/signin" className="text-blue-500 font-medium hover:underline">
                   Sign in
                 </Link>
               </p>

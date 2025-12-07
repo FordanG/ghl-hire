@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, User, Building, Phone, MapPin, AlertCircle, CheckCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -59,6 +59,8 @@ export default function SignUpPage() {
       setLoading(false);
       return;
     }
+
+    const supabase = createClient();
 
     try {
       // Sign up with Supabase
@@ -114,8 +116,10 @@ export default function SignUpPage() {
         setTimeout(() => {
           if (userType === 'jobseeker') {
             router.push('/dashboard');
+            router.refresh();
           } else {
             router.push('/company/dashboard');
+            router.refresh();
           }
         }, 2000);
       }

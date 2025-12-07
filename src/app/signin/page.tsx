@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Mail, Lock, Users, Briefcase, AlertCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -34,6 +34,8 @@ export default function SignInPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    const supabase = createClient();
 
     try {
       // Sign in with Supabase
@@ -65,8 +67,10 @@ export default function SignInPage() {
         // Redirect based on user type
         if (userType === 'jobseeker' && profile) {
           router.push('/dashboard');
+          router.refresh();
         } else if (userType === 'employer' && company) {
           router.push('/company/dashboard');
+          router.refresh();
         } else if (!profile && !company) {
           // New user, redirect to profile creation
           setError('Please complete your profile setup first. Redirecting to signup...');
