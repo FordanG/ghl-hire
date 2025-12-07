@@ -113,6 +113,7 @@ export default function SignUpPage() {
         console.log('Profile created successfully:', profileData);
 
         setSuccess(true);
+        setLoading(false);
         setTimeout(() => {
           if (userType === 'jobseeker') {
             router.push('/dashboard');
@@ -122,6 +123,10 @@ export default function SignUpPage() {
             router.refresh();
           }
         }, 2000);
+      } else {
+        // User already exists or email confirmation required
+        setError('An account with this email may already exist. Please try signing in instead.');
+        setLoading(false);
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
