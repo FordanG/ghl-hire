@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieConsent from "@/components/CookieConsent";
+import PromoBanner from "@/components/PromoBanner";
 import "./globals.css";
 
 export const viewport: Viewport = {
@@ -72,6 +73,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
+        <PromoBanner />
         <AuthProvider>
           {children}
         </AuthProvider>
