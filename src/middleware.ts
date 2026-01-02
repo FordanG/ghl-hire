@@ -112,6 +112,16 @@ setInterval(() => {
  * Main middleware function
  */
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+
+  // Redirect all traffic to waitlist (pre-launch mode)
+  const allowedPaths = ['/waitlist', '/api', '/_next', '/favicon.ico'];
+  const isAllowed = allowedPaths.some(p => path.startsWith(p)) || path.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/);
+
+  if (!isAllowed) {
+    return NextResponse.redirect(new URL('/waitlist', request.url));
+  }
+
   // Apply rate limiting
   const rateLimitResponse = rateLimiter(request);
   if (rateLimitResponse) {

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Waitlist page background - force light mode */
+.waitlist-bg {
+  background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%) !important;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

@@ -139,24 +139,8 @@ const emailLayout = (content: string, preheader?: string) => `
           <!-- Logo Header -->
           <tr>
             <td align="center" style="padding-bottom: 24px;">
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0">
-                <tr>
-                  <td style="vertical-align: middle; padding-right: 12px;">
-                    <div style="width: 40px; height: 40px; background: ${brandColors.primary}; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
-                      <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect width="40" height="40" rx="10" fill="${brandColors.primary}"/>
-                        <path d="M12 14H18V26H12V14Z" fill="white"/>
-                        <path d="M22 14H28V20H22V14Z" fill="white"/>
-                        <path d="M22 22H28V26H22V22Z" fill="white" fill-opacity="0.6"/>
-                      </svg>
-                    </div>
-                  </td>
-                  <td style="vertical-align: middle;">
-                    <span style="font-size: 24px; font-weight: 700; color: ${brandColors.text};">GHL</span>
-                    <span style="font-size: 24px; font-weight: 700; color: ${brandColors.primary};">Hire</span>
-                  </td>
-                </tr>
-              </table>
+              <span style="font-size: 24px; font-weight: 700; color: ${brandColors.text};">GHL</span>
+              <span style="font-size: 24px; font-weight: 700; color: ${brandColors.primary};">Hire</span>
             </td>
           </tr>
 
@@ -169,42 +153,12 @@ const emailLayout = (content: string, preheader?: string) => `
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
                   <td align="center" style="padding: 24px; border-top: 1px solid ${brandColors.border};">
-                    <!-- Social Links -->
-                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 16px;">
-                      <tr>
-                        <td style="padding: 0 8px;">
-                          <a href="https://twitter.com/ghlhire" style="color: ${brandColors.textLight};">
-                            <img src="https://cdn-icons-png.flaticon.com/24/733/733579.png" alt="Twitter" width="24" height="24" style="opacity: 0.6;">
-                          </a>
-                        </td>
-                        <td style="padding: 0 8px;">
-                          <a href="https://linkedin.com/company/ghlhire" style="color: ${brandColors.textLight};">
-                            <img src="https://cdn-icons-png.flaticon.com/24/3536/3536505.png" alt="LinkedIn" width="24" height="24" style="opacity: 0.6;">
-                          </a>
-                        </td>
-                        <td style="padding: 0 8px;">
-                          <a href="https://facebook.com/ghlhire" style="color: ${brandColors.textLight};">
-                            <img src="https://cdn-icons-png.flaticon.com/24/733/733547.png" alt="Facebook" width="24" height="24" style="opacity: 0.6;">
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-
                     <!-- Footer Text -->
                     <p style="margin: 0 0 8px; font-size: 14px; color: ${brandColors.textLight};">
                       GHL Hire - The Premier Job Board for GoHighLevel Professionals
                     </p>
-                    <p style="margin: 0 0 16px; font-size: 13px; color: ${brandColors.textLight};">
+                    <p style="margin: 0; font-size: 13px; color: ${brandColors.textLight};">
                       &copy; ${new Date().getFullYear()} GHL Hire. All rights reserved.
-                    </p>
-
-                    <!-- Footer Links -->
-                    <p style="margin: 0; font-size: 13px;">
-                      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://ghlhire.com'}/help" style="color: ${brandColors.textLight}; margin: 0 8px;">Help Center</a>
-                      <span style="color: ${brandColors.border};">|</span>
-                      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://ghlhire.com'}/privacy" style="color: ${brandColors.textLight}; margin: 0 8px;">Privacy</a>
-                      <span style="color: ${brandColors.border};">|</span>
-                      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://ghlhire.com'}/notifications/preferences" style="color: ${brandColors.textLight}; margin: 0 8px;">Unsubscribe</a>
                     </p>
                   </td>
                 </tr>
@@ -662,6 +616,98 @@ export const emailTemplates = {
         `
       ),
       `Verify your email to complete your GHL Hire registration.`
+    )
+  }),
+
+  // Waitlist confirmation
+  waitlistConfirmation: (email: string, userType: 'employer' | 'jobseeker') => ({
+    subject: "You're on the GHL Hire Waitlist!",
+    html: emailLayout(
+      contentCard(
+        `linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.primaryDark} 100%)`,
+        `
+          <div style="margin-bottom: 16px;">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="32" fill="rgba(255,255,255,0.2)"/>
+              <path d="M26 32L30 36L38 28" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">You're on the List!</h1>
+          <p style="margin: 8px 0 0; font-size: 16px; color: rgba(255,255,255,0.9);">Thanks for joining the GHL Hire waitlist</p>
+        `,
+        `
+          <p style="margin: 0 0 20px; font-size: 16px; color: ${brandColors.text};">
+            Thanks for signing up! We're building the premier job board for GoHighLevel professionals, and you'll be among the first to know when we launch.
+          </p>
+
+          ${userType === 'jobseeker' ? `
+          <div style="background: ${brandColors.background}; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+            <p style="margin: 0 0 12px; font-weight: 600; color: ${brandColors.text};">What's coming for job seekers:</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Exclusive GHL job listings from top agencies</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Profile showcase to highlight your GHL expertise</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Job alerts tailored to your skills</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">One-click applications</td>
+              </tr>
+            </table>
+          </div>
+          ` : `
+          <div style="background: ${brandColors.background}; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+            <p style="margin: 0 0 12px; font-weight: 600; color: ${brandColors.text};">What's coming for employers:</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Access to pre-vetted GHL professionals</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Post jobs and reach the right candidates</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Applicant tracking and management</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; vertical-align: top; width: 24px;">
+                  <span style="color: ${brandColors.success}; font-size: 16px;">&#10003;</span>
+                </td>
+                <td style="padding: 8px 0; color: ${brandColors.text};">Analytics and hiring insights</td>
+              </tr>
+            </table>
+          </div>
+          `}
+
+          <p style="margin: 0; font-size: 16px; color: ${brandColors.text}; text-align: center;">
+            We'll be in touch soon with launch updates!
+          </p>
+        `
+      ),
+      `You're on the GHL Hire waitlist! We'll notify you when we launch.`
     )
   }),
 };
