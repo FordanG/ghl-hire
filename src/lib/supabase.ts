@@ -116,9 +116,10 @@ export type Subscription = {
   id: string;
   company_id: string;
   plan_type: 'free' | 'basic' | 'premium' | 'enterprise';
-  maya_customer_id?: string;
-  maya_subscription_id?: string;
-  maya_plan_id?: string;
+  provider?: string;
+  provider_customer_id?: string;
+  provider_subscription_id?: string;
+  provider_plan_id?: string;
   status: 'active' | 'past_due' | 'canceled' | 'trialing' | 'incomplete' | 'incomplete_expired';
   current_period_start?: string;
   current_period_end?: string;

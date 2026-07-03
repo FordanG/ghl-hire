@@ -22,7 +22,7 @@ export default function SupportPage() {
 
     if (!user) {
       alert('Please sign in to submit a support ticket');
-      router.push('/login');
+      router.push('/signin');
       return;
     }
 

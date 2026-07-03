@@ -1,5 +1,5 @@
 import { sendEmail, emailTemplates } from './resend';
-import { supabase } from '@/lib/supabase';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * Send welcome email to new user
@@ -185,7 +185,8 @@ async function logEmail(
   metadata?: any
 ) {
   try {
-    await supabase.from('email_logs').insert([{
+    // email_logs is service-role-only (no client RLS policies)
+    await createAdminClient().from('email_logs').insert([{
       email_address: emailAddress,
       email_type: emailType,
       subject: subject,
@@ -205,7 +206,7 @@ export async function shouldSendEmail(
   emailType: string
 ): Promise<boolean> {
   try {
-    const { data: prefs } = await supabase
+    const { data: prefs } = await createAdminClient()
       .from('notification_preferences')
       .select('*')
       .eq('profile_id', userId)

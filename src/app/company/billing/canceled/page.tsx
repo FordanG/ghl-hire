@@ -29,7 +29,7 @@ export default function PaymentCanceledPage() {
             <h3 className="font-semibold text-blue-900 mb-2">Still thinking about it?</h3>
             <p className="text-blue-700 text-sm">
               Our paid plans include premium features like unlimited job postings,
-              advanced analytics, and priority support. Start with a 14-day free trial!
+              advanced analytics, and priority support. Upgrade whenever you're ready.
             </p>
           </div>
 

@@ -57,12 +57,12 @@ export default function PostJobPage() {
           setPlanType(subscription.plan_type);
           setJobLimit(subscription.job_post_limit);
 
-          // Count active jobs
+          // Count active jobs (drafts are free and don't count toward the limit)
           const { data: jobs } = await supabase
             .from('jobs')
             .select('id')
             .eq('company_id', company.id)
-            .in('status', ['draft', 'active']);
+            .eq('status', 'active');
 
           const count = jobs?.length || 0;
           setJobCount(count);
@@ -160,7 +160,11 @@ export default function PostJobPage() {
       }
     } catch (err: any) {
       console.error('Job posting error:', err);
-      setError(err.message || 'Failed to post job. Please try again.');
+      if (err?.message?.includes('JOB_POST_LIMIT_REACHED')) {
+        setError("You've reached your plan's active job limit. Upgrade your plan to post more jobs.");
+      } else {
+        setError(err.message || 'Failed to post job. Please try again.');
+      }
       setLoading(false);
     }
   };

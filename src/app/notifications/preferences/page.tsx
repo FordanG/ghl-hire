@@ -23,7 +23,7 @@ interface NotificationPreferences {
 
 export default function NotificationPreferencesPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences>({
@@ -41,12 +41,13 @@ export default function NotificationPreferencesPage() {
   });
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      router.push('/login');
+      router.push('/signin');
       return;
     }
     fetchPreferences();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchPreferences = async () => {
     if (!user) return;

@@ -174,7 +174,11 @@ export default function EditJobPage({ params }: EditJobPageProps) {
       }
     } catch (err: any) {
       console.error('Job update error:', err);
-      setError(err.message || 'Failed to update job. Please try again.');
+      if (err?.message?.includes('JOB_POST_LIMIT_REACHED')) {
+        setError("You've reached your plan's active job limit. Upgrade your plan to post more jobs.");
+      } else {
+        setError(err.message || 'Failed to update job. Please try again.');
+      }
       setSaving(false);
     }
   };

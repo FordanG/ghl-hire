@@ -1,63 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mayaClient, getPlanById, formatAmountForMaya } from '@/lib/payments/maya';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getPlanById } from '@/lib/payments/plans';
+import { createWhopCheckout } from '@/lib/payments/whop';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { planId, companyId, successUrl, cancelUrl } = body;
+    const { planId } = body;
 
-    if (!planId || !companyId) {
+    if (!planId) {
       return NextResponse.json(
-        { error: 'Plan ID and Company ID are required' },
+        { error: 'Plan ID is required' },
         { status: 400 }
       );
     }
 
-    // Get plan details
     const plan = getPlanById(planId);
 
-    if (!plan || planId === 'free') {
+    if (!plan || plan.price === 0) {
       return NextResponse.json(
         { error: 'Invalid plan' },
         { status: 400 }
       );
     }
 
-    // Get company details
+    // The company is derived from the authenticated session, never from the
+    // request body, so a caller can only buy a subscription for themselves.
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { data: company, error: companyError } = await supabase
       .from('companies')
-      .select('*')
-      .eq('id', companyId)
+      .select('id, company_name, email')
+      .eq('user_id', user.id)
       .single();
 
     if (companyError || !company) {
       return NextResponse.json(
-        { error: 'Company not found' },
+        { error: 'Company profile not found. Please create a company profile first.' },
         { status: 404 }
       );
     }
 
-    // Generate reference number
-    const referenceNumber = `SUB-${Date.now()}-${companyId.slice(0, 8)}`;
+    const admin = createAdminClient();
+    const referenceNumber = `SUB-${Date.now()}-${company.id.slice(0, 8)}`;
 
-    // Create payment transaction record
-    const { data: transaction, error: transactionError } = await supabase
+    const { data: transaction, error: transactionError } = await admin
       .from('payment_transactions')
       .insert([{
-        company_id: companyId,
+        company_id: company.id,
         amount_cents: plan.price,
         currency: plan.currency,
         status: 'pending',
         transaction_type: 'subscription',
         reference_number: referenceNumber,
         description: `${plan.name} subscription`,
-        metadata: { plan_id: planId }
+        provider: 'whop',
+        metadata: { plan_id: planId },
       }])
       .select()
       .single();
 
-    if (transactionError) {
+    if (transactionError || !transaction) {
       console.error('Failed to create transaction:', transactionError);
       return NextResponse.json(
         { error: 'Failed to create transaction' },
@@ -65,56 +77,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Maya checkout session
-    const checkoutSession = {
-      totalAmount: {
-        value: plan.price,
-        currency: plan.currency,
-      },
-      buyer: {
-        firstName: company.company_name.split(' ')[0] || 'Company',
-        lastName: company.company_name.split(' ').slice(1).join(' ') || 'User',
-        email: company.email,
-      },
-      items: [
-        {
-          name: plan.name,
-          quantity: 1,
-          amount: {
-            value: plan.price,
-            currency: plan.currency,
-          },
-          totalAmount: {
-            value: plan.price,
-            currency: plan.currency,
-          },
-        },
-      ],
-      redirectUrl: {
-        success: successUrl || `${process.env.NEXT_PUBLIC_APP_URL}/company/billing/success`,
-        failure: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/company/billing/failed`,
-        cancel: cancelUrl || `${process.env.NEXT_PUBLIC_APP_URL}/company/billing/canceled`,
-      },
-      requestReferenceNumber: referenceNumber,
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+
+    // Whop supports a single post-checkout redirect; it appends a status query
+    // param (success/error) that the success page uses to branch.
+    const { checkoutConfigId, purchaseUrl } = await createWhopCheckout({
+      planId,
       metadata: {
-        company_id: companyId,
+        company_id: company.id,
         plan_id: planId,
         transaction_id: transaction.id,
+        reference_number: referenceNumber,
       },
-    };
+      redirectUrl: `${appUrl}/company/billing/success`,
+    });
 
-    const { checkoutId, redirectUrl } = await mayaClient.createCheckoutSession(checkoutSession);
-
-    // Update transaction with Maya checkout ID
-    await supabase
+    await admin
       .from('payment_transactions')
-      .update({ maya_checkout_id: checkoutId })
+      .update({ provider_checkout_id: checkoutConfigId })
       .eq('id', transaction.id);
 
     return NextResponse.json({
       success: true,
-      checkoutId,
-      redirectUrl,
+      checkoutId: checkoutConfigId,
+      redirectUrl: purchaseUrl,
       transactionId: transaction.id,
     });
 

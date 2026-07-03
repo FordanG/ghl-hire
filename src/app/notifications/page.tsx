@@ -45,19 +45,20 @@ const notificationIcons: Record<string, any> = {
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      router.push('/login');
+      router.push('/signin');
       return;
     }
     fetchNotifications();
     subscribeToNotifications();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchNotifications = async () => {
     if (!user) return;

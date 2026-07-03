@@ -5,13 +5,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Check, X, Zap, TrendingUp, Sparkles } from 'lucide-react';
+import { subscriptionPlans } from '@/lib/payments/plans';
+
+// Static Tailwind class mapping — dynamic `bg-${color}-100` strings can't be
+// compiled by Tailwind, so each plan color maps to prebuilt class strings.
+const planColorClasses: Record<string, { wrapper: string; icon: string }> = {
+  gray: { wrapper: 'bg-gray-100', icon: 'text-gray-600' },
+  blue: { wrapper: 'bg-blue-100', icon: 'text-blue-600' },
+  purple: { wrapper: 'bg-purple-100', icon: 'text-purple-600' },
+};
 
 const plans = [
   {
     id: 'free',
     name: 'Free',
-    price: 0,
-    currency: 'PHP',
+    price: subscriptionPlans.free.priceDisplay,
+    currency: subscriptionPlans.free.currency,
     interval: 'forever',
     description: 'Perfect for trying out GHL Hire',
     icon: Zap,
@@ -26,19 +35,15 @@ const plans = [
       { name: 'AI-powered tools', included: false },
       { name: 'Team collaboration', included: false },
     ],
-    limits: {
-      jobPosts: 1,
-      featuredJobs: 0,
-      teamMembers: 1,
-    },
+    limits: subscriptionPlans.free.limits,
     cta: 'Get Started',
     highlighted: false,
   },
   {
     id: 'basic',
     name: 'Basic',
-    price: 2499,
-    currency: 'PHP',
+    price: subscriptionPlans.basic.priceDisplay,
+    currency: subscriptionPlans.basic.currency,
     interval: 'month',
     description: 'Great for small teams and growing companies',
     icon: TrendingUp,
@@ -53,19 +58,15 @@ const plans = [
       { name: 'AI-powered tools', included: false },
       { name: 'Unlimited team members', included: false },
     ],
-    limits: {
-      jobPosts: 5,
-      featuredJobs: 1,
-      teamMembers: 3,
-    },
-    cta: 'Start Free Trial',
+    limits: subscriptionPlans.basic.limits,
+    cta: 'Upgrade Now',
     highlighted: true,
   },
   {
     id: 'premium',
     name: 'Premium',
-    price: 7499,
-    currency: 'PHP',
+    price: subscriptionPlans.premium.priceDisplay,
+    currency: subscriptionPlans.premium.currency,
     interval: 'month',
     description: 'For companies serious about hiring top GHL talent',
     icon: Sparkles,
@@ -80,12 +81,8 @@ const plans = [
       { name: 'AI-powered applicant screening', included: true },
       { name: 'AI resume analysis', included: true },
     ],
-    limits: {
-      jobPosts: -1, // Unlimited
-      featuredJobs: 5,
-      teamMembers: -1, // Unlimited
-    },
-    cta: 'Start Free Trial',
+    limits: subscriptionPlans.premium.limits,
+    cta: 'Upgrade Now',
     highlighted: false,
   },
 ];
@@ -98,7 +95,7 @@ export default function PricingPage() {
 
   const handleSelectPlan = async (planId: string) => {
     if (!user) {
-      router.push('/login?redirect=/pricing');
+      router.push('/signin');
       return;
     }
 
@@ -120,18 +117,13 @@ export default function PricingPage() {
         return;
       }
 
-      // Create checkout session
+      // Create checkout session (company is derived server-side from the session)
       const response = await fetch('/api/payments/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          planId,
-          companyId: companyData.company.id,
-          successUrl: `${window.location.origin}/company/billing/success`,
-          cancelUrl: `${window.location.origin}/pricing`,
-        }),
+        body: JSON.stringify({ planId }),
       });
 
       const data = await response.json();
@@ -140,7 +132,7 @@ export default function PricingPage() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Maya checkout
+      // Redirect to hosted Whop checkout
       window.location.href = data.redirectUrl;
 
     } catch (error: any) {
@@ -160,7 +152,7 @@ export default function PricingPage() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            Choose the perfect plan for your hiring needs. All plans include a 14-day free trial.
+            Choose the perfect plan for your hiring needs. Start free and upgrade anytime as you grow.
           </p>
 
           {/* Billing Toggle
@@ -214,8 +206,8 @@ export default function PricingPage() {
                 )}
 
                 <div className="p-8">
-                  <div className={`w-12 h-12 rounded-lg bg-${plan.color}-100 flex items-center justify-center mb-4`}>
-                    <Icon className={`w-6 h-6 text-${plan.color}-600`} />
+                  <div className={`w-12 h-12 rounded-lg ${(planColorClasses[plan.color] ?? planColorClasses.gray).wrapper} flex items-center justify-center mb-4`}>
+                    <Icon className={`w-6 h-6 ${(planColorClasses[plan.color] ?? planColorClasses.gray).icon}`} />
                   </div>
 
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
@@ -223,7 +215,10 @@ export default function PricingPage() {
 
                   <div className="mb-6">
                     <span className="text-5xl font-bold text-gray-900">
-                      {plan.currency === 'PHP' ? '₱' : '$'}{displayPrice.toLocaleString()}
+                      ${displayPrice.toLocaleString('en-US', {
+                        minimumFractionDigits: Number.isInteger(displayPrice) ? 0 : 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </span>
                     {plan.price > 0 && (
                       <span className="text-gray-600">
@@ -282,14 +277,14 @@ export default function PricingPage() {
             <div>
               <h3 className="font-semibold text-lg mb-2">What payment methods do you accept?</h3>
               <p className="text-gray-600">
-                We accept all major credit cards, GCash, and PayMaya through our secure payment processor.
+                We accept all major credit and debit cards, PayPal, and more — payments are processed securely by Whop.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-lg mb-2">Is there a free trial?</h3>
+              <h3 className="font-semibold text-lg mb-2">What happens when I hit my job posting limit?</h3>
               <p className="text-gray-600">
-                Yes! All paid plans include a 14-day free trial. No credit card required to start.
+                Each plan includes a set number of active job postings — 1 on Free, 5 on Basic, and unlimited on Premium. If you reach your limit, you can upgrade your plan anytime to post more jobs.
               </p>
             </div>
 
@@ -313,7 +308,7 @@ export default function PricingPage() {
               href="/signup"
               className="bg-white text-blue-600 px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center"
             >
-              Start Free Trial
+              Get Started
             </Link>
             <Link
               href="/contact"

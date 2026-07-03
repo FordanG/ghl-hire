@@ -935,11 +935,12 @@ export type Database = {
           failure_code: string | null
           failure_message: string | null
           id: string
-          maya_checkout_id: string | null
-          maya_payment_id: string | null
           metadata: Json | null
           paid_at: string | null
           payment_method: string | null
+          provider: string
+          provider_checkout_id: string | null
+          provider_payment_id: string | null
           reference_number: string | null
           refunded_at: string | null
           status: string
@@ -956,11 +957,12 @@ export type Database = {
           failure_code?: string | null
           failure_message?: string | null
           id?: string
-          maya_checkout_id?: string | null
-          maya_payment_id?: string | null
           metadata?: Json | null
           paid_at?: string | null
           payment_method?: string | null
+          provider?: string
+          provider_checkout_id?: string | null
+          provider_payment_id?: string | null
           reference_number?: string | null
           refunded_at?: string | null
           status?: string
@@ -977,11 +979,12 @@ export type Database = {
           failure_code?: string | null
           failure_message?: string | null
           id?: string
-          maya_checkout_id?: string | null
-          maya_payment_id?: string | null
           metadata?: Json | null
           paid_at?: string | null
           payment_method?: string | null
+          provider?: string
+          provider_checkout_id?: string | null
+          provider_payment_id?: string | null
           reference_number?: string | null
           refunded_at?: string | null
           status?: string
@@ -1281,12 +1284,13 @@ export type Database = {
           featured_job_limit: number | null
           id: string
           job_post_limit: number | null
-          maya_customer_id: string | null
-          maya_plan_id: string | null
-          maya_subscription_id: string | null
           metadata: Json | null
           plan_type: string
           price_cents: number | null
+          provider: string
+          provider_customer_id: string | null
+          provider_plan_id: string | null
+          provider_subscription_id: string | null
           status: string
           team_member_limit: number | null
           trial_end: string | null
@@ -1305,12 +1309,13 @@ export type Database = {
           featured_job_limit?: number | null
           id?: string
           job_post_limit?: number | null
-          maya_customer_id?: string | null
-          maya_plan_id?: string | null
-          maya_subscription_id?: string | null
           metadata?: Json | null
           plan_type?: string
           price_cents?: number | null
+          provider?: string
+          provider_customer_id?: string | null
+          provider_plan_id?: string | null
+          provider_subscription_id?: string | null
           status?: string
           team_member_limit?: number | null
           trial_end?: string | null
@@ -1329,12 +1334,13 @@ export type Database = {
           featured_job_limit?: number | null
           id?: string
           job_post_limit?: number | null
-          maya_customer_id?: string | null
-          maya_plan_id?: string | null
-          maya_subscription_id?: string | null
           metadata?: Json | null
           plan_type?: string
           price_cents?: number | null
+          provider?: string
+          provider_customer_id?: string | null
+          provider_plan_id?: string | null
+          provider_subscription_id?: string | null
           status?: string
           team_member_limit?: number | null
           trial_end?: string | null
@@ -1466,6 +1472,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      waitlist: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          user_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          user_type: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          user_type?: string
+        }
+        Relationships: []
       }
     }
     Views: {

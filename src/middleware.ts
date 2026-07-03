@@ -23,8 +23,8 @@ const CSP = `
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: https: blob:;
   font-src 'self' data:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.resend.com https://*.paymaya.com;
-  frame-src 'self' https://*.paymaya.com;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.resend.com;
+  frame-src 'self';
   object-src 'none';
   base-uri 'self';
   form-action 'self';
@@ -112,16 +112,6 @@ setInterval(() => {
  * Main middleware function
  */
 export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-
-  // Redirect all traffic to waitlist (pre-launch mode)
-  const allowedPaths = ['/waitlist', '/api', '/_next', '/favicon.ico'];
-  const isAllowed = allowedPaths.some(p => path.startsWith(p)) || path.match(/\.(svg|png|jpg|jpeg|gif|webp|ico)$/);
-
-  if (!isAllowed) {
-    return NextResponse.redirect(new URL('/waitlist', request.url));
-  }
-
   // Apply rate limiting
   const rateLimitResponse = rateLimiter(request);
   if (rateLimitResponse) {

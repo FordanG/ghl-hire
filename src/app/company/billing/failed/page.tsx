@@ -37,7 +37,7 @@ export default function PaymentFailedPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-medium text-gray-800">3.</span>
-                <span>Try a different payment method (GCash, Maya)</span>
+                <span>Try a different payment method or card</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="font-medium text-gray-800">4.</span>

@@ -342,7 +342,7 @@ export default function BlogPostPage() {
               <div className="mb-8 p-6 bg-gray-50 rounded-lg text-center">
                 <p className="text-gray-600 mb-4">Sign in to leave a comment</p>
                 <Link
-                  href="/login"
+                  href="/signin"
                   className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Sign In

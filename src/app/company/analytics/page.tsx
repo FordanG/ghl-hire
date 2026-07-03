@@ -48,7 +48,7 @@ interface OverviewStats {
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [jobAnalytics, setJobAnalytics] = useState<JobAnalytics[]>([]);
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesData[]>([]);
@@ -64,12 +64,13 @@ export default function AnalyticsPage() {
   const [selectedJob, setSelectedJob] = useState<string>('all');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      router.push('/login');
+      router.push('/signin');
       return;
     }
     fetchAnalytics();
-  }, [user, selectedPeriod, selectedJob]);
+  }, [user, authLoading, selectedPeriod, selectedJob]);
 
   const fetchAnalytics = async () => {
     if (!user) return;

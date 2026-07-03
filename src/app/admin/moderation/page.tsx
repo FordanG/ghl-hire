@@ -18,18 +18,19 @@ interface Report {
 
 export default function ModerationPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'reviewing' | 'resolved'>('pending');
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
-      router.push('/login');
+      router.push('/signin');
       return;
     }
     checkAdminAccess();
-  }, [user]);
+  }, [user, authLoading]);
 
   const checkAdminAccess = async () => {
     if (!user) return;

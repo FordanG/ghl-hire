@@ -1,204 +1,180 @@
 'use client';
 
-import { useState } from 'react';
-import { 
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
   CreditCard,
-  Check,
-  Download,
-  Users,
   Briefcase,
-  Shield,
+  Download,
   AlertCircle,
-  Edit,
-  Trash2,
-  Plus
+  Loader2,
+  ArrowRight,
+  Calendar,
+  FileText,
+  Sparkles,
 } from 'lucide-react';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase, Subscription } from '@/lib/supabase';
+import { getPlanById, formatPriceForDisplay } from '@/lib/payments/plans';
+
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  amount_cents: number;
+  currency: string;
+  status: string;
+  paid_at: string | null;
+  created_at: string | null;
+}
 
 export default function BillingPage() {
-  const [currentPlan] = useState('professional');
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const router = useRouter();
+  const { user, company, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [activeJobs, setActiveJobs] = useState(0);
 
-  const plans = [
-    {
-      id: 'basic',
-      name: 'Basic',
-      price: { monthly: 29.99, yearly: 299.90 },
-      features: [
-        '5 active job postings',
-        'Basic applicant tracking',
-        'Email support',
-        'Standard job visibility',
-        'Basic analytics'
-      ],
-      limits: {
-        jobs: 5,
-        applications: 100,
-        users: 1
-      }
-    },
-    {
-      id: 'professional',
-      name: 'Professional',
-      price: { monthly: 59.99, yearly: 599.90 },
-      popular: true,
-      features: [
-        '20 active job postings',
-        'Advanced applicant tracking',
-        'Priority support',
-        'Enhanced job visibility',
-        'Advanced analytics',
-        'Custom branding',
-        'Team collaboration'
-      ],
-      limits: {
-        jobs: 20,
-        applications: 500,
-        users: 5
-      }
-    },
-    {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: { monthly: 99.99, yearly: 999.90 },
-      features: [
-        'Unlimited job postings',
-        'Full applicant tracking suite',
-        'Dedicated support',
-        'Premium job visibility',
-        'Custom analytics',
-        'White-label solution',
-        'Unlimited team members',
-        'API access',
-        'Custom integrations'
-      ],
-      limits: {
-        jobs: 'Unlimited',
-        applications: 'Unlimited',
-        users: 'Unlimited'
-      }
+  // Redirect signed-out / non-company users (mirrors sibling dashboard pages)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/signin');
     }
-  ];
-
-  const billingHistory = [
-    {
-      id: '1',
-      date: '2025-01-01',
-      description: 'Professional Plan - Monthly',
-      amount: 59.99,
-      status: 'paid',
-      invoice: 'INV-2025-001'
-    },
-    {
-      id: '2',
-      date: '2024-12-01',
-      description: 'Professional Plan - Monthly',
-      amount: 59.99,
-      status: 'paid',
-      invoice: 'INV-2024-012'
-    },
-    {
-      id: '3',
-      date: '2024-11-01',
-      description: 'Professional Plan - Monthly',
-      amount: 59.99,
-      status: 'paid',
-      invoice: 'INV-2024-011'
+    if (!authLoading && !company) {
+      router.push('/signup');
     }
-  ];
+  }, [authLoading, user, company, router]);
 
-  const paymentMethods = [
-    {
-      id: '1',
-      type: 'card',
-      last4: '4242',
-      brand: 'Visa',
-      expiryMonth: 12,
-      expiryYear: 2026,
-      isDefault: true
+  useEffect(() => {
+    if (company) {
+      loadBillingData();
     }
-  ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [company]);
 
-  const usage = {
-    jobPostings: { used: 8, limit: 20 },
-    applications: { used: 234, limit: 500 },
-    teamMembers: { used: 3, limit: 5 }
+  const loadBillingData = async () => {
+    if (!company) return;
+
+    setLoading(true);
+
+    try {
+      // Subscription row (every company has one via DB trigger)
+      const { data: sub } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('company_id', company.id)
+        .maybeSingle();
+
+      setSubscription((sub as Subscription) ?? null);
+
+      // Invoices, most recent first
+      const { data: invoiceData } = await supabase
+        .from('invoices')
+        .select(
+          'id, invoice_number, amount_cents, currency, status, paid_at, created_at'
+        )
+        .eq('company_id', company.id)
+        .order('created_at', { ascending: false });
+
+      setInvoices((invoiceData as Invoice[]) ?? []);
+
+      // Current count of active jobs
+      const { count } = await supabase
+        .from('jobs')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', company.id)
+        .eq('status', 'active');
+
+      setActiveJobs(count ?? 0);
+    } catch (err) {
+      console.error('Error loading billing data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const PlanCard = ({ plan, isActive }: { plan: typeof plans[0]; isActive: boolean }) => (
-    <div className={`relative border-2 rounded-lg p-6 ${
-      isActive 
-        ? 'border-blue-500 bg-blue-50' 
-        : 'border-gray-200 bg-white hover:border-gray-300'
-    }`}>
-      {plan.popular && (
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-          <span className="bg-blue-600 text-white px-3 py-1 text-sm font-medium rounded-full">
-            Most Popular
-          </span>
-        </div>
-      )}
-      {isActive && (
-        <div className="absolute -top-3 right-4">
-          <span className="bg-green-600 text-white px-3 py-1 text-sm font-medium rounded-full">
-            Current Plan
-          </span>
-        </div>
-      )}
-      
-      <div className="text-center mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">{plan.name}</h3>
-        <div className="mb-4">
-          <span className="text-3xl font-bold text-gray-900">
-            ${billingCycle === 'monthly' ? plan.price.monthly : Math.floor(plan.price.yearly / 12)}
-          </span>
-          <span className="text-gray-600">/month</span>
-          {billingCycle === 'yearly' && (
-            <div className="text-sm text-green-600 font-medium">
-              Save ${plan.price.monthly * 12 - plan.price.yearly} per year
-            </div>
-          )}
-        </div>
-      </div>
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return null;
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
-      <ul className="space-y-3 mb-6">
-        {plan.features.map((feature: string, index: number) => (
-          <li key={index} className="flex items-center gap-3">
-            <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-            <span className="text-sm text-gray-700">{feature}</span>
-          </li>
-        ))}
-      </ul>
+  const getSubStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'trialing':
+        return 'bg-blue-100 text-blue-800';
+      case 'past_due':
+        return 'bg-red-100 text-red-800';
+      case 'incomplete':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-      <div className="border-t border-gray-200 pt-4 mb-6">
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-2xl font-semibold text-gray-900">{plan.limits.jobs}</p>
-            <p className="text-xs text-gray-500">Jobs</p>
-          </div>
-          <div>
-            <p className="text-2xl font-semibold text-gray-900">{plan.limits.applications}</p>
-            <p className="text-xs text-gray-500">Applications</p>
-          </div>
-          <div>
-            <p className="text-2xl font-semibold text-gray-900">{plan.limits.users}</p>
-            <p className="text-xs text-gray-500">Users</p>
+  const getInvoiceStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-green-100 text-green-800';
+      case 'open':
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'void':
+      case 'uncollectible':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (authLoading || loading) {
+    return (
+      <CompanyDashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading billing...</span>
           </div>
         </div>
-      </div>
+      </CompanyDashboardLayout>
+    );
+  }
 
-      <button
-        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-          isActive
-            ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700'
-        }`}
-        disabled={isActive}
-      >
-        {isActive ? 'Current Plan' : 'Upgrade to ' + plan.name}
-      </button>
-    </div>
-  );
+  if (!company) {
+    return null;
+  }
+
+  // Derive plan details. Prefer canonical config, fall back to the stored row.
+  const planType = subscription?.plan_type ?? 'free';
+  const plan = getPlanById(planType);
+  const isFree = planType === 'free';
+  const planName =
+    plan?.name ??
+    `${planType.charAt(0).toUpperCase()}${planType.slice(1)} Plan`;
+
+  const priceCents = plan ? plan.price : subscription?.price_cents ?? 0;
+  const currency = plan ? plan.currency : subscription?.currency ?? 'USD';
+  const priceLabel = isFree
+    ? 'Free'
+    : `${formatPriceForDisplay(priceCents / 100, currency)}/month`;
+
+  const status = subscription?.status ?? 'active';
+  const renewalDate = formatDate(subscription?.current_period_end ?? null);
+  const cancelAtPeriodEnd = subscription?.cancel_at_period_end ?? false;
+
+  const jobLimit =
+    subscription?.job_post_limit ?? plan?.limits.jobPosts ?? 1;
+  const unlimitedJobs = jobLimit === -1;
+  const usagePct = unlimitedJobs
+    ? 0
+    : Math.min(100, jobLimit > 0 ? (activeJobs / jobLimit) * 100 : 0);
 
   return (
     <CompanyDashboardLayout>
@@ -206,227 +182,229 @@ export default function BillingPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Billing & Subscription</h1>
-            <p className="text-gray-600 mt-1">Manage your subscription, billing, and payment methods</p>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Billing &amp; Subscription
+            </h1>
+            <p className="text-gray-600 mt-1">
+              Manage your subscription and view your billing history
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Download className="w-4 h-4" />
-              Download Invoices
-            </button>
-          </div>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Sparkles className="w-4 h-4" />
+            {isFree ? 'Upgrade Plan' : 'Change Plan'}
+          </Link>
         </div>
+
+        {/* Cancellation notice */}
+        {cancelAtPeriodEnd && (
+          <div className="mb-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-amber-900">
+                Your subscription is set to cancel
+              </p>
+              <p className="text-sm text-amber-800 mt-1">
+                {renewalDate
+                  ? `Your plan remains active until ${renewalDate}, after which you'll be moved to the Free plan.`
+                  : "Your plan will be moved to the Free plan at the end of the current period."}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Current Plan & Usage */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Current Plan */}
           <div className="lg:col-span-2 bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Current Plan</h3>
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                Professional
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <Briefcase className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                <p className="text-2xl font-semibold text-gray-900">{usage.jobPostings.used}</p>
-                <p className="text-sm text-gray-600">of {usage.jobPostings.limit} job postings</p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full" 
-                    style={{ width: `${(usage.jobPostings.used / usage.jobPostings.limit) * 100}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                <p className="text-2xl font-semibold text-gray-900">{usage.applications.used}</p>
-                <p className="text-sm text-gray-600">of {usage.applications.limit} applications</p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full" 
-                    style={{ width: `${(usage.applications.used / usage.applications.limit) * 100}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <Shield className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-                <p className="text-2xl font-semibold text-gray-900">{usage.teamMembers.used}</p>
-                <p className="text-sm text-gray-600">of {usage.teamMembers.limit} team members</p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                  <div 
-                    className="bg-purple-500 h-2 rounded-full" 
-                    style={{ width: `${(usage.teamMembers.used / usage.teamMembers.limit) * 100}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Next billing date</p>
-                <p className="font-medium text-gray-900">February 1, 2025</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Amount</p>
-                <p className="font-medium text-gray-900">$59.99</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
-            {paymentMethods.map((method) => (
-              <div key={method.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="w-8 h-8 text-gray-400" />
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      {method.brand} •••• {method.last4}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      Expires {method.expiryMonth}/{method.expiryYear}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="p-1 text-gray-400 hover:text-gray-600">
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button className="p-1 text-gray-400 hover:text-red-600">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button className="mt-4 w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
-              <Plus className="w-4 h-4" />
-              Add Payment Method
-            </button>
-          </div>
-        </div>
-
-        {/* Plans */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Choose Your Plan</h3>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">Monthly</span>
-              <button
-                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  billingCycle === 'yearly' ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
+              <h3 className="text-lg font-semibold text-gray-900">
+                Current Plan
+              </h3>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getSubStatusBadge(
+                  status
+                )}`}
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    billingCycle === 'yearly' ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className="text-sm text-gray-600">
-                Yearly <span className="text-green-600 font-medium">(Save 17%)</span>
+                {status.replace('_', ' ')}
               </span>
+            </div>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="bg-blue-50 rounded-lg p-3">
+                <CreditCard className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {planName}
+                </p>
+                <p className="text-gray-600">{priceLabel}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-gray-600 border-t border-gray-100 pt-4">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              {isFree || !renewalDate ? (
+                <span>Never expires</span>
+              ) : (
+                <span>
+                  {cancelAtPeriodEnd ? 'Access ends' : 'Renews'} on{' '}
+                  <span className="font-medium text-gray-900">
+                    {renewalDate}
+                  </span>
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {plans.map((plan) => (
-              <PlanCard 
-                key={plan.id} 
-                plan={plan} 
-                isActive={plan.id === currentPlan}
-              />
-            ))}
+          {/* Usage */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Usage
+            </h3>
+            <div className="flex items-center gap-3 mb-3">
+              <Briefcase className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm text-gray-600">Active job postings</p>
+                <p className="text-xl font-semibold text-gray-900">
+                  {activeJobs}
+                  <span className="text-sm font-normal text-gray-500">
+                    {' '}
+                    of {unlimitedJobs ? 'Unlimited' : jobLimit}
+                  </span>
+                </p>
+              </div>
+            </div>
+            {!unlimitedJobs && (
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full ${
+                    usagePct >= 100 ? 'bg-red-500' : 'bg-blue-500'
+                  }`}
+                  style={{ width: `${usagePct}%` }}
+                />
+              </div>
+            )}
+            {!unlimitedJobs && activeJobs >= jobLimit && (
+              <p className="text-xs text-gray-500 mt-3">
+                You&apos;ve reached your plan limit.{' '}
+                <Link
+                  href="/pricing"
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  Upgrade
+                </Link>{' '}
+                to post more jobs.
+              </p>
+            )}
           </div>
         </div>
 
         {/* Billing History */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Billing History</h3>
-            <button className="text-blue-600 hover:text-blue-500 text-sm font-medium">
-              View All Invoices
-            </button>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Billing History
+            </h3>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Date</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Description</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Amount</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Status</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-900">Invoice</th>
-                </tr>
-              </thead>
-              <tbody>
-                {billingHistory.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-100">
-                    <td className="py-4 px-4 text-gray-900">{item.date}</td>
-                    <td className="py-4 px-4 text-gray-900">{item.description}</td>
-                    <td className="py-4 px-4 text-gray-900">${item.amount}</td>
-                    <td className="py-4 px-4">
-                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                        Paid
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <button className="text-blue-600 hover:text-blue-500 text-sm font-medium flex items-center gap-1">
-                        {item.invoice}
-                        <Download className="w-3 h-3" />
-                      </button>
-                    </td>
+
+          {invoices.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">
+                      Invoice
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">
+                      Date
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">
+                      Amount
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900">
+                      Status
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-900">
+                      Download
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {invoices.map((invoice) => (
+                    <tr
+                      key={invoice.id}
+                      className="border-b border-gray-100"
+                    >
+                      <td className="py-4 px-4 text-gray-900 font-medium">
+                        {invoice.invoice_number}
+                      </td>
+                      <td className="py-4 px-4 text-gray-600">
+                        {formatDate(invoice.paid_at ?? invoice.created_at) ??
+                          '—'}
+                      </td>
+                      <td className="py-4 px-4 text-gray-900">
+                        {formatPriceForDisplay(
+                          invoice.amount_cents / 100,
+                          invoice.currency
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getInvoiceStatusBadge(
+                            invoice.status
+                          )}`}
+                        >
+                          {invoice.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <a
+                          href={`/api/invoices/${invoice.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-500 text-sm font-medium"
+                        >
+                          <Download className="w-4 h-4" />
+                          View
+                        </a>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="py-12 text-center text-gray-500">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No invoices yet</p>
+              <p className="text-sm mt-1">
+                Invoices will appear here after your first payment.
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Billing Settings */}
-        <div className="mt-8 bg-white border border-gray-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Billing Settings</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-gray-900">Auto-renewal</h4>
-                <p className="text-sm text-gray-600">Automatically renew your subscription</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium text-gray-900">Email Invoices</h4>
-                <p className="text-sm text-gray-600">Receive invoices via email</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
-            </div>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <div className="flex items-center gap-3 text-red-600">
-              <AlertCircle className="w-5 h-5" />
-              <span className="font-medium">Cancel Subscription</span>
-            </div>
-            <p className="text-sm text-gray-600 mt-2">
-              Canceling your subscription will downgrade your account to the free plan at the end of your current billing period.
+        {/* Manage plan CTA */}
+        <div className="mt-8 bg-white border border-gray-200 rounded-lg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Need a different plan?
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Compare plans and upgrade or downgrade anytime from the pricing
+              page.
             </p>
-            <button className="mt-4 px-4 py-2 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition-colors">
-              Cancel Subscription
-            </button>
           </div>
+          <Link
+            href="/pricing"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            View Plans
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </div>
     </CompanyDashboardLayout>

@@ -13,6 +13,7 @@
     "@sentry/nextjs": "^10.23.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.81.1",
+    "@whop/sdk": "^0.0.40",
     "lucide-react": "^0.535.0",
     "next": "^16.0.7",
     "openai": "^6.8.1",
