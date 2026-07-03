@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 /**
  * API Route to create support ticket and send to n8n webhook
@@ -20,20 +21,49 @@ import { supabase } from '@/lib/supabase';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { profile_id, subject, description, category, priority, user_email, user_name } = body;
+    const { subject, description, category, priority } = body;
 
-    if (!profile_id || !subject || !description || !category) {
+    if (!subject || !description || !category) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    // Create ticket in database
-    const { data: ticket, error: ticketError } = await supabase
+    // Identity comes from the session, not the request body
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Please sign in to submit a support ticket' },
+        { status: 401 }
+      );
+    }
+
+    // profile_id is optional: employers have no jobseeker profile row and the
+    // support_tickets.profile_id column is nullable
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const user_email = profile?.email || user.email;
+    const user_name = profile?.full_name || user.user_metadata?.full_name || user.email;
+
+    // Insert with the service role: RLS's insert policy only covers jobseeker
+    // profiles, but employers must be able to file tickets too
+    const admin = createAdminClient();
+
+    const { data: ticketNumber, error: numberError } = await admin.rpc('generate_ticket_number');
+    if (numberError || !ticketNumber) throw numberError || new Error('Failed to generate ticket number');
+
+    const { data: ticket, error: ticketError } = await admin
       .from('support_tickets')
       .insert([{
-        profile_id,
+        ticket_number: ticketNumber,
+        profile_id: profile?.id || null,
         subject,
         description,
         category,

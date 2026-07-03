@@ -1,12 +1,26 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const userType = requestUrl.searchParams.get('type') || 'jobseeker';
 
+  // Optional post-exchange destination (e.g. password recovery -> update-password).
+  // Only allow safe internal paths to prevent open redirects.
+  const nextParam = requestUrl.searchParams.get('next');
+  const safeNext =
+    nextParam &&
+    nextParam.startsWith('/') &&
+    !nextParam.startsWith('//') &&
+    !nextParam.startsWith('/\\')
+      ? nextParam
+      : null;
+
   if (code) {
+    // Use the cookie-aware server client so the PKCE verifier can be read and the
+    // resulting session is persisted for subsequent requests.
+    const supabase = await createClient();
     try {
       // Exchange code for session
       await supabase.auth.exchangeCodeForSession(code);
@@ -15,6 +29,12 @@ export async function GET(request: Request) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
+        // If a safe next destination was provided (e.g. password recovery),
+        // honor it now that the session is established.
+        if (safeNext) {
+          return NextResponse.redirect(new URL(safeNext, requestUrl.origin));
+        }
+
         // Check if profile/company already exists
         const { data: profile } = await supabase
           .from('profiles')
@@ -69,10 +89,19 @@ export async function GET(request: Request) {
       }
     } catch (error) {
       console.error('Auth callback error:', error);
+      // For flows with an explicit destination (e.g. password recovery on a
+      // different device where the PKCE verifier is missing), let the target
+      // page handle the missing session with a friendly message.
+      if (safeNext) {
+        return NextResponse.redirect(new URL(safeNext, requestUrl.origin));
+      }
       return NextResponse.redirect(new URL('/signin?error=auth_failed', requestUrl.origin));
     }
   }
 
-  // If no code, redirect to signin
+  // No code (or no session): honor a safe destination if present, else signin.
+  if (safeNext) {
+    return NextResponse.redirect(new URL(safeNext, requestUrl.origin));
+  }
   return NextResponse.redirect(new URL('/signin', requestUrl.origin));
 }

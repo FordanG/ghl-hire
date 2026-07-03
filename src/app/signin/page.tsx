@@ -51,7 +51,7 @@ export default function SignInPage() {
       }
 
       if (data.user) {
-        // Check if user has the correct profile type
+        // Check the user's actual account type
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -64,20 +64,28 @@ export default function SignInPage() {
           .eq('user_id', data.user.id)
           .single();
 
-        // Redirect based on user type
-        if (userType === 'jobseeker' && profile) {
-          router.push('/dashboard');
+        // Honor a safe internal redirect set by middleware (?redirectedFrom=...)
+        const redirectedFrom = new URLSearchParams(window.location.search).get('redirectedFrom');
+        const safeRedirect =
+          redirectedFrom &&
+          redirectedFrom.startsWith('/') &&
+          !redirectedFrom.startsWith('//') &&
+          !redirectedFrom.startsWith('/\\')
+            ? redirectedFrom
+            : null;
+
+        // Route by the user's ACTUAL account type (ignore the selected tab so an
+        // already-registered user is never blocked for picking the wrong toggle).
+        if (profile) {
+          router.push(safeRedirect ?? '/dashboard');
           router.refresh();
-        } else if (userType === 'employer' && company) {
-          router.push('/company/dashboard');
+        } else if (company) {
+          router.push(safeRedirect ?? '/company/dashboard');
           router.refresh();
-        } else if (!profile && !company) {
-          // New user, redirect to profile creation
+        } else {
+          // New user with no profile/company yet — redirect to profile creation
           setError('Please complete your profile setup first. Redirecting to signup...');
           setTimeout(() => router.push('/signup'), 2000);
-        } else {
-          setError(`You don't have a ${userType} account. Please sign in with the correct user type.`);
-          setLoading(false);
         }
       }
     } catch (err) {

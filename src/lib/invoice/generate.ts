@@ -282,19 +282,35 @@ export async function getInvoiceData(invoiceId: string): Promise<InvoiceData | n
     enterprise: 'Enterprise Plan',
   };
 
-  // Parse line_items from JSON
-  const lineItems = Array.isArray(invoice.line_items)
-    ? invoice.line_items as Array<{
-        description: string;
-        quantity: number;
-        unitPrice: number;
-        total: number;
-      }>
+  // Parse line_items from JSON. The webhook stores each line item as
+  // { description, quantity, amount } where `amount` is the line total in USD
+  // cents (e.g. 2999). Convert to the dollar-based { unitPrice, total } shape
+  // the invoice template renders, tolerating missing fields rather than throwing.
+  const rawLineItems = Array.isArray(invoice.line_items)
+    ? (invoice.line_items as Array<{
+        description?: string;
+        quantity?: number;
+        amount?: number; // line total in cents
+      }>)
+    : [];
+
+  const lineItems = rawLineItems.length > 0
+    ? rawLineItems.map((item) => {
+        const quantity = item.quantity ?? 1;
+        const total = (item.amount ?? 0) / 100;
+        const unitPrice = quantity > 0 ? total / quantity : total;
+        return {
+          description: item.description ?? '',
+          quantity,
+          unitPrice,
+          total,
+        };
+      })
     : [{
         description: planNames[invoice.subscription?.plan_type || 'basic'] || 'Subscription',
         quantity: 1,
-        unitPrice: invoice.amount_cents / 100,
-        total: invoice.amount_cents / 100,
+        unitPrice: (invoice.amount_cents ?? 0) / 100,
+        total: (invoice.amount_cents ?? 0) / 100,
       }];
 
   const now = new Date().toISOString();
@@ -304,7 +320,7 @@ export async function getInvoiceData(invoiceId: string): Promise<InvoiceData | n
     companyName: invoice.company?.company_name || 'Unknown',
     companyEmail: invoice.company?.email || '',
     planName: planNames[invoice.subscription?.plan_type || 'basic'] || 'Subscription',
-    amount: invoice.amount_cents / 100,
+    amount: (invoice.amount_cents ?? 0) / 100,
     currency: invoice.currency || 'PHP',
     billingPeriodStart: invoice.billing_period_start || invoice.created_at || now,
     billingPeriodEnd: invoice.billing_period_end || invoice.created_at || now,

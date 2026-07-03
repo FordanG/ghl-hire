@@ -1,0 +1,4 @@
+{"ts":"2026-07-03T16:48:50.742Z","cmd":"goto","args":"https://ghlhire.com/jobs","origin":"https://ghlhire.com/jobs","durationMs":4726,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-03T16:48:59.084Z","cmd":"wait","args":"--networkidle","origin":"https://ghlhire.com/jobs","durationMs":8299,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-03T16:48:59.131Z","cmd":"text","args":"","origin":"https://ghlhire.com/jobs","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-03T16:48:59.175Z","cmd":"links","args":"","origin":"https://ghlhire.com/jobs","durationMs":3,"status":"ok","hasCookies":false,"mode":"launched"}

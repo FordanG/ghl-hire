@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { MessageSquare, Send, HelpCircle, Mail } from 'lucide-react';
 
 export default function SupportPage() {
@@ -29,9 +30,14 @@ export default function SupportPage() {
     try {
       setSubmitting(true);
 
-      // Get user profile
-      const profileResponse = await fetch('/api/user/profile');
-      const profileData = await profileResponse.json();
+      // Get the job seeker profile for this user, if one exists. Employers
+      // signed in without a jobseeker profile won't have a row here, so we
+      // fall back to the auth user's email/metadata instead of failing.
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, full_name, email')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
       const response = await fetch('/api/support/create-ticket', {
         method: 'POST',
@@ -40,9 +46,9 @@ export default function SupportPage() {
         },
         body: JSON.stringify({
           ...formData,
-          profile_id: profileData.profile.id,
-          user_email: user.email,
-          user_name: profileData.profile.full_name
+          profile_id: profile?.id,
+          user_email: profile?.email || user.email,
+          user_name: profile?.full_name || user.user_metadata?.full_name || user.email
         })
       });
 

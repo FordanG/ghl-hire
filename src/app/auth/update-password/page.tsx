@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -14,6 +14,20 @@ export default function UpdatePasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [hasSession, setHasSession] = useState(false);
+
+  // A valid session is required to change the password. It is established by the
+  // /auth/callback route exchanging the recovery code. If it's missing (e.g. the
+  // reset link was opened on a different device/browser where the PKCE verifier
+  // isn't available), show a friendly prompt instead of a raw auth error.
+  useEffect(() => {
+    const client = createClient();
+    client.auth.getSession().then(({ data: { session } }) => {
+      setHasSession(!!session);
+      setCheckingSession(false);
+    });
+  }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,6 +95,27 @@ export default function UpdatePasswordPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 fade-in fade-in-2">
+            {checkingSession ? (
+              <div className="py-8 text-center text-gray-500 text-sm">
+                Verifying reset link...
+              </div>
+            ) : !hasSession ? (
+              <div className="space-y-4 text-center">
+                <p className="text-gray-900 font-medium">
+                  This reset link is invalid or has expired
+                </p>
+                <p className="text-sm text-gray-500">
+                  Password reset links can only be used on the same device and browser
+                  where they were requested. Please request a new one to continue.
+                </p>
+                <Link
+                  href="/auth/reset-password"
+                  className="inline-block w-full px-4 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                >
+                  Request a new reset link
+                </Link>
+              </div>
+            ) : (
             <form onSubmit={handleUpdatePassword} className="space-y-6">
               {error && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
@@ -135,6 +170,7 @@ export default function UpdatePasswordPage() {
                 {loading ? 'Updating password...' : 'Update password'}
               </button>
             </form>
+            )}
           </div>
         </div>
       </main>
