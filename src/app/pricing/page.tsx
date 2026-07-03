@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Check, X, Zap, TrendingUp, Sparkles } from 'lucide-react';
 import { subscriptionPlans } from '@/lib/payments/plans';
+import Reveal from '@/components/ui/Reveal';
 
 // Static Tailwind class mapping — dynamic `bg-${color}-100` strings can't be
 // compiled by Tailwind, so each plan color maps to prebuilt class strings.
@@ -148,10 +149,10 @@ export default function PricingPage() {
       {/* Hero */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 fade-in fade-in-1">
             Simple, Transparent Pricing
           </h1>
-          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto fade-in fade-in-2">
             Choose the perfect plan for your hiring needs. Start free and upgrade anytime as you grow.
           </p>
 
@@ -187,118 +188,140 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-3 gap-8">
-          {plans.map((plan) => {
+        <div className="grid md:grid-cols-3 gap-8 items-stretch">
+          {plans.map((plan, index) => {
             const Icon = plan.icon;
             const displayPrice = billingInterval === 'year' ? plan.price * 12 * 0.8 : plan.price;
 
             return (
-              <div
+              <Reveal
                 key={plan.id}
-                className={`bg-white rounded-xl shadow-sm overflow-hidden ${
-                  plan.highlighted ? 'ring-2 ring-blue-600 scale-105' : ''
-                }`}
+                delay={Math.min(index + 1, 4) as 1 | 2 | 3 | 4}
+                className="h-full"
               >
-                {plan.highlighted && (
-                  <div className="bg-blue-600 text-white text-center py-2 text-sm font-semibold">
-                    MOST POPULAR
-                  </div>
-                )}
+                <div
+                  className={`bg-white rounded-2xl overflow-hidden flex flex-col h-full ${
+                    plan.highlighted
+                      ? 'ring-2 ring-blue-600 shadow-xl scale-105 relative z-10'
+                      : 'border border-gray-200 shadow-sm hover:shadow-md transition-shadow'
+                  }`}
+                >
+                  {plan.highlighted && (
+                    <div className="bg-blue-600 text-white text-center py-2 text-sm font-semibold tracking-wide">
+                      MOST POPULAR
+                    </div>
+                  )}
 
-                <div className="p-8">
-                  <div className={`w-12 h-12 rounded-lg ${(planColorClasses[plan.color] ?? planColorClasses.gray).wrapper} flex items-center justify-center mb-4`}>
-                    <Icon className={`w-6 h-6 ${(planColorClasses[plan.color] ?? planColorClasses.gray).icon}`} />
-                  </div>
+                  <div className="p-8 flex flex-col flex-1">
+                    <div className={`w-12 h-12 rounded-lg ${(planColorClasses[plan.color] ?? planColorClasses.gray).wrapper} flex items-center justify-center mb-4`}>
+                      <Icon className={`w-6 h-6 ${(planColorClasses[plan.color] ?? planColorClasses.gray).icon}`} />
+                    </div>
 
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                  <p className="text-gray-600 mb-6">{plan.description}</p>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                    <p className="text-gray-600 mb-6">{plan.description}</p>
 
-                  <div className="mb-6">
-                    <span className="text-5xl font-bold text-gray-900">
-                      ${displayPrice.toLocaleString('en-US', {
-                        minimumFractionDigits: Number.isInteger(displayPrice) ? 0 : 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </span>
-                    {plan.price > 0 && (
-                      <span className="text-gray-600">
-                        /{billingInterval === 'year' ? 'year' : 'month'}
+                    <div className="mb-6">
+                      <span className="text-5xl font-bold text-gray-900">
+                        ${displayPrice.toLocaleString('en-US', {
+                          minimumFractionDigits: Number.isInteger(displayPrice) ? 0 : 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </span>
-                    )}
-                    {plan.interval === 'forever' && (
-                      <span className="text-gray-600"> forever</span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => handleSelectPlan(plan.id)}
-                    disabled={loading === plan.id}
-                    className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors mb-8 ${
-                      plan.highlighted
-                        ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {loading === plan.id ? 'Loading...' : plan.cta}
-                  </button>
-
-                  <div className="space-y-3">
-                    {plan.features.map((feature, index) => (
-                      <div key={index} className="flex items-start gap-3">
-                        {feature.included ? (
-                          <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                        ) : (
-                          <X className="w-5 h-5 text-gray-300 flex-shrink-0 mt-0.5" />
-                        )}
-                        <span className={feature.included ? 'text-gray-900' : 'text-gray-400'}>
-                          {feature.name}
+                      {plan.price > 0 && (
+                        <span className="text-gray-600">
+                          /{billingInterval === 'year' ? 'year' : 'month'}
                         </span>
-                      </div>
-                    ))}
+                      )}
+                      {plan.interval === 'forever' && (
+                        <span className="text-gray-600"> forever</span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => handleSelectPlan(plan.id)}
+                      disabled={loading === plan.id}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors mb-8 min-h-[44px] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 press ${
+                        plan.highlighted
+                          ? 'bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500'
+                          : 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-400'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {loading === plan.id ? 'Loading...' : plan.cta}
+                    </button>
+
+                    <div className="border-t border-gray-100 pt-6 mt-auto">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-4">
+                        What&apos;s included
+                      </p>
+                      <ul className="space-y-3">
+                        {plan.features.map((feature, i) => (
+                          <li key={i} className="flex items-start gap-3">
+                            {feature.included ? (
+                              <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <X className="w-5 h-5 text-gray-300 flex-shrink-0 mt-0.5" />
+                            )}
+                            <span className={feature.included ? 'text-gray-900' : 'text-gray-400'}>
+                              {feature.name}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             );
           })}
         </div>
 
         {/* FAQ Section */}
         <div className="mt-20">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+          <Reveal>
+            <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+          </Reveal>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Can I change plans later?</h3>
-              <p className="text-gray-600">
-                Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
-              </p>
-            </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            <Reveal delay={1}>
+              <div className="h-full bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="font-semibold text-lg mb-2 text-gray-900">Can I change plans later?</h3>
+                <p className="text-gray-600">
+                  Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                </p>
+              </div>
+            </Reveal>
 
-            <div>
-              <h3 className="font-semibold text-lg mb-2">What payment methods do you accept?</h3>
-              <p className="text-gray-600">
-                We accept all major credit and debit cards, PayPal, and more — payments are processed securely by Whop.
-              </p>
-            </div>
+            <Reveal delay={2}>
+              <div className="h-full bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="font-semibold text-lg mb-2 text-gray-900">What payment methods do you accept?</h3>
+                <p className="text-gray-600">
+                  We accept all major credit and debit cards, PayPal, and more — payments are processed securely by Whop.
+                </p>
+              </div>
+            </Reveal>
 
-            <div>
-              <h3 className="font-semibold text-lg mb-2">What happens when I hit my job posting limit?</h3>
-              <p className="text-gray-600">
-                Each plan includes a set number of active job postings — 1 on Free, 5 on Basic, and unlimited on Premium. If you reach your limit, you can upgrade your plan anytime to post more jobs.
-              </p>
-            </div>
+            <Reveal delay={3}>
+              <div className="h-full bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="font-semibold text-lg mb-2 text-gray-900">What happens when I hit my job posting limit?</h3>
+                <p className="text-gray-600">
+                  Each plan includes a set number of active job postings — 1 on Free, 5 on Basic, and unlimited on Premium. If you reach your limit, you can upgrade your plan anytime to post more jobs.
+                </p>
+              </div>
+            </Reveal>
 
-            <div>
-              <h3 className="font-semibold text-lg mb-2">Can I cancel anytime?</h3>
-              <p className="text-gray-600">
-                Absolutely. Cancel your subscription anytime with no penalties. You'll retain access until the end of your billing period.
-              </p>
-            </div>
+            <Reveal delay={4}>
+              <div className="h-full bg-white border border-gray-200 rounded-xl p-6">
+                <h3 className="font-semibold text-lg mb-2 text-gray-900">Can I cancel anytime?</h3>
+                <p className="text-gray-600">
+                  Absolutely. Cancel your subscription anytime with no penalties. You&apos;ll retain access until the end of your billing period.
+                </p>
+              </div>
+            </Reveal>
           </div>
         </div>
 
         {/* CTA Section */}
-        <div className="mt-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 sm:p-12 text-white text-center">
+        <Reveal className="mt-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 sm:p-12 text-white text-center">
           <h2 className="text-2xl sm:text-3xl font-bold mb-4">Ready to hire top GHL talent?</h2>
           <p className="text-blue-100 text-base sm:text-lg mb-8 max-w-2xl mx-auto">
             Join hundreds of companies finding and hiring the best GoHighLevel professionals
@@ -306,18 +329,18 @@ export default function PricingPage() {
           <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4">
             <Link
               href="/signup"
-              className="bg-white text-blue-600 px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center"
+              className="bg-white text-blue-600 px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 press"
             >
               Get Started
             </Link>
             <Link
               href="/contact"
-              className="bg-blue-500 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-400 transition-colors flex items-center justify-center"
+              className="bg-blue-500 text-white px-8 py-3 min-h-[44px] rounded-lg font-semibold hover:bg-blue-400 transition-colors flex items-center justify-center outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 press"
             >
               Contact Sales
             </Link>
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   );

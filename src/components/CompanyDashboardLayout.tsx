@@ -47,7 +47,7 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               type="button"
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-6 w-6 text-white" />
@@ -56,12 +56,11 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
 
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
             <div className="flex-shrink-0 flex items-center px-4">
-              <Link href="/" className="flex items-center">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">GHL</span>
-                </div>
-                <span className="ml-2 text-xl font-bold text-gray-900">Hire</span>
-                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Company</span>
+              <Link href="/" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                <span className="text-xl font-semibold tracking-tight text-gray-900">
+                  GHL<span className="font-light text-blue-400">Hire</span>
+                </span>
+                <span className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-600 font-medium tracking-tight">Company</span>
               </Link>
             </div>
             <nav className="mt-8 flex-1 px-2 space-y-1">
@@ -72,13 +71,13 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                       isActive
-                        ? 'bg-blue-100 text-blue-900'
+                        ? 'bg-blue-50 text-blue-700'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className={`mr-3 flex-shrink-0 h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <Icon className={`mr-3 flex-shrink-0 h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                     {item.name}
                   </Link>
                 );
@@ -105,12 +104,11 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
         <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
-              <Link href="/" className="flex items-center">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">GHL</span>
-                </div>
-                <span className="ml-2 text-xl font-bold text-gray-900">Hire</span>
-                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Company</span>
+              <Link href="/" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                <span className="text-xl font-semibold tracking-tight text-gray-900">
+                  GHL<span className="font-light text-blue-400">Hire</span>
+                </span>
+                <span className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-600 font-medium tracking-tight">Company</span>
               </Link>
             </div>
             <nav className="mt-8 flex-1 px-2 space-y-1">
@@ -121,13 +119,13 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                       isActive
-                        ? 'bg-blue-100 text-blue-900'
+                        ? 'bg-blue-50 text-blue-700'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className={`mr-3 flex-shrink-0 h-5 w-5 ${isActive ? 'text-blue-500' : 'text-gray-400'}`} />
+                    <Icon className={`mr-3 flex-shrink-0 h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                     {item.name}
                   </Link>
                 );
@@ -144,7 +142,7 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
                 <p className="text-sm font-medium text-gray-700">TechFlow Solutions</p>
                 <p className="text-xs text-gray-500">Company Admin</p>
               </div>
-              <button className="ml-2 p-1 text-gray-400 hover:text-gray-600">
+              <button className="press ml-2 p-1 text-gray-400 rounded-md outline-none transition-colors hover:text-gray-600 focus-visible:ring-2 focus-visible:ring-blue-500">
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
@@ -158,7 +156,7 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
         <div className="sticky top-0 z-10 md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3 bg-gray-50">
           <button
             type="button"
-            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+            className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 outline-none transition-colors hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />
@@ -175,12 +173,12 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
                   <input
                     type="text"
                     placeholder="Search candidates, applications..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:border-blue-400"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-4">
-                <button className="p-2 text-gray-400 hover:text-gray-600 relative">
+                <button className="p-2 text-gray-400 rounded-md outline-none transition-colors hover:text-gray-600 relative focus-visible:ring-2 focus-visible:ring-blue-500">
                   <Bell className="w-5 h-5" />
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
                 </button>

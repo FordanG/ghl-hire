@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { User, LogOut, Building, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -51,8 +52,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Link href="/" className="text-xl sm:text-2xl font-semibold tracking-tight fade-in fade-in-1 text-gray-900">
-            GHL<span className="font-light text-blue-400">Hire</span>
+          <Link href="/" className="flex items-center gap-2 text-xl sm:text-2xl font-semibold tracking-tight fade-in fade-in-1 text-gray-900">
+            <Image src="/logo-mark.png" alt="GHL Hire logo" width={32} height={32} priority className="h-8 w-8" />
+            <span>GHL<span className="font-light text-blue-400">Hire</span></span>
           </Link>
           <span className="hidden sm:inline-block ml-4 px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-500 font-medium tracking-tight fade-in fade-in-2">
             GoHighLevel

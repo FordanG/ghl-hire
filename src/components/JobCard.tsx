@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Briefcase, Building2, MapPin, Clock, ArrowRight } from 'lucide-react';
+import { Briefcase, Building2, MapPin, Clock, DollarSign, ArrowRight, Sparkles, Wifi } from 'lucide-react';
 import { Job as DatabaseJob } from '@/lib/supabase';
 import { Job as MockJob } from '@/lib/mock-data';
 import { generateJobSlug } from '@/lib/utils';
@@ -41,6 +41,13 @@ function formatDate(dateString: string): string {
   return `${Math.floor(diffDays / 30)} months ago`;
 }
 
+function formatSalary(min?: number | null, max?: number | null): string {
+  if (min && max) return `$${min.toLocaleString()} – $${max.toLocaleString()}`;
+  if (min) return `From $${min.toLocaleString()}`;
+  if (max) return `Up to $${max.toLocaleString()}`;
+  return '';
+}
+
 export default function JobCard({ job, className = '' }: JobCardProps) {
   // Handle both database and mock job types
   const companyName =
@@ -56,36 +63,79 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
   // Generate SEO-friendly slug
   const jobSlug = generateJobSlug(job.title || '', job.id || '');
 
+  // Presentational-only derived display fields (no data fetching / logic change)
+  const salaryDisplay =
+    ('salary' in job && job.salary) ? job.salary :
+    ('salary_min' in job || 'salary_max' in job)
+      ? formatSalary(
+          ('salary_min' in job) ? job.salary_min : undefined,
+          ('salary_max' in job) ? job.salary_max : undefined,
+        )
+      : '';
+
+  const isRemote =
+    ('remote' in job) ? Boolean(job.remote) :
+    (typeof job.location === 'string' && job.location.toLowerCase().includes('remote'));
+
+  const isFeatured = ('is_featured' in job) ? Boolean(job.is_featured) : false;
+
   return (
-    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col gap-4 transition-all hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 duration-150 ${className}`}>
+    <div
+      className={`group hover-lift relative flex h-full flex-col gap-4 rounded-xl border bg-white p-6 shadow-sm ${
+        isFeatured
+          ? 'border-blue-300 ring-1 ring-blue-100'
+          : 'border-gray-200 hover:border-blue-300'
+      } ${className}`}
+    >
+      {/* Title + company + save */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="bg-blue-50 rounded-full p-2 flex-shrink-0">
-            <Briefcase className="w-6 h-6 text-blue-500" />
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className={`flex-shrink-0 rounded-xl p-2.5 ${isFeatured ? 'bg-blue-100' : 'bg-blue-50'}`}>
+            <Briefcase className="h-5 w-5 text-blue-500" />
           </div>
-          <span className="text-base font-semibold tracking-tight text-gray-900 line-clamp-2">
-            {job.title}
-          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight text-gray-900 transition-colors group-hover:text-blue-600">
+              {job.title}
+            </h3>
+            <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-gray-500">
+              <Building2 className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">{companyName}</span>
+            </p>
+          </div>
         </div>
         <SaveJobButton jobId={job.id || ''} size="sm" />
       </div>
 
-      <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-        <span className="inline-flex items-center gap-1">
-          <Building2 className="w-4 h-4" />
-          {companyName}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <MapPin className="w-4 h-4" />
-          {job.location}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <Clock className="w-4 h-4" />
-          {jobType}
-        </span>
+      {/* Meta badges */}
+      <div className="flex flex-wrap items-center gap-2">
+        {isFeatured && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600">
+            <Sparkles className="h-3.5 w-3.5" />
+            Featured
+          </span>
+        )}
+        {jobType && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+            <Clock className="h-3.5 w-3.5" />
+            {jobType}
+          </span>
+        )}
+        {isRemote && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+            <Wifi className="h-3.5 w-3.5" />
+            Remote
+          </span>
+        )}
+        {job.location && (
+          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="truncate">{job.location}</span>
+          </span>
+        )}
       </div>
 
-      <p className="text-gray-600 text-sm mt-1 mb-2 flex-1">
+      {/* Description */}
+      <p className="flex-1 text-sm leading-relaxed text-gray-600">
         {job.description && job.description.length > 120
           ? `${job.description.substring(0, 120)}...`
           : job.description || ''
@@ -93,22 +143,35 @@ export default function JobCard({ job, className = '' }: JobCardProps) {
         {job.description && job.description.length > 120 && (
           <Link
             href={`/jobs/${jobSlug}`}
-            className="text-blue-500 font-medium hover:underline cursor-pointer ml-1"
+            className="ml-1 cursor-pointer font-medium text-blue-500 hover:underline"
           >
             Read more
           </Link>
         )}
       </p>
 
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-blue-500 font-medium text-sm">
-          Posted {postedDate}
-        </span>
+      {/* Footer: salary / posted + apply */}
+      <div className="flex items-end justify-between gap-4 border-t border-gray-100 pt-4">
+        <div className="min-w-0">
+          {salaryDisplay ? (
+            <span className="inline-flex items-center gap-1 text-sm font-semibold text-gray-900">
+              <DollarSign className="h-4 w-4 flex-shrink-0 text-blue-500" />
+              <span className="truncate">{salaryDisplay}</span>
+            </span>
+          ) : (
+            <span className="text-sm font-medium text-blue-500">
+              {postedDate ? `Posted ${postedDate}` : 'View role'}
+            </span>
+          )}
+          {salaryDisplay && postedDate && (
+            <span className="mt-0.5 block text-xs text-gray-400">Posted {postedDate}</span>
+          )}
+        </div>
         <Link
           href={`/jobs/${jobSlug}`}
-          className="inline-flex items-center justify-center gap-1 px-4 py-2 min-h-[44px] min-w-[44px] border border-blue-100 rounded-md text-blue-500 font-semibold text-sm hover:bg-blue-50 transition-colors"
+          className="press inline-flex min-h-[44px] min-w-[44px] flex-shrink-0 items-center justify-center gap-1 rounded-md border border-blue-100 bg-blue-50/60 px-4 py-2 text-sm font-semibold text-blue-600 transition-colors hover:bg-blue-100"
         >
-          Apply <ArrowRight className="w-4 h-4" />
+          Apply <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </Link>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { Metadata } from 'next';
 import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar, ExternalLink, Share2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import Reveal from '@/components/ui/Reveal';
 import JobDetailClient from './JobDetailClient';
 import ShareButtons from './ShareButtons';
 import { supabase } from '@/lib/supabase';
@@ -289,7 +290,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3 fade-in fade-in-5">
+          <div id="apply-actions" className="flex flex-col gap-3 scroll-mt-24 fade-in fade-in-5">
             <JobDetailClient job={job} />
             <ShareButtons job={job} />
           </div>
@@ -298,38 +299,47 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         {/* Job Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-10">
             {/* Description */}
             <div className="fade-in fade-in-6">
-              <h2 className="text-xl font-semibold mb-4">Job Description</h2>
-              <div className="text-gray-600 leading-relaxed whitespace-pre-line">
+              <h2 className="mb-4 flex items-center gap-2.5 text-xl font-semibold tracking-tight text-gray-900">
+                <span className="h-5 w-1 rounded-full bg-blue-500" aria-hidden="true"></span>
+                Job Description
+              </h2>
+              <div className="whitespace-pre-line leading-7 text-gray-700">
                 {job.description}
               </div>
             </div>
 
             {/* Requirements */}
             {job.requirements && (
-              <div className="fade-in fade-in-2">
-                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-                <div className="text-gray-600 leading-relaxed whitespace-pre-line">
+              <Reveal>
+                <h2 className="mb-4 flex items-center gap-2.5 text-xl font-semibold tracking-tight text-gray-900">
+                  <span className="h-5 w-1 rounded-full bg-blue-500" aria-hidden="true"></span>
+                  Requirements
+                </h2>
+                <div className="whitespace-pre-line leading-7 text-gray-700">
                   {job.requirements}
                 </div>
-              </div>
+              </Reveal>
             )}
 
             {/* Benefits */}
             {job.benefits && (
-              <div className="fade-in fade-in-3">
-                <h2 className="text-xl font-semibold mb-4">Benefits</h2>
-                <div className="text-gray-600 leading-relaxed whitespace-pre-line">
+              <Reveal>
+                <h2 className="mb-4 flex items-center gap-2.5 text-xl font-semibold tracking-tight text-gray-900">
+                  <span className="h-5 w-1 rounded-full bg-blue-500" aria-hidden="true"></span>
+                  Benefits
+                </h2>
+                <div className="whitespace-pre-line leading-7 text-gray-700">
                   {job.benefits}
                 </div>
-              </div>
+              </Reveal>
             )}
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
             {/* Company Info */}
             <div className="bg-gray-50 rounded-xl p-6 fade-in fade-in-3">
               <h3 className="font-semibold mb-4">About {job.company?.company_name}</h3>
@@ -427,24 +437,27 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-12 text-center bg-blue-50 rounded-xl p-8 fade-in fade-in-6">
-          <h3 className="text-xl font-semibold mb-2">Ready to Apply?</h3>
-          <p className="text-gray-600 mb-6">
+        <Reveal className="mt-12 rounded-xl bg-blue-50 p-8 text-center">
+          <h3 className="mb-2 text-xl font-semibold tracking-tight text-gray-900">Ready to Apply?</h3>
+          <p className="mb-6 text-gray-600">
             Join the GoHighLevel community and take your career to the next level.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors">
+            <a
+              href="#apply-actions"
+              className="press inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+            >
               <ExternalLink className="w-5 h-5" />
               Apply Now
-            </button>
-            <Link 
-              href="/jobs" 
-              className="inline-flex items-center justify-center px-6 py-3 border border-gray-200 font-semibold rounded-lg hover:bg-white transition-colors"
+            </a>
+            <Link
+              href="/jobs"
+              className="press inline-flex items-center justify-center px-6 py-3 border border-gray-200 font-semibold rounded-lg hover:bg-white transition-colors"
             >
               Browse More Jobs
             </Link>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       <Footer />

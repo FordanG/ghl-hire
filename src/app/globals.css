@@ -8,6 +8,14 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Motion tokens — single source of truth for durations + easing.
+     Use these instead of hard-coded values so motion stays consistent. */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1); /* entrances / reveals */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);   /* presses / snappy UI  */
+  --dur-fast: 150ms;   /* taps, presses            */
+  --dur-base: 250ms;   /* hovers, lifts            */
+  --dur-slow: 400ms;   /* scroll reveals           */
 }
 
 @theme inline {
@@ -42,20 +50,30 @@ body {
   border-radius: 6px;
 }
 
-/* Fade-in animations */
+/* ===============================================================
+   MOTION SYSTEM
+   All motion below is neutralized in the prefers-reduced-motion:
+   reduce block at the bottom of this file. Keep new motion here so
+   that override stays authoritative.
+   =============================================================== */
+
+/* --- Entrance: page-load fade-in (staggered) -------------------
+   Class API is unchanged (.fade-in + .fade-in-1..6) — 20+ files
+   depend on it. Refined: softer easing, shorter duration, subtler
+   translateY + blur so above-the-fold content settles quickly. */
 .fade-in {
   opacity: 0;
-  transform: translateY(24px);
-  filter: blur(7px);
-  animation: fadeInSlide 0.7s forwards;
+  transform: translateY(12px);
+  filter: blur(4px);
+  animation: fadeInSlide 0.5s var(--ease-out-soft) both;
 }
 
-.fade-in-1 { animation-delay: 0.18s; }
-.fade-in-2 { animation-delay: 0.36s; }
-.fade-in-3 { animation-delay: 0.54s; }
-.fade-in-4 { animation-delay: 0.72s; }
-.fade-in-5 { animation-delay: 0.9s; }
-.fade-in-6 { animation-delay: 1.08s; }
+.fade-in-1 { animation-delay: 0.06s; }
+.fade-in-2 { animation-delay: 0.13s; }
+.fade-in-3 { animation-delay: 0.20s; }
+.fade-in-4 { animation-delay: 0.27s; }
+.fade-in-5 { animation-delay: 0.34s; }
+.fade-in-6 { animation-delay: 0.41s; }
 
 @keyframes fadeInSlide {
   to {
@@ -63,6 +81,51 @@ body {
     transform: none;
     filter: blur(0);
   }
+}
+
+/* --- Entrance: scroll reveal -----------------------------------
+   For below-the-fold sections/cards. Starts hidden; the <Reveal>
+   component (IntersectionObserver) adds .reveal-visible when the
+   element scrolls into view. Pair with .reveal-delay-N for stagger. */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--dur-slow) var(--ease-out-soft),
+    transform var(--dur-slow) var(--ease-out-soft);
+}
+
+.reveal-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.reveal-delay-1 { transition-delay: 60ms; }
+.reveal-delay-2 { transition-delay: 120ms; }
+.reveal-delay-3 { transition-delay: 180ms; }
+.reveal-delay-4 { transition-delay: 240ms; }
+
+/* --- Micro-interactions ----------------------------------------
+   .hover-lift : nudge + soften shadow on hover (cards, tiles).
+   .press      : scale down on active (buttons, tappable rows).   */
+.hover-lift {
+  transition:
+    transform var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    border-color var(--dur-base) var(--ease-out-soft);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -14px rgba(15, 23, 42, 0.20);
+}
+
+.press {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.press:active {
+  transform: scale(0.98);
 }
 
 /* Mobile Optimizations */
@@ -158,5 +221,18 @@ a:active {
     opacity: 1;
     transform: none;
     filter: none;
+  }
+
+  /* Scroll reveals resolve to their final (visible) state instantly. */
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  /* No positional/scale motion on interaction. */
+  .hover-lift:hover,
+  .press:active {
+    transform: none;
   }
 }

@@ -5,6 +5,8 @@ import { Filter, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobCard from '@/components/JobCard';
+import JobCardSkeleton from '@/components/JobCardSkeleton';
+import Reveal from '@/components/ui/Reveal';
 import { supabase, Job } from '@/lib/supabase';
 
 const JOBS_PER_PAGE = 20;
@@ -177,6 +179,23 @@ export default function JobsPage() {
 
         {/* Search and Filters */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8 fade-in fade-in-3">
+          {/* Filter header */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+              <Filter className="w-4 h-4 text-blue-500" />
+              Filter jobs
+            </span>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="press inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                <X className="w-4 h-4" />
+                Clear all ({activeFilterCount})
+              </button>
+            )}
+          </div>
+
           {/* Search Bar */}
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -185,19 +204,19 @@ export default function JobsPage() {
               placeholder="Search jobs, companies, or skills..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-colors"
             />
           </div>
 
           {/* Filters Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <select
               value={jobType}
               onChange={(e) => {
                 setJobType(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
+              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white transition-colors"
             >
               <option value="">All Job Types</option>
               <option value="Full-Time">Full-Time</option>
@@ -212,7 +231,7 @@ export default function JobsPage() {
                 setExperienceLevel(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
+              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white transition-colors"
             >
               <option value="">All Experience Levels</option>
               <option value="Entry Level">Entry Level</option>
@@ -229,7 +248,7 @@ export default function JobsPage() {
                 setLocation(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-colors"
             />
 
             <input
@@ -240,10 +259,10 @@ export default function JobsPage() {
                 setSalaryMin(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-colors"
             />
 
-            <label className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+            <label className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
               <input
                 type="checkbox"
                 checked={remoteOnly}
@@ -255,76 +274,41 @@ export default function JobsPage() {
               />
               <span className="text-sm font-medium text-gray-700">Remote Only</span>
             </label>
-
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center justify-center gap-2 px-4 py-3 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Clear Filters ({activeFilterCount})
-              </button>
-            )}
           </div>
         </div>
 
         {/* Results Count and Sort */}
-        <div className="flex items-center justify-between mb-6 fade-in fade-in-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 fade-in fade-in-4">
           <p className="text-gray-600">
-            Showing <span className="font-semibold">{startJob}-{endJob}</span> of <span className="font-semibold">{totalCount}</span> {totalCount === 1 ? 'job' : 'jobs'}
+            Showing <span className="font-semibold text-gray-900">{startJob}-{endJob}</span> of <span className="font-semibold text-gray-900">{totalCount}</span> {totalCount === 1 ? 'job' : 'jobs'}
           </p>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value);
-              setCurrentPage(1); // Reset to first page on sort change
-            }}
-            className="px-3 py-2 border border-gray-200 rounded-md text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white"
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="most-viewed">Most Viewed</option>
-            <option value="salary-high">Salary: High to Low</option>
-            <option value="salary-low">Salary: Low to High</option>
-          </select>
+          <label className="inline-flex items-center gap-2 text-sm text-gray-500">
+            <span className="font-medium">Sort by</span>
+            <select
+              value={sortBy}
+              onChange={(e) => {
+                setSortBy(e.target.value);
+                setCurrentPage(1); // Reset to first page on sort change
+              }}
+              className="px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white transition-colors"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="most-viewed">Most Viewed</option>
+              <option value="salary-high">Salary: High to Low</option>
+              <option value="salary-low">Salary: Low to High</option>
+            </select>
+          </label>
         </div>
       </section>
 
       {/* Job Listings */}
       <section className="max-w-6xl mx-auto px-4 pb-16">
         {initialLoad || loading ? (
-          // Skeleton loading state
+          // Skeleton loading state (mirrors JobCard layout)
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {[...Array(6)].map((_, index) => (
-              <div
-                key={index}
-                className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 animate-pulse"
-              >
-                {/* Job icon and title skeleton */}
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="bg-gray-200 rounded-full w-10 h-10"></div>
-                  <div className="bg-gray-200 h-6 w-3/4 rounded"></div>
-                </div>
-
-                {/* Meta info skeleton */}
-                <div className="flex gap-3 mb-4">
-                  <div className="bg-gray-200 h-4 w-24 rounded"></div>
-                  <div className="bg-gray-200 h-4 w-32 rounded"></div>
-                  <div className="bg-gray-200 h-4 w-20 rounded"></div>
-                </div>
-
-                {/* Description skeleton */}
-                <div className="space-y-2 mb-4">
-                  <div className="bg-gray-200 h-4 w-full rounded"></div>
-                  <div className="bg-gray-200 h-4 w-5/6 rounded"></div>
-                </div>
-
-                {/* Footer skeleton */}
-                <div className="flex justify-between items-center">
-                  <div className="bg-gray-200 h-4 w-28 rounded"></div>
-                  <div className="bg-gray-200 h-9 w-20 rounded"></div>
-                </div>
-              </div>
+              <JobCardSkeleton key={index} />
             ))}
           </div>
         ) : jobs.length === 0 ? (
@@ -351,13 +335,25 @@ export default function JobsPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {jobs.map((job, index) => (
-                <JobCard
-                  key={job.id}
-                  job={job}
-                  className={`fade-in fade-in-${Math.min(index % 6 + 1, 6)}`}
-                />
-              ))}
+              {jobs.map((job, index) =>
+                // First row (above the fold) fades in on load; the rest
+                // reveal on scroll, staggered in a repeating 1→4 wave.
+                index < 2 ? (
+                  <JobCard
+                    key={job.id}
+                    job={job}
+                    className={`fade-in fade-in-${index + 1}`}
+                  />
+                ) : (
+                  <Reveal
+                    key={job.id}
+                    className="h-full"
+                    delay={(((index - 2) % 4) + 1) as 1 | 2 | 3 | 4}
+                  >
+                    <JobCard job={job} />
+                  </Reveal>
+                )
+              )}
             </div>
 
             {/* Pagination Controls */}
@@ -366,7 +362,7 @@ export default function JobsPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="inline-flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="press inline-flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Previous
@@ -378,7 +374,7 @@ export default function JobsPage() {
                     <>
                       <button
                         onClick={() => setCurrentPage(1)}
-                        className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="press w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         1
                       </button>
@@ -395,7 +391,7 @@ export default function JobsPage() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`w-10 h-10 flex items-center justify-center border rounded-lg font-medium transition-colors ${
+                        className={`press w-10 h-10 flex items-center justify-center border rounded-lg font-medium transition-colors ${
                           page === currentPage
                             ? 'bg-blue-500 text-white border-blue-500'
                             : 'border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -413,7 +409,7 @@ export default function JobsPage() {
                       )}
                       <button
                         onClick={() => setCurrentPage(totalPages)}
-                        className="w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="press w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                       >
                         {totalPages}
                       </button>
@@ -424,7 +420,7 @@ export default function JobsPage() {
                 <button
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="inline-flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="press inline-flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                   <ChevronRight className="w-4 h-4" />

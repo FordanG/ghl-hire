@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Reveal from '@/components/ui/Reveal';
 import {
   Code,
   Zap,
@@ -109,10 +110,10 @@ export default function CategoriesPage() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 fade-in fade-in-1">
               Explore GoHighLevel Career Paths
             </h1>
-            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto fade-in fade-in-2">
               Discover your perfect role in the GHL ecosystem. From development to sales,
               find opportunities that match your skills and career goals.
             </p>
@@ -123,62 +124,67 @@ export default function CategoriesPage() {
       {/* Categories Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const Icon = category.icon;
             const colors = colorClasses[category.color as keyof typeof colorClasses];
 
             return (
-              <Link
+              <Reveal
                 key={category.slug}
-                href={`/jobs/category/${category.slug}`}
-                className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+                className="h-full"
+                delay={((index % 3) + 1) as 1 | 2 | 3}
               >
-                <div className={`bg-gradient-to-r ${colors.gradient} p-6 text-white`}>
-                  <Icon className="w-12 h-12 mb-4" />
-                  <h2 className="text-2xl font-bold mb-2">{category.title}</h2>
-                </div>
-
-                <div className="p-6">
-                  <p className="text-gray-600 mb-6 h-12">
-                    {category.description}
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Avg Salary</div>
-                      <div className={`text-sm font-semibold ${colors.text}`}>
-                        {category.stats.avgSalary}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Demand</div>
-                      <div className={`text-sm font-semibold ${colors.text}`}>
-                        {category.stats.demand}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-gray-500 mb-1">Openings</div>
-                      <div className={`text-sm font-semibold ${colors.text}`}>
-                        {category.stats.openings}
-                      </div>
-                    </div>
+                <Link
+                  href={`/jobs/category/${category.slug}`}
+                  className="group hover-lift flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm"
+                >
+                  <div className={`bg-gradient-to-r ${colors.gradient} p-6 text-white`}>
+                    <Icon className="w-12 h-12 mb-4" />
+                    <h2 className="text-2xl font-bold tracking-tight mb-2">{category.title}</h2>
                   </div>
 
-                  <div className={`flex items-center justify-between ${colors.text} font-semibold group-hover:gap-2 transition-all`}>
-                    <span>Explore Jobs</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  <div className="flex flex-1 flex-col p-6">
+                    <p className="mb-6 line-clamp-2 min-h-[3rem] text-gray-600">
+                      {category.description}
+                    </p>
+
+                    <div className="mb-6 grid grid-cols-3 gap-4">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Avg Salary</div>
+                        <div className={`text-sm font-semibold ${colors.text}`}>
+                          {category.stats.avgSalary}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Demand</div>
+                        <div className={`text-sm font-semibold ${colors.text}`}>
+                          {category.stats.demand}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">Openings</div>
+                        <div className={`text-sm font-semibold ${colors.text}`}>
+                          {category.stats.openings}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`mt-auto flex items-center justify-between ${colors.text} font-semibold group-hover:gap-2 transition-all`}>
+                      <span>Explore Jobs</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </Reveal>
             );
           })}
         </div>
 
         {/* Bottom CTA */}
-        <div className="mt-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-8 text-white text-center">
+        <Reveal className="mt-16 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-8 text-white text-center">
           <Briefcase className="w-16 h-16 mx-auto mb-4 opacity-90" />
-          <h2 className="text-3xl font-bold mb-4">
-            Can't find the right category?
+          <h2 className="text-3xl font-bold tracking-tight mb-4">
+            Can&apos;t find the right category?
           </h2>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
             Browse all available positions or set up a custom job alert to get notified
@@ -187,18 +193,18 @@ export default function CategoriesPage() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/jobs"
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="press bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
             >
               Browse All Jobs
             </Link>
             <Link
               href="/job-alerts"
-              className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-400 transition-colors"
+              className="press bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-400 transition-colors"
             >
               Create Job Alert
             </Link>
           </div>
-        </div>
+        </Reveal>
       </div>
     </div>
   );

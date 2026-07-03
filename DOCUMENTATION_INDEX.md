@@ -41,6 +41,9 @@ documents/
 ### Development Sessions
 - ✅ [2025-11-14 - Database Setup](documents/sessions/2025-11-14_database-setup-session.md) - Supabase integration, migrations, testing
 
+### Guides
+- ✅ [Brand Toolkit](documents/guides/brand-toolkit.md) - Colors, typography, logo usage, and brand asset inventory
+
 ### Project Documentation
 - ✅ [CLAUDE.md](CLAUDE.md) - Project guidelines for AI assistance
 - ✅ [PRODUCTION_STORIES.md](PRODUCTION_STORIES.md) - Full development roadmap
