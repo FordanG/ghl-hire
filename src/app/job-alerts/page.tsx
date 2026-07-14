@@ -155,9 +155,9 @@ export default function JobAlertsPage() {
       setShowCreateModal(false);
       resetForm();
       fetchAlerts();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error saving alert:', err);
-      setError(err.message || 'Failed to save job alert');
+      setError(err instanceof Error ? err.message : 'Failed to save job alert');
     }
   };
 
@@ -174,9 +174,9 @@ export default function JobAlertsPage() {
 
       setSuccess('Job alert deleted successfully!');
       fetchAlerts();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error deleting alert:', err);
-      setError(err.message || 'Failed to delete job alert');
+      setError(err instanceof Error ? err.message : 'Failed to delete job alert');
     }
   };
 
@@ -191,9 +191,9 @@ export default function JobAlertsPage() {
 
       setSuccess(`Job alert ${!alert.is_active ? 'activated' : 'paused'} successfully!`);
       fetchAlerts();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error toggling alert:', err);
-      setError(err.message || 'Failed to update job alert');
+      setError(err instanceof Error ? err.message : 'Failed to update job alert');
     }
   };
 

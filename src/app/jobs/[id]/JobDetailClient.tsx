@@ -9,7 +9,12 @@ import { supabase } from '@/lib/supabase';
 import ApplyJobModal from '@/components/ApplyJobModal';
 
 interface JobDetailClientProps {
-  job: any;
+  job: {
+    id: string;
+    title: string;
+    applications_count: number;
+    company: { company_name: string } | null;
+  };
 }
 
 export default function JobDetailClient({ job }: JobDetailClientProps) {

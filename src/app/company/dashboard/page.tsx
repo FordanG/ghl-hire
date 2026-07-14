@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Briefcase,
@@ -62,7 +63,8 @@ interface DashboardStats {
 }
 
 export default function CompanyDashboardPage() {
-  const { company } = useAuth();
+  const router = useRouter();
+  const { company, profile, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     activeJobs: 0,
@@ -80,6 +82,14 @@ export default function CompanyDashboardPage() {
       loadDashboardData();
     }
   }, [company]);
+
+  useEffect(() => {
+    // Job seekers get routed here from /dashboard when they have no company;
+    // send them back to their own dashboard instead of spinning forever.
+    if (!authLoading && !company && profile) {
+      router.push('/dashboard');
+    }
+  }, [authLoading, company, profile, router]);
 
   const loadDashboardData = async () => {
     if (!company) return;
@@ -217,6 +227,45 @@ export default function CompanyDashboardPage() {
   const hireRate = stats.totalApplications > 0
     ? ((stats.acceptedApplications / stats.totalApplications) * 100).toFixed(1)
     : '0.0';
+
+  if (authLoading) {
+    return (
+      <CompanyDashboardLayout>
+        <div className="p-6">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            <span className="ml-2 text-gray-600">Loading dashboard...</span>
+          </div>
+        </div>
+      </CompanyDashboardLayout>
+    );
+  }
+
+  if (!company) {
+    // Job seekers are redirected to /dashboard by the effect above; this covers the
+    // brief moment before that redirect fires, plus orphaned accounts with neither
+    // a profile nor a company (e.g. profile creation failed during signup). Bail out
+    // here instead of falling through to the `loading` check below, since
+    // loadDashboardData (and its setLoading(false)) never runs without a company.
+    if (profile) {
+      return null;
+    }
+
+    return (
+      <CompanyDashboardLayout>
+        <div className="p-6">
+          <div className="p-12 text-center text-gray-500">
+            <Briefcase className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <p className="text-gray-900 font-medium">No employer account found</p>
+            <p className="text-sm mt-1">We couldn&apos;t find a company linked to your account.</p>
+            <Link href="/support" className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-4 inline-block">
+              Contact support
+            </Link>
+          </div>
+        </div>
+      </CompanyDashboardLayout>
+    );
+  }
 
   if (loading) {
     return (

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { HelpCircle, Search, ChevronDown, ChevronUp, BookOpen, Users, Briefcase, CreditCard, Settings, Mail } from 'lucide-react';
+import { HelpCircle, Search, ChevronDown, ChevronUp, BookOpen, Users, Briefcase, CreditCard, Settings, Mail, type LucideIcon } from 'lucide-react';
 
 interface FAQItem {
   question: string;
@@ -11,7 +11,7 @@ interface FAQItem {
 
 interface FAQCategory {
   title: string;
-  icon: any;
+  icon: LucideIcon;
   faqs: FAQItem[];
 }
 
@@ -263,7 +263,7 @@ export default function HelpPage() {
           <Mail className="w-12 h-12 mx-auto mb-4 opacity-90" />
           <h2 className="text-2xl font-bold mb-4">Still need help?</h2>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
-            Can't find what you're looking for? Our support team is here to help.
+            Can&apos;t find what you&apos;re looking for? Our support team is here to help.
           </p>
           <Link
             href="/support"

@@ -1,5 +1,6 @@
 import { sendEmail, emailTemplates } from './resend';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { Json } from '@/types/supabase';
 
 /**
  * Send welcome email to new user
@@ -68,7 +69,7 @@ export async function sendNewApplicationEmail(
       html: template.html,
     });
 
-    await logEmail(employerEmail, 'new_application', template.subject);
+    await logEmail(employerEmail, 'new_application', template.subject, { applicationId });
   } catch (error) {
     console.error('Failed to send new application email:', error);
   }
@@ -182,7 +183,7 @@ async function logEmail(
   emailAddress: string,
   emailType: string,
   subject: string,
-  metadata?: any
+  metadata?: Json
 ) {
   try {
     // email_logs is service-role-only (no client RLS policies)

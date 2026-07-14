@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { sendApplicationSubmittedEmail, sendNewApplicationEmail, shouldSendEmail } from '@/lib/email/notifications';
 
 /**
@@ -22,6 +23,17 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createClient();
+
+    // Only the authenticated applicant who owns this application may trigger
+    // its notification emails (prevents replaying an arbitrary applicationId).
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
     // Get application details with job, profile, and company info
     const { data: application, error } = await supabase
@@ -56,14 +68,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const profile = application.profile as any;
-    const job = application.job as any;
-    const company = job?.company as any;
+    const profile = application.profile as unknown as { id: string; email: string | null; full_name: string | null; user_id: string } | null;
+    const job = application.job as unknown as { title: string; company: { company_name: string; email: string | null } | null } | null;
+    const company = job?.company as { company_name: string; email: string | null } | null;
 
     if (!profile || !job || !company) {
       return NextResponse.json(
         { error: 'Missing application data' },
         { status: 400 }
+      );
+    }
+
+    if (profile.user_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Not authorized to trigger notifications for this application' },
+        { status: 403 }
       );
     }
 
@@ -90,19 +109,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send notification email to employer
+    // Send notification email to employer (only once per application - guards
+    // against replaying this endpoint to spam the employer / burn email quota)
     if (company.email) {
-      try {
-        await sendNewApplicationEmail(
-          company.email,
-          company.company_name,
-          profile.full_name || 'A candidate',
-          job.title,
-          applicationId
-        );
-        results.employerEmail = true;
-      } catch (err) {
-        console.error('Failed to send employer email:', err);
+      const { data: alreadyNotified } = await createAdminClient()
+        .from('email_logs')
+        .select('id')
+        .eq('email_type', 'new_application')
+        .contains('metadata', { applicationId })
+        .limit(1)
+        .maybeSingle();
+
+      if (!alreadyNotified) {
+        try {
+          await sendNewApplicationEmail(
+            company.email,
+            company.company_name,
+            profile.full_name || 'A candidate',
+            job.title,
+            applicationId
+          );
+          results.employerEmail = true;
+        } catch (err) {
+          console.error('Failed to send employer email:', err);
+        }
       }
     }
 
@@ -111,10 +141,10 @@ export async function POST(request: NextRequest) {
       results,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error sending application emails:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to send emails' },
+      { error: error instanceof Error ? error.message : 'Failed to send emails' },
       { status: 500 }
     );
   }

@@ -17,11 +17,32 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
+interface DashboardApplication {
+  id: string;
+  status: string;
+  applied_at: string;
+  job: {
+    title: string;
+    company: { company_name: string } | null;
+  } | null;
+}
+
+interface DashboardSavedJob {
+  id: string;
+  job: {
+    id: string;
+    title: string;
+    location: string;
+    job_type: string;
+    company: { company_name: string };
+  };
+}
+
 export default function CandidateDashboard() {
   const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
-  const [applications, setApplications] = useState<any[]>([]);
-  const [savedJobs, setSavedJobs] = useState<any[]>([]);
+  const [applications, setApplications] = useState<DashboardApplication[]>([]);
+  const [savedJobs, setSavedJobs] = useState<DashboardSavedJob[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,7 +79,7 @@ export default function CandidateDashboard() {
         .order('applied_at', { ascending: false })
         .limit(5);
 
-      setApplications(appsData || []);
+      setApplications((appsData || []) as unknown as DashboardApplication[]);
 
       // Fetch saved jobs
       const { data: savedData } = await supabase
@@ -74,7 +95,7 @@ export default function CandidateDashboard() {
         .order('saved_at', { ascending: false })
         .limit(5);
 
-      setSavedJobs(savedData || []);
+      setSavedJobs((savedData || []) as unknown as DashboardSavedJob[]);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -154,7 +175,7 @@ export default function CandidateDashboard() {
             Welcome back, {profile?.full_name?.split(' ')[0] || 'there'}!
           </h1>
           <p className="text-gray-600 mt-1">
-            Here's what's happening with your job search
+            Here&apos;s what&apos;s happening with your job search
           </p>
         </div>
 

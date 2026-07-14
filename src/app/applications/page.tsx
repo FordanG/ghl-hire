@@ -40,6 +40,7 @@ export default function ApplicationsPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/signin?redirect=/applications');
+      return;
     }
 
     if (!authLoading && !profile) {

@@ -442,7 +442,7 @@ export default function ApplicationsPage() {
                         )}
                         {application.resume_url && (
                           <a
-                            href={application.resume_url}
+                            href={`/api/resumes/view?applicationId=${application.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"

@@ -64,9 +64,9 @@ export default function SupportPage() {
         priority: 'medium'
       });
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error submitting ticket:', error);
-      alert(error.message || 'Failed to submit support ticket');
+      alert(error instanceof Error ? error.message : 'Failed to submit support ticket');
     } finally {
       setSubmitting(false);
     }

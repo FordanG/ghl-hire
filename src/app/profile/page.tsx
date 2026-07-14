@@ -106,9 +106,9 @@ export default function ProfilePage() {
 
       setResumeFile(null);
       setSuccess(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Resume upload error:', err);
-      setError(err.message || 'Failed to upload resume');
+      setError(err instanceof Error ? err.message : 'Failed to upload resume');
     } finally {
       setUploadingResume(false);
     }
@@ -175,9 +175,9 @@ export default function ProfilePage() {
 
       // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err: any) {
+    } catch (err) {
       console.error('Profile update error:', err);
-      setError(err.message || 'Failed to update profile. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -475,7 +475,7 @@ export default function ProfilePage() {
                       </span>
                     </div>
                     <a
-                      href={formData.resume_url}
+                      href="/api/resumes/view"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium"

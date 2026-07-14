@@ -13,6 +13,8 @@ export default function ContactPage() {
     message: '',
     type: 'general'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -22,11 +24,27 @@ export default function ContactPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Contact form submitted:', formData);
-    alert('Thank you for your message! We\'ll get back to you soon.');
-    setFormData({ name: '', email: '', subject: '', message: '', type: 'general' });
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to send message. Please try again.');
+      }
+      alert('Thank you for your message! We\'ll get back to you soon.');
+      setFormData({ name: '', email: '', subject: '', message: '', type: 'general' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -101,16 +119,16 @@ export default function ContactPage() {
             <div className="mt-12 fade-in fade-in-4">
               <h3 className="font-semibold mb-4">Quick Help</h3>
               <div className="space-y-3">
-                <a href="#" className="block text-blue-600 hover:text-blue-500 transition-colors">
+                <a href="/help" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   How do I post a job?
                 </a>
-                <a href="#" className="block text-blue-600 hover:text-blue-500 transition-colors">
+                <a href="/help" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   How do I apply for jobs?
                 </a>
-                <a href="#" className="block text-blue-600 hover:text-blue-500 transition-colors">
+                <a href="/pricing" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   Pricing information
                 </a>
-                <a href="#" className="block text-blue-600 hover:text-blue-500 transition-colors">
+                <a href="/dashboard/settings" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   Account management
                 </a>
               </div>
@@ -208,12 +226,17 @@ export default function ContactPage() {
                   />
                 </div>
 
+                {error && (
+                  <p className="text-sm text-red-600" role="alert">{error}</p>
+                )}
+
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send className="w-5 h-5" />
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </form>
             </div>

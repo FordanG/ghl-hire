@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Save, Bell, Mail, Smartphone } from 'lucide-react';
+import { ArrowLeft, Save, Bell, Mail, Smartphone, type LucideIcon } from 'lucide-react';
 
 interface NotificationPreferences {
   email_application_updates: boolean;
@@ -120,7 +120,11 @@ export default function NotificationPreferencesPage() {
     }
   };
 
-  const PreferenceSection = ({ title, description, icon: Icon }: any) => (
+  const PreferenceSection = ({ title, description, icon: Icon }: {
+    title: string;
+    description: string;
+    icon: LucideIcon;
+  }) => (
     <div className="mb-8">
       <div className="flex items-center gap-3 mb-4">
         <Icon className="w-6 h-6 text-blue-600" />
@@ -132,7 +136,12 @@ export default function NotificationPreferencesPage() {
     </div>
   );
 
-  const PreferenceToggle = ({ label, description, value, onChange }: any) => (
+  const PreferenceToggle = ({ label, description, value, onChange }: {
+    label: string;
+    description?: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+  }) => (
     <div className="flex items-start justify-between py-4 border-b border-gray-200">
       <div className="flex-1">
         <label className="font-medium text-gray-900 cursor-pointer">
@@ -328,7 +337,7 @@ export default function NotificationPreferencesPage() {
                     onChange={(e) =>
                       setPreferences({
                         ...preferences,
-                        digest_frequency: e.target.value as any
+                        digest_frequency: e.target.value as 'instant' | 'daily' | 'weekly' | 'never'
                       })
                     }
                     className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"

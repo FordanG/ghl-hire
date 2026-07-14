@@ -72,8 +72,8 @@ export default function JobPostingsPage() {
       if (fetchError) throw fetchError;
 
       setJobs(data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load jobs');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load jobs');
     } finally {
       setLoading(false);
     }
@@ -102,8 +102,8 @@ export default function JobPostingsPage() {
       setJobs(prev => prev.map(job =>
         job.id === jobId ? { ...job, status: newStatus as Job['status'] } : job
       ));
-    } catch (err: any) {
-      setError(err.message || 'Failed to update job status');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update job status');
     } finally {
       setUpdatingId(null);
     }
@@ -133,8 +133,8 @@ export default function JobPostingsPage() {
       if (insertError) throw insertError;
 
       setJobs(prev => [newJob, ...prev]);
-    } catch (err: any) {
-      setError(err.message || 'Failed to duplicate job');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to duplicate job');
     } finally {
       setUpdatingId(null);
     }
@@ -156,8 +156,8 @@ export default function JobPostingsPage() {
       if (deleteError) throw deleteError;
 
       setJobs(prev => prev.filter(job => job.id !== jobId));
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete job');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete job');
     } finally {
       setDeletingId(null);
     }

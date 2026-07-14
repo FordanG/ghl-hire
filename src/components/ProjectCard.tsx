@@ -151,7 +151,7 @@ export default function ProjectCard({
               </button>
             </div>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "{project.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{project.title}&quot;? This action cannot be undone.
               This project will also be removed from any job applications where it was included.
             </p>
             <div className="flex gap-3 justify-end">

@@ -139,8 +139,8 @@ export default function AnalyticsPage() {
         jobs: jobs || [],
         applications
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to load analytics');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setLoading(false);
     }

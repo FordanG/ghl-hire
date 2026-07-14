@@ -9,7 +9,11 @@ import { getProjects, attachProjectsToApplication, type Project } from '@/lib/ac
 import ProjectCard from './ProjectCard';
 
 interface ApplyJobModalProps {
-  job: any;
+  job: {
+    id: string;
+    title: string;
+    company: { company_name: string } | null;
+  };
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -165,9 +169,9 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
         onSuccess();
         onClose();
       }, 2000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Application error:', err);
-      setError(err.message || 'Failed to submit application. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to submit application. Please try again.');
       setLoading(false);
     }
   };

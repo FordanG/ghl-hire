@@ -59,8 +59,8 @@ export default function UpdatePasswordPage() {
       setTimeout(() => {
         router.push('/signin');
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while updating password');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while updating password');
     } finally {
       setLoading(false);
     }

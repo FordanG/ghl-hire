@@ -104,10 +104,10 @@ export async function POST(request: NextRequest) {
       transactionId: transaction.id,
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating checkout session:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create checkout session' },
+      { error: error instanceof Error ? error.message : 'Failed to create checkout session' },
       { status: 500 }
     );
   }

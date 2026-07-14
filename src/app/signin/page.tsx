@@ -64,14 +64,16 @@ export default function SignInPage() {
           .eq('user_id', data.user.id)
           .single();
 
-        // Honor a safe internal redirect set by middleware (?redirectedFrom=...)
-        const redirectedFrom = new URLSearchParams(window.location.search).get('redirectedFrom');
+        // Honor a safe internal redirect from client flows (?redirect=...) or
+        // middleware (?redirectedFrom=...). Client-side callers use `redirect`.
+        const params = new URLSearchParams(window.location.search);
+        const requestedRedirect = params.get('redirect') ?? params.get('redirectedFrom');
         const safeRedirect =
-          redirectedFrom &&
-          redirectedFrom.startsWith('/') &&
-          !redirectedFrom.startsWith('//') &&
-          !redirectedFrom.startsWith('/\\')
-            ? redirectedFrom
+          requestedRedirect &&
+          requestedRedirect.startsWith('/') &&
+          !requestedRedirect.startsWith('//') &&
+          !requestedRedirect.startsWith('/\\')
+            ? requestedRedirect
             : null;
 
         // Route by the user's ACTUAL account type (ignore the selected tab so an

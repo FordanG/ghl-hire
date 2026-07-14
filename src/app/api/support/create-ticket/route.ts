@@ -133,10 +133,10 @@ export async function POST(request: NextRequest) {
       message: 'Support ticket created successfully'
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating support ticket:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create support ticket' },
+      { error: error instanceof Error ? error.message : 'Failed to create support ticket' },
       { status: 500 }
     );
   }

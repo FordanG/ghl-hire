@@ -158,12 +158,13 @@ export default function PostJobPage() {
       } else {
         router.push('/company/dashboard');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Job posting error:', err);
-      if (err?.message?.includes('JOB_POST_LIMIT_REACHED')) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('JOB_POST_LIMIT_REACHED')) {
         setError("You've reached your plan's active job limit. Upgrade your plan to post more jobs.");
       } else {
-        setError(err.message || 'Failed to post job. Please try again.');
+        setError(message || 'Failed to post job. Please try again.');
       }
       setLoading(false);
     }
@@ -207,7 +208,7 @@ export default function PostJobPage() {
                   Job Posting Limit Reached
                 </p>
                 <p className="text-sm text-yellow-700 mt-1">
-                  You've used {jobCount} of {jobLimit} job posts on your {planType} plan.
+                  You&apos;ve used {jobCount} of {jobLimit} job posts on your {planType} plan.
                   Upgrade to post more jobs or close existing ones.
                 </p>
               </div>

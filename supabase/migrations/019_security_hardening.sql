@@ -62,6 +62,44 @@ END $$;
 DROP POLICY IF EXISTS "System can insert email logs" ON email_logs;
 DROP POLICY IF EXISTS "System can update email logs" ON email_logs;
 
+-- 3b. waitlist was created out-of-band in production (migration 20260102233134)
+-- and never committed, so tracked migrations can't reproduce it. A fresh
+-- `db reset`/new environment therefore lacks the table and the REVOKE in step 4
+-- below would fail with "relation waitlist does not exist". Recreate it
+-- idempotently here, ahead of that REVOKE, mirroring the live schema. anon's
+-- SELECT is stripped by step 4; the remaining grants come from Supabase defaults.
+CREATE TABLE IF NOT EXISTS waitlist (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT NOT NULL UNIQUE,
+  user_type TEXT NOT NULL CHECK (user_type IN ('employer', 'jobseeker')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist(email);
+CREATE INDEX IF NOT EXISTS idx_waitlist_user_type ON waitlist(user_type);
+CREATE INDEX IF NOT EXISTS idx_waitlist_created_at ON waitlist(created_at DESC);
+
+ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can join waitlist" ON waitlist;
+CREATE POLICY "Anyone can join waitlist"
+  ON waitlist
+  FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Admins can view waitlist" ON waitlist;
+CREATE POLICY "Admins can view waitlist"
+  ON waitlist
+  FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM admin_roles ar
+      JOIN profiles p ON p.id = ar.profile_id
+      WHERE p.user_id = auth.uid()
+    )
+  );
+
 -- 4. Private tables should not be discoverable/queryable pre-auth.
 -- RLS already scopes rows; this removes the anon grant entirely.
 -- Public content (jobs, companies, blog_posts, blog_comments, resources,

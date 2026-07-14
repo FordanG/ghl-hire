@@ -15,7 +15,8 @@ import {
   Users,
   Mail,
   AlertCircle,
-  Calendar
+  Calendar,
+  type LucideIcon
 } from 'lucide-react';
 
 interface Notification {
@@ -24,13 +25,13 @@ interface Notification {
   title: string;
   message: string;
   link: string | null;
-  data: any;
+  data: unknown;
   is_read: boolean;
   created_at: string;
   read_at: string | null;
 }
 
-const notificationIcons: Record<string, any> = {
+const notificationIcons: Record<string, LucideIcon> = {
   application_received: Users,
   application_status_changed: Briefcase,
   new_job_match: Briefcase,

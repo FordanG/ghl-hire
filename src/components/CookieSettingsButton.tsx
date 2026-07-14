@@ -2,8 +2,8 @@
 
 export default function CookieSettingsButton() {
   const handleClick = () => {
-    if (typeof window !== 'undefined' && (window as any).showCookieSettings) {
-      (window as any).showCookieSettings();
+    if (typeof window !== 'undefined' && window.showCookieSettings) {
+      window.showCookieSettings();
     }
   };
 

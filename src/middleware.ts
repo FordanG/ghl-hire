@@ -17,13 +17,17 @@ const securityHeaders = {
 };
 
 // Content Security Policy
+// googletagmanager/google-analytics entries: layout.tsx loads GA4 via
+// @next/third-parties, which injects the gtag.js script and beacons to
+// regional *.google-analytics.com endpoints -- without these the tag is
+// silently blocked in production and analytics collects nothing.
 const CSP = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com;
   style-src 'self' 'unsafe-inline';
   img-src 'self' data: https: blob:;
   font-src 'self' data:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.resend.com;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.resend.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com;
   frame-src 'self';
   object-src 'none';
   base-uri 'self';
@@ -119,7 +123,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Update Supabase session first
-  let response = await updateSession(request);
+  const response = await updateSession(request);
 
   // Apply security headers
   Object.entries(securityHeaders).forEach(([key, value]) => {

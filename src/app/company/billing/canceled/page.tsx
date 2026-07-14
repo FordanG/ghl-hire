@@ -22,14 +22,14 @@ export default function PaymentCanceledPage() {
 
           <p className="text-gray-600 mb-8">
             Your payment was canceled. No charges were made to your account.
-            You can try again whenever you're ready to upgrade your subscription.
+            You can try again whenever you&apos;re ready to upgrade your subscription.
           </p>
 
           <div className="bg-blue-50 rounded-lg p-6 mb-8">
             <h3 className="font-semibold text-blue-900 mb-2">Still thinking about it?</h3>
             <p className="text-blue-700 text-sm">
               Our paid plans include premium features like unlimited job postings,
-              advanced analytics, and priority support. Upgrade whenever you're ready.
+              advanced analytics, and priority support. Upgrade whenever you&apos;re ready.
             </p>
           </div>
 

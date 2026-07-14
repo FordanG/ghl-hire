@@ -346,7 +346,7 @@ export default function JobCategoryPage() {
         {/* CTA Section */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-8 text-white text-center">
           <h2 className="text-2xl font-bold mb-4">
-            Don't miss out on new {category.title.toLowerCase()}
+            Don&apos;t miss out on new {category.title.toLowerCase()}
           </h2>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
             Get notified when new positions matching your criteria are posted. Create a custom job alert in seconds.

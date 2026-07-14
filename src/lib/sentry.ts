@@ -81,7 +81,7 @@ export function initSentry() {
 /**
  * Capture exception with context
  */
-export function captureException(error: Error, context?: Record<string, any>) {
+export function captureException(error: Error, context?: Record<string, unknown>) {
   if (context) {
     Sentry.setContext('additional', context);
   }
@@ -128,9 +128,8 @@ export function startSpan(name: string, op: string, callback: () => void) {
   }, callback);
 }
 
-// Initialize Sentry if DSN is configured
-if (typeof window !== 'undefined') {
-  initSentry();
-}
+// Sentry is initialized by the Next.js instrumentation entry points so it runs
+// in every runtime: instrumentation.ts (server + edge) and
+// instrumentation-client.ts (browser) both call initSentry().
 
 export { Sentry };

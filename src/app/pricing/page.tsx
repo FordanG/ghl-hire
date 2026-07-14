@@ -136,9 +136,9 @@ export default function PricingPage() {
       // Redirect to hosted Whop checkout
       window.location.href = data.redirectUrl;
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error selecting plan:', error);
-      alert(error.message || 'Failed to start checkout');
+      alert(error instanceof Error ? error.message : 'Failed to start checkout');
     } finally {
       setLoading(null);
     }

@@ -144,7 +144,7 @@ export default function ModerationPage() {
             {['all', 'pending', 'reviewing', 'resolved'].map((f) => (
               <button
                 key={f}
-                onClick={() => setFilter(f as any)}
+                onClick={() => setFilter(f as 'all' | 'pending' | 'reviewing' | 'resolved')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   filter === f
                     ? 'bg-blue-600 text-white'

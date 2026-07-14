@@ -57,11 +57,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ received: true });
 
-  } catch (error: any) {
+  } catch (error) {
     // Non-2xx makes Whop retry, which is what we want for transient failures
     console.error('Webhook error:', error);
     return NextResponse.json(
-      { error: error.message || 'Webhook processing failed' },
+      { error: error instanceof Error ? error.message : 'Webhook processing failed' },
       { status: 500 }
     );
   }
@@ -83,7 +83,8 @@ async function handlePaymentSucceeded(payment: WhopPayment) {
       .from('payment_transactions')
       .select('*')
       .eq('id', metadata.transaction_id)
-      .single();
+      .maybeSingle()
+      .throwOnError();
     transaction = data;
   }
 
@@ -92,7 +93,8 @@ async function handlePaymentSucceeded(payment: WhopPayment) {
       .from('payment_transactions')
       .select('*')
       .eq('provider_checkout_id', payment.checkout_configuration_id)
-      .single();
+      .maybeSingle()
+      .throwOnError();
     transaction = data;
   }
 
@@ -129,36 +131,8 @@ async function handlePaymentSucceeded(payment: WhopPayment) {
   }
 
   const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-  if (transaction) {
-    await admin
-      .from('payment_transactions')
-      .update({
-        status: 'succeeded',
-        provider_payment_id: payment.id,
-        paid_at: payment.paid_at || now.toISOString(),
-      })
-      .eq('id', transaction.id);
-  } else {
-    await admin
-      .from('payment_transactions')
-      .insert([{
-        company_id: companyId,
-        amount_cents: plan.price,
-        currency: plan.currency,
-        status: 'succeeded',
-        transaction_type: 'subscription',
-        reference_number: `WHOP-${payment.id}`,
-        description: `${plan.name} subscription`,
-        provider: 'whop',
-        provider_payment_id: payment.id,
-        provider_checkout_id: payment.checkout_configuration_id,
-        paid_at: payment.paid_at || now.toISOString(),
-        metadata: { plan_id: plan.id },
-      }]);
-  }
+  const periodEnd = addOneMonth(now);
+  const { amountCents, currency } = chargedAmount(payment, plan);
 
   await activateSubscription(admin, {
     companyId,
@@ -171,13 +145,49 @@ async function handlePaymentSucceeded(payment: WhopPayment) {
 
   await createPaidInvoice(admin, {
     companyId,
-    plan,
+    amountCents,
+    currency,
     description: plan.name,
     paidAt: payment.paid_at || now.toISOString(),
     periodStart: now,
     periodEnd,
     whopPaymentId: payment.id,
   });
+
+  // Mark the transaction succeeded last: it is the idempotency marker the
+  // replay guard above checks, so it must only be written once the
+  // subscription and invoice work is actually done.
+  if (transaction) {
+    await admin
+      .from('payment_transactions')
+      .update({
+        status: 'succeeded',
+        provider_payment_id: payment.id,
+        amount_cents: amountCents,
+        currency,
+        paid_at: payment.paid_at || now.toISOString(),
+      })
+      .eq('id', transaction.id)
+      .throwOnError();
+  } else {
+    await admin
+      .from('payment_transactions')
+      .insert([{
+        company_id: companyId,
+        amount_cents: amountCents,
+        currency,
+        status: 'succeeded',
+        transaction_type: 'subscription',
+        reference_number: `WHOP-${payment.id}`,
+        description: `${plan.name} subscription`,
+        provider: 'whop',
+        provider_payment_id: payment.id,
+        provider_checkout_id: payment.checkout_configuration_id,
+        paid_at: payment.paid_at || now.toISOString(),
+        metadata: { plan_id: plan.id },
+      }])
+      .throwOnError();
+  }
 
   console.log('Subscription activated for company:', companyId);
 }
@@ -195,11 +205,26 @@ async function handleRenewalByMembership(payment: WhopPayment) {
     return;
   }
 
+  // Idempotency: Whop retries webhooks; skip if this payment is already recorded
+  const { data: existing } = await admin
+    .from('payment_transactions')
+    .select('id')
+    .eq('provider_payment_id', payment.id)
+    .eq('status', 'succeeded')
+    .limit(1)
+    .throwOnError();
+
+  if (existing && existing.length > 0) {
+    console.log('Renewal payment already processed, skipping:', payment.id);
+    return;
+  }
+
   const { data: subscription } = await admin
     .from('subscriptions')
     .select('*')
     .eq('provider_subscription_id', membershipId)
-    .single();
+    .maybeSingle()
+    .throwOnError();
 
   if (!subscription) {
     console.error('No subscription found for membership:', membershipId);
@@ -213,8 +238,8 @@ async function handleRenewalByMembership(payment: WhopPayment) {
   }
 
   const now = new Date();
-  const periodEnd = new Date(now);
-  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  const periodEnd = addOneMonth(now);
+  const { amountCents, currency } = chargedAmount(payment, plan);
 
   await admin
     .from('subscriptions')
@@ -223,14 +248,28 @@ async function handleRenewalByMembership(payment: WhopPayment) {
       current_period_start: now.toISOString(),
       current_period_end: periodEnd.toISOString(),
     })
-    .eq('id', subscription.id);
+    .eq('id', subscription.id)
+    .throwOnError();
 
+  await createPaidInvoice(admin, {
+    companyId: subscription.company_id,
+    amountCents,
+    currency,
+    description: `${plan.name} renewal`,
+    paidAt: payment.paid_at || now.toISOString(),
+    periodStart: now,
+    periodEnd,
+    whopPaymentId: payment.id,
+  });
+
+  // Insert the transaction last: it is the idempotency marker the guard above
+  // checks, so it must only be written once the renewal work is actually done.
   await admin
     .from('payment_transactions')
     .insert([{
       company_id: subscription.company_id,
-      amount_cents: plan.price,
-      currency: plan.currency,
+      amount_cents: amountCents,
+      currency,
       status: 'succeeded',
       transaction_type: 'subscription',
       reference_number: `WHOP-${payment.id}`,
@@ -239,17 +278,8 @@ async function handleRenewalByMembership(payment: WhopPayment) {
       provider_payment_id: payment.id,
       paid_at: payment.paid_at || now.toISOString(),
       metadata: { plan_id: plan.id },
-    }]);
-
-  await createPaidInvoice(admin, {
-    companyId: subscription.company_id,
-    plan,
-    description: `${plan.name} renewal`,
-    paidAt: payment.paid_at || now.toISOString(),
-    periodStart: now,
-    periodEnd,
-    whopPaymentId: payment.id,
-  });
+    }])
+    .throwOnError();
 
   console.log('Subscription renewed:', subscription.id);
 }
@@ -258,7 +288,8 @@ async function createPaidInvoice(
   admin: ReturnType<typeof createAdminClient>,
   options: {
     companyId: string;
-    plan: SubscriptionPlan;
+    amountCents: number;
+    currency: string;
     description: string;
     paidAt: string;
     periodStart: Date;
@@ -266,11 +297,24 @@ async function createPaidInvoice(
     whopPaymentId: string;
   }
 ) {
+  // Idempotency: Whop retries webhooks; skip if this payment is already invoiced
+  const { data: existing } = await admin
+    .from('invoices')
+    .select('id')
+    .eq('metadata->>whop_payment_id', options.whopPaymentId)
+    .limit(1)
+    .throwOnError();
+
+  if (existing && existing.length > 0) {
+    console.log('Invoice already exists for payment, skipping:', options.whopPaymentId);
+    return;
+  }
+
   const { data: invoiceNumber, error: numberError } = await admin.rpc('generate_invoice_number');
 
   if (numberError || !invoiceNumber) {
     console.error('Failed to generate invoice number:', numberError);
-    return;
+    throw numberError || new Error('Failed to generate invoice number');
   }
 
   await admin
@@ -278,8 +322,8 @@ async function createPaidInvoice(
     .insert([{
       company_id: options.companyId,
       invoice_number: invoiceNumber,
-      amount_cents: options.plan.price,
-      currency: options.plan.currency,
+      amount_cents: options.amountCents,
+      currency: options.currency,
       status: 'paid',
       billing_period_start: options.periodStart.toISOString(),
       billing_period_end: options.periodEnd.toISOString(),
@@ -287,10 +331,11 @@ async function createPaidInvoice(
       line_items: [{
         description: options.description,
         quantity: 1,
-        amount: options.plan.price,
+        amount: options.amountCents,
       }],
       metadata: { whop_payment_id: options.whopPaymentId },
-    }]);
+    }])
+    .throwOnError();
 }
 
 async function activateSubscription(
@@ -329,7 +374,8 @@ async function activateSubscription(
       ended_at: null,
     }, {
       onConflict: 'company_id',
-    });
+    })
+    .throwOnError();
 }
 
 async function handlePaymentFailed(payment: WhopPayment) {
@@ -344,6 +390,9 @@ async function handlePaymentFailed(payment: WhopPayment) {
     return;
   }
 
+  // Only flip pending attempts: a failed renewal charge (or an out-of-order
+  // event) carries the original checkout metadata and must not overwrite an
+  // already-succeeded transaction.
   const query = admin
     .from('payment_transactions')
     .update({
@@ -351,12 +400,13 @@ async function handlePaymentFailed(payment: WhopPayment) {
       provider_payment_id: payment.id,
       failed_at: new Date().toISOString(),
       failure_message: payment.failure_message,
-    });
+    })
+    .in('status', ['pending', 'processing']);
 
   if (transactionId) {
-    await query.eq('id', transactionId);
+    await query.eq('id', transactionId).throwOnError();
   } else {
-    await query.eq('provider_checkout_id', checkoutConfigId!);
+    await query.eq('provider_checkout_id', checkoutConfigId!).throwOnError();
   }
 
   console.log('Payment failed:', payment.id);
@@ -373,7 +423,8 @@ async function handleMembershipDeactivated(membership: WhopMembership) {
     .from('subscriptions')
     .select('id, company_id')
     .eq('provider_subscription_id', membership.id)
-    .single();
+    .maybeSingle()
+    .throwOnError();
 
   if (!subscription) {
     console.log('No subscription found for deactivated membership:', membership.id);
@@ -397,7 +448,8 @@ async function handleMembershipDeactivated(membership: WhopMembership) {
       canceled_at: new Date().toISOString(),
       ended_at: new Date().toISOString(),
     })
-    .eq('id', subscription.id);
+    .eq('id', subscription.id)
+    .throwOnError();
 
   console.log('Subscription downgraded to free for company:', subscription.company_id);
 }
@@ -411,7 +463,36 @@ async function handleCancelAtPeriodEndChanged(membership: WhopMembership) {
       cancel_at_period_end: Boolean(membership.cancel_at_period_end),
       canceled_at: membership.cancel_at_period_end ? new Date().toISOString() : null,
     })
-    .eq('provider_subscription_id', membership.id);
+    .eq('provider_subscription_id', membership.id)
+    .throwOnError();
 
   console.log('cancel_at_period_end updated for membership:', membership.id);
+}
+
+/**
+ * Add one calendar month, clamping to the last day of the target month.
+ * (Bare Date.setMonth overflows: Jan 31 + 1 month would become Mar 3.)
+ */
+function addOneMonth(from: Date): Date {
+  const result = new Date(from);
+  result.setDate(1);
+  result.setMonth(result.getMonth() + 1);
+  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(from.getDate(), lastDay));
+  return result;
+}
+
+/**
+ * Amount/currency to record for a payment. Prefer what Whop actually charged
+ * (settlement_amount is in decimal currency units and reflects promos,
+ * discounts, and dashboard price changes; our tables store cents), falling
+ * back to the local plan price if the payload omits it.
+ */
+function chargedAmount(payment: WhopPayment, plan: SubscriptionPlan) {
+  const amountCents =
+    typeof payment.settlement_amount === 'number'
+      ? Math.round(payment.settlement_amount * 100)
+      : plan.price;
+  const currency = payment.currency ? payment.currency.toUpperCase() : plan.currency;
+  return { amountCents, currency };
 }

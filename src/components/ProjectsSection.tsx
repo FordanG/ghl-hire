@@ -382,7 +382,7 @@ export default function ProjectsSection({ profileId }: ProjectsSectionProps) {
 
       {projects.length >= 5 && (
         <p className="text-sm text-gray-600 mt-4 text-center">
-          You've reached the maximum of 5 projects. Delete a project to add a new one.
+          You&apos;ve reached the maximum of 5 projects. Delete a project to add a new one.
         </p>
       )}
     </div>

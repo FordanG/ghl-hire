@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import type { Json } from '@/types/supabase';
 
@@ -260,7 +261,32 @@ export async function createNotification(
   try {
     const supabase = await createClient();
 
-    const { data: notification, error: createError } = await supabase
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Get user's profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!profile) {
+      return { success: false, error: 'Profile not found' };
+    }
+
+    // Only the profile's owner may create a notification for it. Client
+    // INSERT on notifications is revoked (022_production_security_fixes),
+    // so this check is what stops one user from injecting notifications
+    // into another profile before the service-role write below.
+    if (profile.id !== profileId) {
+      return { success: false, error: 'Not authorized to create notifications for this profile' };
+    }
+
+    const { data: notification, error: createError } = await createAdminClient()
       .from('notifications')
       .insert({
         profile_id: profileId,

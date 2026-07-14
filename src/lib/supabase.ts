@@ -1,17 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 
 // Supabase client configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Create a single supabase client for interacting with your database
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+// Create a single supabase client for interacting with your database.
+// Uses the cookie-based @supabase/ssr browser client so the session set at
+// sign-in (via @/lib/supabase/client) is visible here as well.
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
 
 // Database Types (based on our schema)
 export type Profile = {
@@ -133,7 +129,7 @@ export type Subscription = {
   price_cents: number;
   currency: string;
   billing_interval: 'month' | 'year';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 };
@@ -145,7 +141,7 @@ export type Notification = {
   title: string;
   message: string;
   link?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   is_read: boolean;
   read_at?: string;
   created_at: string;

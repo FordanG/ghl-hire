@@ -172,12 +172,13 @@ export default function EditJobPage({ params }: EditJobPageProps) {
       } else {
         router.push('/company/dashboard');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Job update error:', err);
-      if (err?.message?.includes('JOB_POST_LIMIT_REACHED')) {
+      const message = err instanceof Error ? err.message : '';
+      if (message.includes('JOB_POST_LIMIT_REACHED')) {
         setError("You've reached your plan's active job limit. Upgrade your plan to post more jobs.");
       } else {
-        setError(err.message || 'Failed to update job. Please try again.');
+        setError(message || 'Failed to update job. Please try again.');
       }
       setSaving(false);
     }
@@ -204,9 +205,9 @@ export default function EditJobPage({ params }: EditJobPageProps) {
       }
 
       router.push('/company/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Job deletion error:', err);
-      setError(err.message || 'Failed to delete job. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to delete job. Please try again.');
       setSaving(false);
     }
   };

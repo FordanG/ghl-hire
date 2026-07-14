@@ -67,10 +67,10 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching user company:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch company' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch company' },
       { status: 500 }
     );
   }

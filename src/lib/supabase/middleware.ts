@@ -39,7 +39,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/company/dashboard', '/post-job']
+  const protectedRoutes = [
+    '/dashboard',
+    '/company',
+    '/post-job',
+    '/admin',
+    '/edit-job',
+    '/applications',
+    '/profile',
+    '/notifications',
+    '/job-alerts',
+  ]
   const isProtectedRoute = protectedRoutes.some((route) =>
     request.nextUrl.pathname.startsWith(route)
   )
@@ -50,6 +60,20 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/signin'
     url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Admin area needs its own server-side gate: being logged in isn't enough,
+  // the user must hold an admin_roles row. Mirrors the admin_roles check the
+  // moderation page runs client-side, but enforced before any page renders.
+  if (user && request.nextUrl.pathname.startsWith('/admin')) {
+    const { data: isAdminOrModerator } = await supabase.rpc('is_admin_or_moderator', {
+      p_user_id: user.id,
+    })
+    if (!isAdminOrModerator) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

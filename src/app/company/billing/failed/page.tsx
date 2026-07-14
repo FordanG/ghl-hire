@@ -21,7 +21,7 @@ export default function PaymentFailedPage() {
           </h1>
 
           <p className="text-gray-600 mb-8">
-            We couldn't process your payment. This could be due to insufficient funds, an expired card, or a temporary issue with your payment provider.
+            We couldn&apos;t process your payment. This could be due to insufficient funds, an expired card, or a temporary issue with your payment provider.
           </p>
 
           <div className="bg-gray-50 rounded-lg p-6 mb-8">

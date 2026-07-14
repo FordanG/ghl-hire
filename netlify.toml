@@ -1,0 +1,12 @@
+# Netlify build configuration, versioned alongside the app instead of
+# living only in the Netlify dashboard. Publish directory and the
+# Next.js runtime plugin are left to Netlify's built-in framework
+# auto-detection (already working in production); this file pins the
+# build command and Node version so they can't silently drift via a
+# dashboard edit or a Netlify-side platform default change.
+[build]
+  command = "npm run build"
+
+[build.environment]
+  # Next.js 16 requires Node >=20.9.0 (see node_modules/next/package.json).
+  NODE_VERSION = "22"

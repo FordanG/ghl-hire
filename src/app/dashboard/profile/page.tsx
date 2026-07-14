@@ -415,7 +415,7 @@ export default function ProfilePage() {
                   <textarea
                     value={typeof formData.skills === 'string' ? formData.skills : formData.skills?.join(', ') || ''}
                     onChange={(e) => updateFormData({
-                      skills: e.target.value as any
+                      skills: e.target.value as unknown as string[]
                     })}
                     onBlur={(e) => {
                       // Only split into array on blur
@@ -570,7 +570,7 @@ export default function ProfilePage() {
             </div>
             {profile?.resume_url && (
               <a
-                href={profile.resume_url}
+                href="/api/resumes/view"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-3 text-sm text-blue-600 hover:underline inline-block"

@@ -30,11 +30,11 @@ async function testConnection() {
 
     // Test 2: Check tables exist
     console.log('\n2. Checking tables...')
-    const tables = ['profiles', 'companies', 'jobs', 'applications', 'saved_jobs']
+    const tables = ['profiles', 'companies', 'jobs', 'applications', 'saved_jobs'] as const
 
     for (const table of tables) {
       const { error } = await supabase
-        .from(table as any)
+        .from(table)
         .select('id')
         .limit(1)
 

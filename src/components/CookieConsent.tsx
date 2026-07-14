@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import { X, Cookie, Settings } from 'lucide-react';
 import Link from 'next/link';
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+    showCookieSettings?: () => void;
+  }
+}
+
 interface CookiePreferences {
   essential: boolean;
   analytics: boolean;
@@ -38,7 +45,7 @@ export default function CookieConsent() {
 
     // Make showCookieSettings available globally
     if (typeof window !== 'undefined') {
-      (window as any).showCookieSettings = () => {
+      window.showCookieSettings = () => {
         setShowBanner(true);
         setShowSettings(true);
       };
@@ -49,15 +56,15 @@ export default function CookieConsent() {
     // Apply analytics consent
     if (prefs.analytics) {
       // Enable Google Analytics
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('consent', 'update', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('consent', 'update', {
           analytics_storage: 'granted',
         });
       }
     } else {
       // Disable Google Analytics
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('consent', 'update', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('consent', 'update', {
           analytics_storage: 'denied',
         });
       }
@@ -66,8 +73,8 @@ export default function CookieConsent() {
     // Apply marketing consent
     if (prefs.marketing) {
       // Enable marketing cookies
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('consent', 'update', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('consent', 'update', {
           ad_storage: 'granted',
           ad_user_data: 'granted',
           ad_personalization: 'granted',
@@ -75,8 +82,8 @@ export default function CookieConsent() {
       }
     } else {
       // Disable marketing cookies
-      if (typeof window !== 'undefined' && (window as any).gtag) {
-        (window as any).gtag('consent', 'update', {
+      if (typeof window !== 'undefined' && window.gtag) {
+        window.gtag('consent', 'update', {
           ad_storage: 'denied',
           ad_user_data: 'denied',
           ad_personalization: 'denied',

@@ -1,8 +1,10 @@
-// @ts-nocheck
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { Database } from '@/types/supabase'
+
+type ProjectUpdate = Database['public']['Tables']['projects']['Update']
 
 export type Project = {
   id: string
@@ -124,7 +126,7 @@ export async function updateProject(
     const supabase = await createClient()
 
     // Build update object
-    const updates: any = {}
+    const updates: ProjectUpdate = {}
 
     if (data.title !== undefined) {
       if (!data.title || data.title.trim() === '') {
@@ -295,7 +297,7 @@ export async function getApplicationProjects(
 
     // Extract projects from the nested structure
     const projects = data
-      ?.map((item: any) => item.projects)
+      ?.map((item) => item.projects)
       .filter(Boolean) as Project[]
 
     return { projects, error: null }

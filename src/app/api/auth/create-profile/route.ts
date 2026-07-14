@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient as createServerClient } from '@/lib/supabase/server';
 
 // Create a Supabase client with service role (bypasses RLS)
 const supabaseAdmin = createClient(
@@ -16,13 +17,35 @@ const supabaseAdmin = createClient(
 export async function POST(request: NextRequest) {
   console.log('=== Create Profile API Called ===');
   try {
-    const body = await request.json();
-    const { userId, role, fullName, companyName, email, phone, location } = body;
+    // Authenticate the caller — identity must come from the session, never the request body
+    const supabase = await createServerClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-    console.log('Request body:', { userId, role, fullName, companyName, email, phone, location });
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-    if (!userId || !role || !email) {
-      console.error('Missing required fields:', { userId, role, email });
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const { role, fullName, companyName, phone, location } = body;
+
+    // Identity fields are derived from the authenticated session, not the request body
+    const userId = user.id;
+    const email = user.email;
+
+    if (!role || !email) {
+      console.error('Missing required fields');
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -58,7 +81,7 @@ export async function POST(request: NextRequest) {
       if (error) {
         console.error('Profile creation error:', error);
         return NextResponse.json(
-          { error: 'Failed to create profile', details: error.message },
+          { error: 'Failed to create profile' },
           { status: 500 }
         );
       }
@@ -92,31 +115,13 @@ export async function POST(request: NextRequest) {
       if (companyError) {
         console.error('Company creation error:', companyError);
         return NextResponse.json(
-          { error: 'Failed to create company', details: companyError.message },
+          { error: 'Failed to create company' },
           { status: 500 }
         );
       }
 
-      // Create free subscription
-      const { error: subscriptionError } = await supabaseAdmin
-        .from('subscriptions')
-        .insert({
-          company_id: companyData.id,
-          plan_type: 'free',
-          status: 'active',
-          job_post_limit: 1,
-          job_posts_used: 0,
-          featured_job_limit: 0,
-          team_member_limit: 1,
-          price_cents: 0,
-          currency: 'USD',
-          billing_interval: 'month',
-        });
-
-      if (subscriptionError) {
-        console.error('Subscription creation error:', subscriptionError);
-        // Don't fail if subscription creation fails - the company profile is more important
-      }
+      // The free subscription is created automatically by the
+      // create_free_subscription trigger on the companies table.
 
       return NextResponse.json({ success: true, company: companyData });
     } else {
@@ -125,10 +130,10 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(
-      { error: 'An unexpected error occurred', details: error.message },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }

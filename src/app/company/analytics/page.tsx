@@ -15,7 +15,8 @@ import {
   BarChart3,
   ArrowUp,
   ArrowDown,
-  Briefcase
+  Briefcase,
+  type LucideIcon
 } from 'lucide-react';
 
 interface JobAnalytics {
@@ -200,7 +201,13 @@ export default function AnalyticsPage() {
     }
   };
 
-  const StatCard = ({ title, value, change, icon: Icon, color }: any) => (
+  const StatCard = ({ title, value, change, icon: Icon, color }: {
+    title: string;
+    value: number | string;
+    change?: number;
+    icon: LucideIcon;
+    color: string;
+  }) => (
     <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center justify-between mb-4">
         <div className={`p-3 rounded-lg ${color}`}>
@@ -257,7 +264,7 @@ export default function AnalyticsPage() {
           <div className="flex gap-4">
             <select
               value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
+              onChange={(e) => setSelectedPeriod(e.target.value as '7days' | '30days' | '90days')}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="7days">Last 7 days</option>
