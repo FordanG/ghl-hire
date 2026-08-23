@@ -160,8 +160,8 @@ documents/
 ### Key Documentation Files
 
 - [`documents/README.md`](documents/README.md) - Documentation guidelines
-- [`documents/setup/2025-11-14_setup-complete.md`](documents/setup/2025-11-14_setup-complete.md) - Complete backend setup guide
-- [`documents/architecture/2025-11-14_security-model.md`](documents/architecture/2025-11-14_security-model.md) - Security & RLS policies
+- [`documents/setup/2026-11-14_setup-complete.md`](documents/setup/2026-11-14_setup-complete.md) - Complete backend setup guide
+- [`documents/architecture/2026-11-14_security-model.md`](documents/architecture/2026-11-14_security-model.md) - Security & RLS policies
 - [`documents/sessions/`](documents/sessions/) - Development history
 - [`PRODUCTION_STORIES.md`](PRODUCTION_STORIES.md) - Full project roadmap
 - [`DOCUMENTATION_INDEX.md`](DOCUMENTATION_INDEX.md) - Quick reference index

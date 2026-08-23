@@ -1,9 +1,9 @@
 # P0-9: Job Detail Page with Real Data - Implementation Session
 
-**Date**: 2025-11-14
+**Date**: 2026-11-14
 **Author**: Claude Code
 **Status**: Completed
-**Last Updated**: 2025-11-14
+**Last Updated**: 2026-11-14
 
 ## Overview
 
@@ -175,8 +175,8 @@ alternates: {
   "@type": "JobPosting",
   "title": "Senior GHL Developer",
   "description": "...",
-  "datePosted": "2025-11-14T10:00:00Z",
-  "validThrough": "2025-12-14T10:00:00Z",
+  "datePosted": "2026-11-14T10:00:00Z",
+  "validThrough": "2026-12-14T10:00:00Z",
   "employmentType": "FULL_TIME",
   "hiringOrganization": {
     "@type": "Organization",
@@ -484,8 +484,8 @@ await supabase.rpc('increment_job_views', { job_id: jobId });
 
 ## Related Documentation
 
-- **Setup Guide**: `documents/setup/2025-11-14_setup-complete.md`
-- **P0-8 Session**: `documents/sessions/2025-11-14_p0-8-job-listing-page-implementation.md`
+- **Setup Guide**: `documents/setup/2026-11-14_setup-complete.md`
+- **P0-8 Session**: `documents/sessions/2026-11-14_p0-8-job-listing-page-implementation.md`
 - **Production Stories**: `PRODUCTION_STORIES.md` (P0-9)
 - **Database Migrations**: `supabase/migrations/013_job_view_counter.sql`
 

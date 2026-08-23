@@ -1,6 +1,6 @@
 # GHL Hire - Setup & Deployment Guide
 
-**Last Updated**: 2025-11-05
+**Last Updated**: 2026-11-05
 
 This guide will help you set up GHL Hire for local development and deploy to production.
 

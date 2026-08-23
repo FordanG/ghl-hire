@@ -154,9 +154,9 @@ export const mockApplications: Application[] = [
     jobId: '1',
     jobTitle: 'GoHighLevel Specialist',
     company: 'SaaS Agency',
-    appliedDate: '2025-01-15',
+    appliedDate: '2026-01-15',
     status: 'interview',
-    lastUpdate: '2025-01-18',
+    lastUpdate: '2026-01-18',
     notes: 'Technical interview scheduled for next week'
   },
   {
@@ -164,27 +164,27 @@ export const mockApplications: Application[] = [
     jobId: '4',
     jobTitle: 'Senior GoHighLevel Consultant',
     company: 'Growth Marketing Labs',
-    appliedDate: '2025-01-12',
+    appliedDate: '2026-01-12',
     status: 'reviewing',
-    lastUpdate: '2025-01-16'
+    lastUpdate: '2026-01-16'
   },
   {
     id: '3',
     jobId: '6',
     jobTitle: 'Marketing Automation Specialist (GHL)',
     company: 'ScaleUp Solutions',
-    appliedDate: '2025-01-10',
+    appliedDate: '2026-01-10',
     status: 'applied',
-    lastUpdate: '2025-01-10'
+    lastUpdate: '2026-01-10'
   },
   {
     id: '4',
     jobId: '2',
     jobTitle: 'GHL API Developer',
     company: 'AutomatePro',
-    appliedDate: '2025-01-08',
+    appliedDate: '2026-01-08',
     status: 'rejected',
-    lastUpdate: '2025-01-14',
+    lastUpdate: '2026-01-14',
     notes: 'Looking for more backend development experience'
   },
   {
@@ -192,9 +192,9 @@ export const mockApplications: Application[] = [
     jobId: '5',
     jobTitle: 'GoHighLevel White Label Manager',
     company: 'Digital Agency Collective',
-    appliedDate: '2025-01-05',
+    appliedDate: '2026-01-05',
     status: 'offer',
-    lastUpdate: '2025-01-19',
+    lastUpdate: '2026-01-19',
     notes: 'Offer received - $75,000 base + benefits'
   }
 ];
@@ -215,7 +215,7 @@ export const mockSavedJobs: SavedJob[] = [
       salary: '$70,000 - $85,000',
       postedDate: '1 day ago'
     },
-    savedDate: '2025-01-18'
+    savedDate: '2026-01-18'
   },
   {
     id: '2',
@@ -232,7 +232,7 @@ export const mockSavedJobs: SavedJob[] = [
       salary: '$90,000 - $110,000',
       postedDate: '3 days ago'
     },
-    savedDate: '2025-01-16'
+    savedDate: '2026-01-16'
   }
 ];
 
@@ -246,7 +246,7 @@ export const mockJobAlerts: JobAlert[] = [
     salaryMin: 70000,
     frequency: 'daily',
     active: true,
-    createdDate: '2025-01-10'
+    createdDate: '2026-01-10'
   },
   {
     id: '2',
@@ -254,7 +254,7 @@ export const mockJobAlerts: JobAlert[] = [
     keywords: ['API', 'Developer', 'Integration'],
     frequency: 'weekly',
     active: true,
-    createdDate: '2025-01-05'
+    createdDate: '2026-01-05'
   },
   {
     id: '3',

@@ -23,7 +23,7 @@ export default function TermsPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <div className="fade-in fade-in-1">
           <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4">Terms of Service</h1>
-          <p className="text-gray-600 mb-8">Last updated: November 9, 2025</p>
+          <p className="text-gray-600 mb-8">Last updated: November 9, 2026</p>
           <p className="text-gray-600 mb-8">
             Please read these Terms of Service carefully before using GHL Hire. By accessing or using our service, you agree to be bound by these terms.
           </p>

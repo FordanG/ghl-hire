@@ -1,9 +1,9 @@
 # GHL Hire - Security Model & Row Level Security (RLS) Documentation
 
-**Date**: 2025-11-14
+**Date**: 2026-11-14
 **Author**: Development Team
 **Status**: Approved
-**Last Updated**: 2025-11-14
+**Last Updated**: 2026-11-14
 
 ---
 
@@ -771,7 +771,7 @@ describe('Profile RLS', () => {
 ## References
 
 ### Internal Documentation
-- [Setup Complete Guide](../setup/2025-11-14_setup-complete.md)
+- [Setup Complete Guide](../setup/2026-11-14_setup-complete.md)
 - [Database Schema](../../supabase/migrations/)
 - [PRODUCTION_STORIES.md](../../PRODUCTION_STORIES.md)
 
@@ -787,10 +787,10 @@ describe('Profile RLS', () => {
 
 | Date | Change | Author |
 |------|--------|--------|
-| 2025-11-14 | Initial security model documentation | Development Team |
+| 2026-11-14 | Initial security model documentation | Development Team |
 
 ---
 
-**Last Updated**: 2025-11-14
-**Next Review**: 2025-12-14
+**Last Updated**: 2026-11-14
+**Next Review**: 2026-12-14
 **Status**: Approved

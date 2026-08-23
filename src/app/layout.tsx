@@ -27,6 +27,14 @@ export const metadata: Metadata = {
   creator: "GHL Hire",
   publisher: "GHL Hire",
   metadataBase: new URL("https://ghlhire.com"),
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", type: "image/png", sizes: "180x180" },
+    ],
+  },
   openGraph: {
     title: "GHL Hire - Premier Job Board for GoHighLevel Professionals",
     description: "Connect with the best GoHighLevel opportunities and talent in the industry.",
@@ -39,7 +47,8 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "GHL Hire - GoHighLevel Job Board",
+        alt: "GHL Hire - The GoHighLevel Job Board",
+        type: "image/png",
       },
     ],
   },
