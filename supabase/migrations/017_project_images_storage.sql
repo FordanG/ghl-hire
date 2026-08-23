@@ -1,6 +1,6 @@
 -- Migration: Storage Bucket for Project Images
 -- Description: Create storage bucket and RLS policies for project images
--- Created: 2025-11-15
+-- Created: 2026-11-15
 
 -- Create project-images storage bucket
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

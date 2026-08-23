@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, Profile, Company } from '@/lib/supabase';
+import { deferAuthStateWork } from './auth-state';
 
 interface AuthContextType {
   user: User | null;
@@ -24,8 +25,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const userType = profile ? 'jobseeker' : company ? 'employer' : null;
 
-  const refreshProfile = async () => {
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+  const refreshProfile = async (authenticatedUser?: User) => {
+    const currentUser = authenticatedUser ?? (await supabase.auth.getUser()).data.user;
 
     if (!currentUser) {
       setProfile(null);
@@ -56,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        await refreshProfile();
+        await refreshProfile(session.user);
       }
       setLoading(false);
     });
@@ -64,15 +65,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        await refreshProfile();
+        deferAuthStateWork(
+          async () => {
+            await refreshProfile(session.user);
+            setLoading(false);
+          },
+          {
+            onError: (error) => {
+              console.error('Failed to refresh account after auth change:', error);
+              setProfile(null);
+              setCompany(null);
+              setLoading(false);
+            },
+          }
+        );
       } else {
         setProfile(null);
         setCompany(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();

@@ -6,11 +6,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { User, LogOut, Building, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NotificationBell from './NotificationBell';
+import { getHeaderAuthView } from './header-auth';
 
 export default function Header() {
   const { user, userType, profile, company, signOut, loading } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const authView = getHeaderAuthView({
+    loading,
+    userEmail: user?.email,
+    userType,
+    profileName: profile?.full_name,
+    companyName: company?.company_name,
+  });
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -52,9 +60,9 @@ export default function Header() {
       <div className="max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5">
         {/* Logo */}
         <div className="flex items-center space-x-2">
-          <Link href="/" className="flex items-center gap-2 text-xl sm:text-2xl font-semibold tracking-tight fade-in fade-in-1 text-gray-900">
+          <Link href="/" className="flex items-center gap-2 text-xl sm:text-2xl font-semibold tracking-tight fade-in fade-in-1 text-[#0B1F3A]">
             <Image src="/logo-mark.png" alt="GHL Hire logo" width={32} height={32} priority className="h-8 w-8" />
-            <span>GHL<span className="font-light text-blue-400">Hire</span></span>
+            <span>GHL<span className="font-light text-blue-600">Hire</span></span>
           </Link>
           <span className="hidden sm:inline-block ml-4 px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-500 font-medium tracking-tight fade-in fade-in-2">
             GoHighLevel
@@ -76,7 +84,7 @@ export default function Header() {
             Employers
           </Link>
 
-          {!loading && !user && (
+          {authView.state === 'signed-out' && (
             <Link
               href="/signin"
               className="text-gray-500 px-2 py-1 transition-colors fade-in fade-in-5 hover:text-gray-900 hover:underline"
@@ -85,7 +93,7 @@ export default function Header() {
             </Link>
           )}
 
-          {!loading && user && (
+          {authView.state === 'signed-in' && (
             <>
               <NotificationBell />
               <div className="relative user-menu">
@@ -93,38 +101,32 @@ export default function Header() {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className="user-menu-button flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-50"
                 >
-                {userType === 'jobseeker' && profile && (
-                  <>
-                    <User className="w-5 h-5" />
-                    <span className="hidden lg:inline">{profile.full_name}</span>
-                  </>
+                {authView.isEmployer ? (
+                  <Building className="w-5 h-5" />
+                ) : (
+                  <User className="w-5 h-5" />
                 )}
-                {userType === 'employer' && company && (
-                  <>
-                    <Building className="w-5 h-5" />
-                    <span className="hidden lg:inline">{company.company_name}</span>
-                  </>
-                )}
+                <span className="max-w-36 truncate">{authView.accountLabel}</span>
               </button>
 
               {showUserMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <Link
-                    href={userType === 'jobseeker' ? '/dashboard' : '/company/dashboard'}
+                    href={authView.dashboardHref}
                     className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                     onClick={() => setShowUserMenu(false)}
                   >
                     Dashboard
                   </Link>
                   <Link
-                    href={userType === 'jobseeker' ? '/dashboard/profile' : '/company/dashboard/profile'}
+                    href={authView.profileHref}
                     className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                     onClick={() => setShowUserMenu(false)}
                   >
                     Profile
                   </Link>
                   <Link
-                    href={userType === 'jobseeker' ? '/dashboard/applications' : '/company/dashboard/applications'}
+                    href={authView.applicationsHref}
                     className="block px-4 py-2 text-gray-700 hover:bg-gray-50"
                     onClick={() => setShowUserMenu(false)}
                   >
@@ -147,7 +149,7 @@ export default function Header() {
 
         {/* Desktop CTA Button */}
         <div className="hidden md:flex items-center gap-3">
-          {!loading && userType === 'employer' && (
+          {authView.state === 'signed-in' && authView.isEmployer && (
             <Link
               href="/post-job"
               className="px-4 py-2 rounded-md bg-blue-500 font-semibold tracking-tight shadow hover:bg-blue-600 transition-colors fade-in fade-in-6 text-white min-h-[44px] flex items-center"
@@ -156,7 +158,16 @@ export default function Header() {
             </Link>
           )}
 
-          {!loading && !user && (
+          {authView.state === 'signed-in' && !authView.isEmployer && (
+            <Link
+              href={authView.dashboardHref}
+              className="px-4 py-2 rounded-md bg-blue-600 font-semibold tracking-tight shadow hover:bg-blue-700 transition-colors fade-in fade-in-6 text-white min-h-[44px] flex items-center"
+            >
+              Dashboard
+            </Link>
+          )}
+
+          {authView.state === 'signed-out' && (
             <Link
               href="/signup"
               className="px-4 py-2 rounded-md bg-blue-500 font-semibold tracking-tight shadow hover:bg-blue-600 transition-colors fade-in fade-in-6 text-white min-h-[44px] flex items-center"
@@ -199,7 +210,7 @@ export default function Header() {
               Employers
             </Link>
 
-            {!loading && !user && (
+            {authView.state === 'signed-out' && (
               <>
                 <Link
                   href="/signin"
@@ -218,46 +229,42 @@ export default function Header() {
               </>
             )}
 
-            {!loading && user && (
+            {authView.state === 'signed-in' && (
               <>
                 <div className="px-4 py-2 text-sm text-gray-500 border-t border-gray-200 mt-2 pt-3">
-                  {userType === 'jobseeker' && profile && (
-                    <div className="flex items-center gap-2">
-                      <User className="w-5 h-5" />
-                      <span>{profile.full_name}</span>
-                    </div>
-                  )}
-                  {userType === 'employer' && company && (
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    {authView.isEmployer ? (
                       <Building className="w-5 h-5" />
-                      <span>{company.company_name}</span>
-                    </div>
-                  )}
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
+                    <span className="truncate">{authView.accountLabel}</span>
+                  </div>
                 </div>
 
                 <Link
-                  href={userType === 'jobseeker' ? '/dashboard' : '/company/dashboard'}
+                  href={authView.dashboardHref}
                   className="block px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors min-h-[44px]"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Dashboard
                 </Link>
                 <Link
-                  href={userType === 'jobseeker' ? '/dashboard/profile' : '/company/dashboard/profile'}
+                  href={authView.profileHref}
                   className="block px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors min-h-[44px]"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Profile
                 </Link>
                 <Link
-                  href={userType === 'jobseeker' ? '/dashboard/applications' : '/company/dashboard/applications'}
+                  href={authView.applicationsHref}
                   className="block px-4 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors min-h-[44px]"
                   onClick={() => setShowMobileMenu(false)}
                 >
                   Applications
                 </Link>
 
-                {userType === 'employer' && (
+                {authView.isEmployer && (
                   <Link
                     href="/post-job"
                     className="block px-4 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors text-center min-h-[44px] flex items-center justify-center"

@@ -1,6 +1,6 @@
 -- Migration: Job View Counter Function
 -- Description: Creates a database function to safely increment job view counts
--- Date: 2025-11-14
+-- Date: 2026-11-14
 
 -- Function to increment job view count atomically
 CREATE OR REPLACE FUNCTION increment_job_views(job_id UUID)

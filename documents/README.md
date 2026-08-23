@@ -34,7 +34,7 @@ documents/
 - Handoff notes for team members
 
 **Example**:
-- `2025-11-14_database-setup-session.md`
+- `2026-11-14_database-setup-session.md`
 
 ### `/setup/`
 **Purpose**: Installation, configuration, and setup instructions.
@@ -49,7 +49,7 @@ documents/
 - Troubleshooting guides
 
 **Example**:
-- `2025-11-14_setup-complete.md`
+- `2026-11-14_setup-complete.md`
 
 ### `/architecture/`
 **Purpose**: System design, architecture decisions, and technical specifications.
@@ -66,7 +66,7 @@ documents/
 
 **Examples** (to be created):
 - `database_schema_architecture.md`
-- `2025-11-XX_authentication-architecture.md`
+- `2026-11-XX_authentication-architecture.md`
 - `api_design_patterns.md`
 
 ### `/guides/`
@@ -106,8 +106,8 @@ documents/
 - Link to replacement documentation if applicable
 
 **Examples**:
-- `2025-11-14_old-setup-guide.md` - Replaced by new setup guide
-- `2025-11-14_legacy-architecture.md` - Superseded by new architecture
+- `2026-11-14_old-setup-guide.md` - Replaced by new setup guide
+- `2026-11-14_legacy-architecture.md` - Superseded by new architecture
 
 ---
 
@@ -118,7 +118,7 @@ documents/
 1. **Date-Prefixed Documents** (sessions, setup):
    - Format: `YYYY-MM-DD_topic-name.md`
    - Use lowercase with hyphens
-   - Example: `2025-11-14_database-setup-session.md`
+   - Example: `2026-11-14_database-setup-session.md`
 
 2. **Topic Documents** (architecture, guides):
    - Format: `topic_name.md` or `topic-name.md`
@@ -178,23 +178,23 @@ All documentation should include:
 ## Current Documentation
 
 ### Sessions (1 document)
-- ✅ `2025-11-14_database-setup-session.md` - Database setup and Supabase integration
+- ✅ `2026-11-14_database-setup-session.md` - Database setup and Supabase integration
 
 ### Setup (1 document)
-- ✅ `2025-11-14_setup-complete.md` - Complete backend setup guide
+- ✅ `2026-11-14_setup-complete.md` - Complete backend setup guide
 
 ### Architecture (1 document)
-- ✅ `2025-11-14_security-model.md` - Row Level Security and authentication
+- ✅ `2026-11-14_security-model.md` - Row Level Security and authentication
 
 ### Guides (0 documents)
 - 🔄 To be created as needed
 
 ### Archive (5 documents)
-- 📦 `2025-11-14_feature-enhancements.md` - Archived
-- 📦 `2025-11-14_implementation-summary.md` - Archived
-- 📦 `2025-11-14_mobile-optimization.md` - Archived
-- 📦 `2025-11-14_performance.md` - Archived
-- 📦 `2025-11-14_setup-guide.md` - Superseded by new setup guide
+- 📦 `2026-11-14_feature-enhancements.md` - Archived
+- 📦 `2026-11-14_implementation-summary.md` - Archived
+- 📦 `2026-11-14_mobile-optimization.md` - Archived
+- 📦 `2026-11-14_performance.md` - Archived
+- 📦 `2026-11-14_setup-guide.md` - Superseded by new setup guide
 
 ---
 
@@ -321,7 +321,7 @@ graph TD
 
 Link between documents using relative paths:
 ```markdown
-See also: [Database Setup](../setup/2025-11-14_setup-complete.md)
+See also: [Database Setup](../setup/2026-11-14_setup-complete.md)
 ```
 
 ---
@@ -389,5 +389,5 @@ For documentation improvements:
 
 ---
 
-**Last Updated**: 2025-11-14
+**Last Updated**: 2026-11-14
 **Maintained By**: Development Team

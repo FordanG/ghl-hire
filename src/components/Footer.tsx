@@ -15,10 +15,10 @@ export default function Footer() {
           height={24}
           className="h-6 w-6"
         />
-        <span className="text-lg font-semibold tracking-tight text-gray-900">
-          GHL<span className="font-light text-blue-400">Hire</span>
+        <span className="text-lg font-semibold tracking-tight text-[#0B1F3A]">
+          GHL<span className="font-light text-blue-600">Hire</span>
         </span>
-        <span className="ml-3 text-xs text-gray-400">© 2025</span>
+        <span className="ml-3 text-xs text-gray-400">© 2026</span>
       </div>
 
       {/* Links with proper touch target size (min 44px height) */}

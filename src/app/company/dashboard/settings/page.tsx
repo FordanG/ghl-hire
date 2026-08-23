@@ -64,7 +64,7 @@ export default function CompanySettingsPage() {
       email: 'john@techflowsolutions.com',
       role: 'Admin',
       status: 'active',
-      lastActive: '2025-01-20'
+      lastActive: '2026-01-20'
     },
     {
       id: '2',
@@ -72,7 +72,7 @@ export default function CompanySettingsPage() {
       email: 'sarah@techflowsolutions.com',
       role: 'Recruiter',
       status: 'active',
-      lastActive: '2025-01-19'
+      lastActive: '2026-01-19'
     },
     {
       id: '3',
@@ -497,7 +497,7 @@ export default function CompanySettingsPage() {
                 <div className="space-y-4">
                   <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
                     <h4 className="font-medium text-blue-900">Current Plan: Professional</h4>
-                    <p className="text-sm text-blue-700">Next billing date: February 1, 2025</p>
+                    <p className="text-sm text-blue-700">Next billing date: February 1, 2026</p>
                   </div>
                 </div>
               </div>

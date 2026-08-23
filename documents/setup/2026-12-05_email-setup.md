@@ -1,9 +1,9 @@
 # Email Setup Guide - GHL Hire
 
-**Date**: 2025-12-05
+**Date**: 2026-12-05
 **Author**: Claude
 **Status**: Approved
-**Last Updated**: 2025-12-05
+**Last Updated**: 2026-12-05
 
 ## Overview
 

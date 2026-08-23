@@ -1,6 +1,6 @@
 -- Migration: Projects Section for Job Seekers
 -- Description: Add projects table and application_projects junction table
--- Created: 2025-11-14
+-- Created: 2026-11-14
 
 -- Create projects table
 CREATE TABLE IF NOT EXISTS projects (
