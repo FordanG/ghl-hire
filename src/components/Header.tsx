@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
-import { User, LogOut, Building, Menu, X } from 'lucide-react';
+import { User, LogOut, Building, Menu, ShieldCheck, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NotificationBell from './NotificationBell';
 import { getHeaderAuthView } from './header-auth';
 
 export default function Header() {
-  const { user, userType, profile, company, signOut, loading } = useAuth();
+  const { user, userType, profile, company, adminRole, signOut, loading } = useAuth();
+  const isAdmin = adminRole === 'admin';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const authView = getHeaderAuthView({
@@ -132,6 +133,16 @@ export default function Header() {
                   >
                     Applications
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2 px-4 py-2 font-medium text-blue-700 hover:bg-blue-50"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      Admin Console
+                    </Link>
+                  )}
                   <hr className="my-2" />
                   <button
                     onClick={handleSignOut}
@@ -158,7 +169,16 @@ export default function Header() {
             </Link>
           )}
 
-          {authView.state === 'signed-in' && !authView.isEmployer && (
+          {authView.state === 'signed-in' && isAdmin && (
+            <Link
+              href="/admin"
+              className="flex min-h-[44px] items-center rounded-md bg-[#0B1F3A] px-4 py-2 font-semibold tracking-tight text-white shadow transition-colors hover:bg-slate-800"
+            >
+              Admin Console
+            </Link>
+          )}
+
+          {authView.state === 'signed-in' && !authView.isEmployer && !isAdmin && (
             <Link
               href={authView.dashboardHref}
               className="px-4 py-2 rounded-md bg-blue-600 font-semibold tracking-tight shadow hover:bg-blue-700 transition-colors fade-in fade-in-6 text-white min-h-[44px] flex items-center"
@@ -263,6 +283,17 @@ export default function Header() {
                 >
                   Applications
                 </Link>
+
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="flex min-h-[44px] items-center gap-2 rounded-lg px-4 py-3 font-medium text-blue-700 transition-colors hover:bg-blue-50"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <ShieldCheck className="h-5 w-5" />
+                    Admin Console
+                  </Link>
+                )}
 
                 {authView.isEmployer && (
                   <Link
