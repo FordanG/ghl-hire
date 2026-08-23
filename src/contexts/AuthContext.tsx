@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null;
   profile: Profile | null;
   company: Company | null;
+  adminRole: string | null;
   userType: 'jobseeker' | 'employer' | null;
   loading: boolean;
   signOut: () => Promise<void>;
@@ -21,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
+  const [adminRole, setAdminRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const userType = profile ? 'jobseeker' : company ? 'employer' : null;
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!currentUser) {
       setProfile(null);
       setCompany(null);
+      setAdminRole(null);
       return;
     }
 
@@ -48,8 +51,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq('user_id', currentUser.id)
       .single();
 
+    const { data: adminRoleData } = profileData
+      ? await supabase
+          .from('admin_roles')
+          .select('role')
+          .eq('profile_id', profileData.id)
+          .maybeSingle()
+      : { data: null };
+
     setProfile(profileData);
     setCompany(companyData);
+    setAdminRole(adminRoleData?.role || null);
   };
 
   useEffect(() => {
@@ -78,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               console.error('Failed to refresh account after auth change:', error);
               setProfile(null);
               setCompany(null);
+              setAdminRole(null);
               setLoading(false);
             },
           }
@@ -85,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setProfile(null);
         setCompany(null);
+        setAdminRole(null);
         setLoading(false);
       }
     });
@@ -97,12 +111,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setProfile(null);
     setCompany(null);
+    setAdminRole(null);
   };
 
   const value: AuthContextType = {
     user,
     profile,
     company,
+    adminRole,
     userType,
     loading,
     signOut,
