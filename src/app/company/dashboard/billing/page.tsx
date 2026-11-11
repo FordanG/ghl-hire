@@ -36,6 +36,8 @@ export default function BillingPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activeJobs, setActiveJobs] = useState(0);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   // Redirect signed-out / non-company users (mirrors sibling dashboard pages)
   useEffect(() => {
@@ -92,6 +94,24 @@ export default function BillingPage() {
       console.error('Error loading billing data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openBillingPortal = async () => {
+    setPortalError(null);
+    setPortalLoading(true);
+    try {
+      const response = await fetch('/api/payments/portal', { method: 'POST' });
+      const data = await response.json();
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || 'Failed to open the billing portal');
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setPortalError(
+        err instanceof Error ? err.message : 'Failed to open the billing portal'
+      );
+      setPortalLoading(false);
     }
   };
 
@@ -391,20 +411,42 @@ export default function BillingPage() {
         <div className="mt-8 bg-white border border-gray-200 rounded-lg p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Need a different plan?
+              {isFree ? 'Need a different plan?' : 'Manage your subscription'}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Compare plans and upgrade or downgrade anytime from the pricing
-              page.
+              {isFree
+                ? 'Compare plans and upgrade anytime from the pricing page.'
+                : 'Change plan, update your payment method, cancel or download receipts in the secure billing portal.'}
             </p>
+            {portalError && (
+              <p className="text-sm text-red-600 mt-2" role="alert">
+                {portalError}
+              </p>
+            )}
           </div>
-          <Link
-            href="/pricing"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-          >
-            View Plans
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          {isFree ? (
+            <Link
+              href="/pricing"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+            >
+              View Plans
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={openBillingPortal}
+              disabled={portalLoading}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap disabled:opacity-60"
+            >
+              {portalLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4" />
+              )}
+              Manage Subscription
+            </button>
+          )}
         </div>
       </div>
     </CompanyDashboardLayout>

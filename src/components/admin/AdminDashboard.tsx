@@ -674,7 +674,7 @@ export default function AdminDashboard({ data }: { data: AdminDashboardData }) {
 
           {activeSection === 'revenue' && (
             <>
-              <SectionHeading eyebrow="Commercial health" title="Revenue" description="Track subscription run rate and captured payments. Billing records are intentionally read-only here because Whop remains the financial source of truth." />
+              <SectionHeading eyebrow="Commercial health" title="Revenue" description="Track subscription run rate and captured payments. Billing records are intentionally read-only here because Polar remains the financial source of truth." />
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <MetricCard label="Monthly run rate" value={formatMoney(data.metrics.monthlyRecurringRevenueCents)} detail="Normalized from active monthly and annual subscriptions" icon={CircleDollarSign} accent="bg-emerald-50 text-emerald-700" />
                 <MetricCard label="Captured revenue" value={formatMoney(data.metrics.capturedRevenueCents)} detail="All successful USD transactions recorded by the platform" icon={WalletCards} accent="bg-blue-50 text-blue-700" />

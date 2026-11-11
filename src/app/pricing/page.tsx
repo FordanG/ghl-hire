@@ -133,7 +133,7 @@ export default function PricingPage() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to hosted Whop checkout
+      // Redirect to hosted Polar checkout
       window.location.href = data.redirectUrl;
 
     } catch (error) {
@@ -295,7 +295,7 @@ export default function PricingPage() {
               <div className="h-full bg-white border border-gray-200 rounded-xl p-6">
                 <h3 className="font-semibold text-lg mb-2 text-gray-900">What payment methods do you accept?</h3>
                 <p className="text-gray-600">
-                  We accept all major credit and debit cards, PayPal, and more — payments are processed securely by Whop.
+                  We accept all major credit and debit cards, PayPal, and more — payments are processed securely by Polar.
                 </p>
               </div>
             </Reveal>

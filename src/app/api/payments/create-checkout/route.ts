@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getPlanById } from '@/lib/payments/plans';
-import { createWhopCheckout } from '@/lib/payments/whop';
+import { createPolarCheckout, createPolarPortalUrl } from '@/lib/payments/polar';
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,6 +51,29 @@ export async function POST(request: NextRequest) {
     }
 
     const admin = createAdminClient();
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+
+    // A company that already has a live Polar subscription must change plan in
+    // the customer portal (which prorates); a second checkout would create a
+    // second, parallel subscription.
+    const { data: existing } = await admin
+      .from('subscriptions')
+      .select('plan_type, provider, provider_subscription_id')
+      .eq('company_id', company.id)
+      .maybeSingle();
+
+    if (
+      existing?.provider === 'polar' &&
+      existing.provider_subscription_id &&
+      existing.plan_type !== 'free'
+    ) {
+      const portalUrl = await createPolarPortalUrl({
+        companyId: company.id,
+        returnUrl: `${appUrl}/company/dashboard/billing`,
+      });
+      return NextResponse.json({ success: true, redirectUrl: portalUrl, portal: true });
+    }
+
     const referenceNumber = `SUB-${Date.now()}-${company.id.slice(0, 8)}`;
 
     const { data: transaction, error: transactionError } = await admin
@@ -63,7 +86,7 @@ export async function POST(request: NextRequest) {
         transaction_type: 'subscription',
         reference_number: referenceNumber,
         description: `${plan.name} subscription`,
-        provider: 'whop',
+        provider: 'polar',
         metadata: { plan_id: planId },
       }])
       .select()
@@ -77,37 +100,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
-
-    // Whop supports a single post-checkout redirect; it appends a status query
-    // param (success/error) that the success page uses to branch.
-    const { checkoutConfigId, purchaseUrl } = await createWhopCheckout({
+    const { checkoutId, checkoutUrl } = await createPolarCheckout({
       planId,
+      companyId: company.id,
+      customerEmail: company.email || user.email,
+      customerName: company.company_name,
       metadata: {
         company_id: company.id,
         plan_id: planId,
         transaction_id: transaction.id,
         reference_number: referenceNumber,
       },
-      redirectUrl: `${appUrl}/company/billing/success`,
+      // Polar substitutes {CHECKOUT_ID} on redirect
+      successUrl: `${appUrl}/company/billing/success?checkout_id={CHECKOUT_ID}`,
+      returnUrl: `${appUrl}/company/billing/canceled`,
     });
 
     await admin
       .from('payment_transactions')
-      .update({ provider_checkout_id: checkoutConfigId })
+      .update({ provider_checkout_id: checkoutId })
       .eq('id', transaction.id);
 
     return NextResponse.json({
       success: true,
-      checkoutId: checkoutConfigId,
-      redirectUrl: purchaseUrl,
+      checkoutId,
+      redirectUrl: checkoutUrl,
       transactionId: transaction.id,
     });
 
   } catch (error) {
     console.error('Error creating checkout session:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create checkout session' },
+      { error: 'Failed to create checkout session' },
       { status: 500 }
     );
   }

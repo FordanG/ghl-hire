@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, ArrowRight, Loader2, Clock } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -18,38 +17,14 @@ function PageShell({ children }: { children: React.ReactNode }) {
 }
 
 function PaymentSuccessContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [verifying, setVerifying] = useState(true);
 
-  // Whop appends a status param on return (e.g. ?status=success or ?status=error)
-  const status = searchParams.get('status');
-  const isError =
-    status === 'error' || status === 'failed' || status === 'declined';
-
   useEffect(() => {
-    // If Whop reported an error, send the user to the failure page.
-    if (isError) {
-      router.replace('/company/billing/failed');
-      return;
-    }
-
-    // Otherwise give the webhook a moment to activate the subscription.
+    // Polar only redirects here after a successful checkout. Give the webhook
+    // a moment to activate the subscription before showing the confirmation.
     const timer = setTimeout(() => setVerifying(false), 2000);
     return () => clearTimeout(timer);
-  }, [isError, router]);
-
-  if (isError) {
-    // Redirecting to the failed page.
-    return (
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 text-blue-600 mx-auto mb-4 animate-spin" />
-          <p className="text-gray-600">Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
+  }, []);
 
   if (verifying) {
     return (

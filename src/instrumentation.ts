@@ -3,7 +3,7 @@
  *
  * Next.js loads this automatically at startup for the Node.js server and Edge
  * runtimes. Initializing Sentry here is what makes server route, API,
- * Whop webhook, and edge middleware errors reach Sentry. The browser runtime is
+ * Polar webhook, and edge middleware errors reach Sentry. The browser runtime is
  * initialized separately in instrumentation-client.ts.
  */
 
