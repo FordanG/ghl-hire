@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   Mail,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { ToastContainer } from '@/components/ui/toast';
 import {
   getProfile,
@@ -53,10 +54,9 @@ export default function ProfilePage() {
     is_available: true
   });
 
-  // Auto-save
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  const { refreshProfile } = useAuth();
   const { toasts, removeToast, success, error: showError } = useToast();
 
   // Load profile on mount
@@ -106,6 +106,7 @@ export default function ProfilePage() {
       setProfile(result.data);
       setIsEditing(false);
       setLastSaved(new Date());
+      await refreshProfile();
       success('Profile updated successfully!');
     } else {
       showError(result.error || 'Failed to update profile');
@@ -113,38 +114,6 @@ export default function ProfilePage() {
 
     setIsSaving(false);
   };
-
-  const handleAutoSave = useCallback(async () => {
-    if (!isEditing) return;
-
-    const result = await updateProfile(formData);
-
-    if (result.success && result.data) {
-      setProfile(result.data);
-      setLastSaved(new Date());
-    }
-  }, [formData, isEditing]);
-
-  // Trigger auto-save on form changes
-  useEffect(() => {
-    if (!isEditing) return;
-
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    // Set new timeout for auto-save (3 seconds after last change)
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      handleAutoSave();
-    }, 3000);
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, [formData, isEditing, handleAutoSave]);
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -159,6 +128,7 @@ export default function ProfilePage() {
 
     if (result.success && result.data) {
       setProfile(result.data);
+      await refreshProfile();
       success('Resume uploaded successfully!');
     } else {
       showError(result.error || 'Failed to upload resume');
@@ -181,6 +151,7 @@ export default function ProfilePage() {
 
     if (result.success && result.data) {
       setProfile(result.data);
+      await refreshProfile();
       success('Profile photo updated successfully!');
     } else {
       showError(result.error || 'Failed to upload photo');

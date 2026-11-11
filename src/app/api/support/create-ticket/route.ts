@@ -67,7 +67,14 @@ export async function POST(request: NextRequest) {
         subject,
         description,
         category,
-        priority: priority || 'medium'
+        priority: priority || 'medium',
+        // Employers have no profile row, so profile_id is null for their
+        // tickets; keep the requester's identity on the ticket for admins
+        metadata: {
+          user_id: user.id,
+          user_email: user_email || null,
+          user_name: user_name || null,
+        },
       }])
       .select()
       .single();
@@ -106,15 +113,31 @@ export async function POST(request: NextRequest) {
         if (webhookResponse.ok) {
           const webhookData = await webhookResponse.json();
 
-          // Update ticket with n8n workflow data
-          await supabase
+          // Write back n8n workflow data with the service role: ticket owners
+          // have no UPDATE policy, and employer tickets (profile_id null)
+          // never matched one anyway. Merge so the requester identity stored
+          // at insert is not overwritten.
+          const n8nMetadata =
+            webhookData.metadata && typeof webhookData.metadata === 'object' && !Array.isArray(webhookData.metadata)
+              ? webhookData.metadata
+              : {};
+          const existingMetadata =
+            ticket.metadata && typeof ticket.metadata === 'object' && !Array.isArray(ticket.metadata)
+              ? ticket.metadata
+              : {};
+
+          const { error: writeBackError } = await admin
             .from('support_tickets')
             .update({
               n8n_workflow_id: webhookData.workflow_id,
               external_ticket_id: webhookData.external_ticket_id,
-              metadata: webhookData.metadata || {}
+              metadata: { ...n8nMetadata, ...existingMetadata },
             })
             .eq('id', ticket.id);
+
+          if (writeBackError) {
+            console.error('Failed to store n8n ticket data:', writeBackError);
+          }
         }
 
       } catch (webhookError) {

@@ -130,7 +130,6 @@ export default function JobAlertsPage() {
         remote_only: formData.remote_only,
         salary_min: formData.salary_min ? parseInt(formData.salary_min) : null,
         frequency: formData.frequency,
-        is_active: true,
       };
 
       if (editingAlert) {
@@ -146,7 +145,7 @@ export default function JobAlertsPage() {
         // Create new alert
         const { error } = await supabase
           .from('job_alerts')
-          .insert([alertData]);
+          .insert([{ ...alertData, is_active: true }]);
 
         if (error) throw error;
         setSuccess('Job alert created successfully!');

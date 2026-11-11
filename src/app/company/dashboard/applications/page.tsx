@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Search,
@@ -61,14 +61,22 @@ interface Application {
   }[];
 }
 
-export default function ApplicationsPage() {
+function ApplicationsPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const jobIdParam = searchParams.get('jobId');
   const { user, company, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  // Job filter, initialised from ?jobId=<id> (linked from the job postings page)
+  const [jobIdFilter, setJobIdFilter] = useState<string | null>(jobIdParam);
+
+  useEffect(() => {
+    setJobIdFilter(jobIdParam);
+  }, [jobIdParam]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -142,6 +150,11 @@ export default function ApplicationsPage() {
   useEffect(() => {
     let filtered = applications;
 
+    // Filter by job
+    if (jobIdFilter) {
+      filtered = filtered.filter(app => app.job_id === jobIdFilter);
+    }
+
     // Filter by status
     if (statusFilter !== 'all') {
       filtered = filtered.filter(app => app.status === statusFilter);
@@ -157,7 +170,7 @@ export default function ApplicationsPage() {
     }
 
     setFilteredApplications(filtered);
-  }, [applications, statusFilter, searchTerm]);
+  }, [applications, statusFilter, searchTerm, jobIdFilter]);
 
   const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
     try {
@@ -289,6 +302,19 @@ export default function ApplicationsPage() {
             />
           </div>
         </div>
+
+        {jobIdFilter && (
+          <div className="mb-4 flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-sm text-blue-800">
+            <span>Showing applications for one job</span>
+            <button
+              type="button"
+              onClick={() => setJobIdFilter(null)}
+              className="font-medium text-blue-700 hover:text-blue-900"
+            >
+              Clear job filter
+            </button>
+          </div>
+        )}
 
         {/* Applications List */}
         {filteredApplications.length > 0 ? (
@@ -482,12 +508,12 @@ export default function ApplicationsPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {searchTerm || statusFilter !== 'all'
+              {searchTerm || statusFilter !== 'all' || jobIdFilter
                 ? 'No applications match your filters'
                 : 'No applications yet'}
             </h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm || statusFilter !== 'all'
+              {searchTerm || statusFilter !== 'all' || jobIdFilter
                 ? 'Try adjusting your search terms or filters.'
                 : 'Applications will appear here once candidates apply to your jobs.'}
             </p>
@@ -503,5 +529,13 @@ export default function ApplicationsPage() {
         )}
       </div>
     </CompanyDashboardLayout>
+  );
+}
+
+export default function ApplicationsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ApplicationsPageContent />
+    </Suspense>
   );
 }

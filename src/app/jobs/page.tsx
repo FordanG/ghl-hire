@@ -50,6 +50,16 @@ export default function JobsPage() {
     };
   }, [searchTerm]);
 
+  // Seed the search filter from ?category=<slug> (e.g. links from category pages)
+  useEffect(() => {
+    const category = new URLSearchParams(window.location.search).get('category');
+    if (category) {
+      const term = category.replaceAll('-', ' ').trim();
+      setSearchTerm(term);
+      setDebouncedSearchTerm(term);
+    }
+  }, []);
+
   // Fetch jobs when filters or pagination change
   useEffect(() => {
     fetchJobs();
@@ -96,7 +106,15 @@ export default function JobsPage() {
 
       // Search across title, description, and company name
       if (debouncedSearchTerm) {
-        query = query.or(`title.ilike.%${debouncedSearchTerm}%,description.ilike.%${debouncedSearchTerm}%`);
+        // Strip PostgREST-reserved chars and escape LIKE wildcards
+        const safe = debouncedSearchTerm
+          .replace(/[,()"\\*:]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .replace(/[%_]/g, (c) => `\\${c}`);
+        if (safe) {
+          query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
+        }
       }
 
       // Apply sorting

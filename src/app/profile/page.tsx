@@ -79,15 +79,15 @@ export default function ProfilePage() {
   };
 
   const handleResumeUpload = async () => {
-    if (!resumeFile || !authProfile) return;
+    if (!resumeFile || !authProfile || !user) return;
 
     setUploadingResume(true);
     setError(null);
 
     try {
       const fileExt = resumeFile.name.split('.').pop();
-      const fileName = `${authProfile.id}-${Date.now()}.${fileExt}`;
-      const filePath = `resumes/${fileName}`;
+      // Storage policy requires the first folder to be the auth user id
+      const filePath = `${user.id}/resume-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('resumes')

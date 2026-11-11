@@ -30,6 +30,8 @@ interface Job {
   location: string;
   job_type: string;
   experience_level: string | null;
+  requirements: string | null;
+  benefits: string | null;
   salary_min: number | null;
   salary_max: number | null;
   remote: boolean;
@@ -125,6 +127,8 @@ export default function JobPostingsPage() {
           salary_min: job.salary_min,
           salary_max: job.salary_max,
           remote: job.remote,
+          requirements: job.requirements,
+          benefits: job.benefits,
           status: 'draft'
         })
         .select()

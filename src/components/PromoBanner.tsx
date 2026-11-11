@@ -18,7 +18,12 @@ export default function PromoBanner() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(STORAGE_KEY);
+    let dismissed: string | null = null;
+    try {
+      dismissed = localStorage.getItem(STORAGE_KEY);
+    } catch {
+      // Storage blocked: show the banner
+    }
     if (!dismissed) {
       setIsDismissed(false);
       // Pick a random message
@@ -29,7 +34,11 @@ export default function PromoBanner() {
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    localStorage.setItem(STORAGE_KEY, "true");
+    try {
+      localStorage.setItem(STORAGE_KEY, "true");
+    } catch {
+      // Storage blocked: the banner is still hidden for this page view
+    }
   };
 
   if (isDismissed) return null;

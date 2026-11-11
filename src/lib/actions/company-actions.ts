@@ -230,8 +230,8 @@ export async function uploadCompanyLogo(formData: FormData): Promise<CompanyActi
 
     // Generate file path
     const fileExt = file.name.split('.').pop();
-    const fileName = `${company.id}-${Date.now()}.${fileExt}`;
-    const filePath = `logos/${fileName}`;
+    // Storage policy requires the first folder to be the owning company's id
+    const filePath = `${company.id}/logo-${Date.now()}.${fileExt}`;
 
     // Upload to Supabase Storage
     const { error: uploadError } = await supabase.storage

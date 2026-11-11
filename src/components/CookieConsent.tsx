@@ -28,7 +28,12 @@ export default function CookieConsent() {
 
   useEffect(() => {
     // Check if user has already consented
-    const consent = localStorage.getItem('cookie-consent');
+    let consent: string | null = null;
+    try {
+      consent = localStorage.getItem('cookie-consent');
+    } catch {
+      // Storage blocked: treat as no saved choice and show the banner
+    }
     if (!consent) {
       // Show banner after a short delay for better UX
       setTimeout(() => setShowBanner(true), 1000);
@@ -93,8 +98,12 @@ export default function CookieConsent() {
   };
 
   const saveConsent = (prefs: CookiePreferences) => {
-    localStorage.setItem('cookie-consent', JSON.stringify(prefs));
-    localStorage.setItem('cookie-consent-date', new Date().toISOString());
+    try {
+      localStorage.setItem('cookie-consent', JSON.stringify(prefs));
+      localStorage.setItem('cookie-consent-date', new Date().toISOString());
+    } catch {
+      // Storage blocked: the choice still applies for this page view
+    }
     applyConsent(prefs);
     setShowBanner(false);
     setShowSettings(false);

@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bookmark, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { toggleSaveJob, isJobSaved } from '@/lib/actions/saved-jobs-actions';
 
 interface SaveJobButtonProps {
@@ -17,6 +19,8 @@ export default function SaveJobButton({
   showLabel = false,
   size = 'md'
 }: SaveJobButtonProps) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -38,12 +42,19 @@ export default function SaveJobButton({
     e.preventDefault();
     e.stopPropagation();
 
+    if (!user) {
+      router.push('/signin');
+      return;
+    }
+
     setLoading(true);
 
     const result = await toggleSaveJob(jobId);
 
     if (result.success) {
       setIsSaved(result.isSaved || false);
+    } else if (result.error === 'Not authenticated') {
+      router.push('/signin');
     }
 
     setLoading(false);

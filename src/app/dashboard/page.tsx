@@ -44,6 +44,7 @@ export default function CandidateDashboard() {
   const [applications, setApplications] = useState<DashboardApplication[]>([]);
   const [savedJobs, setSavedJobs] = useState<DashboardSavedJob[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totals, setTotals] = useState({ applications: 0, active: 0, saved: 0 });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -96,6 +97,29 @@ export default function CandidateDashboard() {
         .limit(5);
 
       setSavedJobs((savedData || []) as unknown as DashboardSavedJob[]);
+
+      // Exact totals for the stats cards (the lists above are limited to 5 rows)
+      const [totalAppsRes, activeAppsRes, savedRes] = await Promise.all([
+        supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', profile.id),
+        supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', profile.id)
+          .in('status', ['pending', 'reviewing', 'shortlisted']),
+        supabase
+          .from('saved_jobs')
+          .select('*', { count: 'exact', head: true })
+          .eq('profile_id', profile.id),
+      ]);
+
+      setTotals({
+        applications: totalAppsRes.count ?? 0,
+        active: activeAppsRes.count ?? 0,
+        saved: savedRes.count ?? 0,
+      });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -117,11 +141,9 @@ export default function CandidateDashboard() {
   }
 
   const stats = {
-    totalApplications: applications.length,
-    activeApplications: applications.filter(app =>
-      ['pending', 'reviewing', 'shortlisted'].includes(app.status)
-    ).length,
-    savedJobs: savedJobs.length,
+    totalApplications: totals.applications,
+    activeApplications: totals.active,
+    savedJobs: totals.saved,
     profileComplete: calculateProfileCompletion(),
   };
 

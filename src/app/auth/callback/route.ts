@@ -74,7 +74,6 @@ export async function GET(request: Request) {
                 plan_type: 'free',
                 status: 'active',
                 job_post_limit: 1,
-                job_posts_used: 0,
               });
             }
           }

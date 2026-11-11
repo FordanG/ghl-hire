@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import {
   Activity,
   ArrowUpRight,
@@ -72,6 +72,8 @@ function formatDate(value: string | null) {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    // Fixed timezone so the server render and client hydration agree
+    timeZone: 'UTC',
   }).format(new Date(value));
 }
 
@@ -85,6 +87,15 @@ function formatRelative(value: string) {
   const days = Math.round(hours / 24);
   if (days < 30) return `${days}d ago`;
   return formatDate(value);
+}
+
+const subscribeNoop = () => () => {};
+
+// Relative times depend on the viewer's clock, so render the deterministic
+// absolute date during SSR and hydration, then switch to relative on the client.
+function RelativeTime({ value }: { value: string }) {
+  const hydrated = useSyncExternalStore(subscribeNoop, () => true, () => false);
+  return <>{hydrated ? formatRelative(value) : formatDate(value)}</>;
 }
 
 function titleCase(value: string) {
@@ -282,7 +293,7 @@ function Overview({ data, onNavigate }: { data: AdminDashboardData; onNavigate: 
             {[
               { section: 'moderation' as const, label: 'Pending reports', value: metrics.pendingReports, tone: 'bg-amber-400' },
               { section: 'support' as const, label: 'Open support tickets', value: metrics.openTickets, tone: 'bg-blue-500' },
-              { section: 'companies' as const, label: 'Unverified companies', value: data.companies.filter((company) => !company.isVerified).length, tone: 'bg-violet-500' },
+              { section: 'companies' as const, label: 'Unverified companies', value: metrics.unverifiedCompanies, tone: 'bg-violet-500' },
             ].map((item) => (
               <button
                 key={item.label}
@@ -320,7 +331,7 @@ function Overview({ data, onNavigate }: { data: AdminDashboardData; onNavigate: 
                   <p className="truncate text-sm font-medium text-slate-800">{item.title}</p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">{item.detail}</p>
                 </div>
-                <time className="whitespace-nowrap font-mono text-[10px] text-slate-400">{formatRelative(item.occurredAt)}</time>
+                <time className="whitespace-nowrap font-mono text-[10px] text-slate-400"><RelativeTime value={item.occurredAt} /></time>
               </div>
             )) : (
               <p className="py-8 text-center text-sm text-slate-500">No recent platform activity.</p>
@@ -370,13 +381,13 @@ export default function AdminDashboard({ data }: { data: AdminDashboardData }) {
         .includes(normalizedSearch)
     ),
     reports: data.reports.filter((report) =>
-      [report.contentType, report.reason, report.description || '', report.status]
+      [report.contentType, report.contentId, report.reason, report.description || '', report.status]
         .join(' ')
         .toLowerCase()
         .includes(normalizedSearch)
     ),
     tickets: data.tickets.filter((ticket) =>
-      [ticket.number, ticket.subject, ticket.customerName, ticket.category, ticket.priority, ticket.status]
+      [ticket.number, ticket.subject, ticket.customerName, ticket.customerEmail || '', ticket.category, ticket.priority, ticket.status]
         .join(' ')
         .toLowerCase()
         .includes(normalizedSearch)
@@ -534,7 +545,7 @@ export default function AdminDashboard({ data }: { data: AdminDashboardData }) {
             ) : (
               <div className="ml-auto hidden text-right sm:block">
                 <p className="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-400">Snapshot</p>
-                <p className="mt-0.5 text-xs font-medium text-slate-600">{formatRelative(data.generatedAt)}</p>
+                <p className="mt-0.5 text-xs font-medium text-slate-600"><RelativeTime value={data.generatedAt} /></p>
               </div>
             )}
             <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-700 sm:flex">
@@ -679,20 +690,20 @@ export default function AdminDashboard({ data }: { data: AdminDashboardData }) {
           {activeSection === 'moderation' && (
             <>
               <SectionHeading eyebrow="Trust & safety" title="Moderation" description="Triage content reports, move them into review, and record a clear final outcome without leaving the admin workspace." />
-              {filtered.reports.length ? <div className="grid gap-4 xl:grid-cols-2">{filtered.reports.map((report: AdminReport) => <article key={report.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-40px_rgba(15,23,42,0.6)]"><div className="flex items-start justify-between gap-4"><div className="flex items-center gap-3"><div className="rounded-xl bg-amber-50 p-2.5 text-amber-700"><ShieldAlert className="h-5 w-5" /></div><div><p className="font-medium text-slate-900">{titleCase(report.contentType)} report</p><p className="text-xs text-slate-500">{formatDate(report.createdAt)}</p></div></div><StatusPill status={report.status} /></div><div className="mt-4 rounded-xl bg-slate-50 p-4"><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400">Reason</p><p className="mt-1 text-sm font-semibold text-slate-800">{titleCase(report.reason)}</p><p className="mt-2 text-sm leading-6 text-slate-600">{report.description || 'The reporter did not provide additional context.'}</p></div><div className="mt-4 flex flex-wrap justify-end gap-2">{report.status === 'pending' && <button disabled={pendingAction === `reports-${report.id}`} onClick={() => runAction('reports', report.id, 'set-status', 'reviewing', 'Report moved into review.')} className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Start review</button>}{!['resolved', 'dismissed'].includes(report.status) && <><button disabled={pendingAction === `reports-${report.id}`} onClick={() => runAction('reports', report.id, 'set-status', 'dismissed', 'Report dismissed.', 'Dismiss this report as not actionable?')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Dismiss</button><button disabled={pendingAction === `reports-${report.id}`} onClick={() => runAction('reports', report.id, 'set-status', 'resolved', 'Report resolved.', 'Resolve this report and mark the case complete?')} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">Resolve</button></>}</div></article>)}</div> : <EmptyState label="reports" />}
+              {filtered.reports.length ? <div className="grid gap-4 xl:grid-cols-2">{filtered.reports.map((report: AdminReport) => <article key={report.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-40px_rgba(15,23,42,0.6)]"><div className="flex items-start justify-between gap-4"><div className="flex items-center gap-3"><div className="rounded-xl bg-amber-50 p-2.5 text-amber-700"><ShieldAlert className="h-5 w-5" /></div><div><p className="font-medium text-slate-900">{titleCase(report.contentType)} report</p><p className="text-xs text-slate-500">{formatDate(report.createdAt)}</p></div></div><StatusPill status={report.status} /></div><div className="mt-4 rounded-xl bg-slate-50 p-4"><p className="font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400">Reason</p><p className="mt-1 text-sm font-semibold text-slate-800">{titleCase(report.reason)}</p><p className="mt-2 text-sm leading-6 text-slate-600">{report.description || 'The reporter did not provide additional context.'}</p><p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400">Reported item</p>{report.contentHref ? <Link href={report.contentHref} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 break-all text-sm font-semibold text-blue-700 hover:text-blue-800">View {titleCase(report.contentType).toLowerCase()}<ArrowUpRight className="h-3.5 w-3.5" /></Link> : <p className="mt-1 break-all font-mono text-xs text-slate-600">{report.contentId}</p>}</div><div className="mt-4 flex flex-wrap justify-end gap-2">{report.status === 'pending' && <button disabled={pendingAction === `reports-${report.id}`} onClick={() => runAction('reports', report.id, 'set-status', 'reviewing', 'Report moved into review.')} className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Start review</button>}{!['resolved', 'dismissed'].includes(report.status) && <><button disabled={pendingAction === `reports-${report.id}`} onClick={() => runAction('reports', report.id, 'set-status', 'dismissed', 'Report dismissed.', 'Dismiss this report as not actionable?')} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Dismiss</button><button disabled={pendingAction === `reports-${report.id}`} onClick={() => runAction('reports', report.id, 'set-status', 'resolved', 'Report resolved.', 'Resolve this report and mark the case complete?')} className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800">Resolve</button></>}</div></article>)}</div> : <EmptyState label="reports" />}
             </>
           )}
 
           {activeSection === 'support' && (
             <>
               <SectionHeading eyebrow="Customer operations" title="Support" description="Prioritize urgent customer issues, see who needs help, and move tickets through the support workflow." />
-              {filtered.tickets.length ? <div className="grid gap-4 xl:grid-cols-2">{filtered.tickets.map((ticket: AdminTicket) => <article key={ticket.id} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-start justify-between gap-4"><div><div className="flex items-center gap-2"><span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600">{ticket.number}</span><StatusPill status={ticket.priority} /></div><h2 className="mt-2 font-serif text-xl font-semibold text-slate-950">{ticket.subject}</h2><p className="mt-1 text-sm text-slate-500">{ticket.customerName} · {titleCase(ticket.category)} · {formatDate(ticket.createdAt)}</p></div><LifeBuoy className="h-5 w-5 text-slate-400" /></div><div className="mt-5 flex items-center justify-between gap-4 border-t border-slate-100 pt-4"><StatusPill status={ticket.status} /><select aria-label={`Status for ${ticket.number}`} disabled={pendingAction === `tickets-${ticket.id}`} value={ticket.status} onChange={(event) => runAction('tickets', ticket.id, 'set-status', event.target.value, `${ticket.number} is now ${titleCase(event.target.value)}.`, ['resolved', 'closed'].includes(event.target.value) ? `Mark ${ticket.number} as ${event.target.value}?` : undefined)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400">{ticketStatuses.map((status) => <option key={status} value={status}>{titleCase(status)}</option>)}</select></div></article>)}</div> : <EmptyState label="support tickets" />}
+              {filtered.tickets.length ? <div className="grid gap-4 xl:grid-cols-2">{filtered.tickets.map((ticket: AdminTicket) => <article key={ticket.id} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex items-start justify-between gap-4"><div><div className="flex items-center gap-2"><span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-600">{ticket.number}</span><StatusPill status={ticket.priority} /></div><h2 className="mt-2 font-serif text-xl font-semibold text-slate-950">{ticket.subject}</h2><p className="mt-1 text-sm text-slate-500">{ticket.customerName}{ticket.customerEmail && ticket.customerEmail !== ticket.customerName ? ` (${ticket.customerEmail})` : ''} · {titleCase(ticket.category)} · {formatDate(ticket.createdAt)}</p></div><LifeBuoy className="h-5 w-5 text-slate-400" /></div><div className="mt-5 flex items-center justify-between gap-4 border-t border-slate-100 pt-4"><StatusPill status={ticket.status} /><select aria-label={`Status for ${ticket.number}`} disabled={pendingAction === `tickets-${ticket.id}`} value={ticket.status} onChange={(event) => runAction('tickets', ticket.id, 'set-status', event.target.value, `${ticket.number} is now ${titleCase(event.target.value)}.`, ['resolved', 'closed'].includes(event.target.value) ? `Mark ${ticket.number} as ${event.target.value}?` : undefined)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400">{ticketStatuses.map((status) => <option key={status} value={status}>{titleCase(status)}</option>)}</select></div></article>)}</div> : <EmptyState label="support tickets" />}
             </>
           )}
         </main>
 
         <footer className="border-t border-slate-200 px-4 py-5 text-center font-mono text-[10px] uppercase tracking-[0.14em] text-slate-400 sm:px-6 lg:px-8">
-          Snapshot generated {formatRelative(data.generatedAt)} · Up to 75 recent records per management table
+          Snapshot generated <RelativeTime value={data.generatedAt} /> · Up to 75 recent records per management table
         </footer>
       </div>
     </div>
