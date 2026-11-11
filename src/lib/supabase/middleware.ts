@@ -38,6 +38,16 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Redirects must carry any session cookies refreshed by getUser() above,
+  // otherwise the browser keeps the stale tokens and the session can drop.
+  const redirectWithSession = (url: URL) => {
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie)
+    })
+    return response
+  }
+
   // Protected routes that require authentication
   const protectedRoutes = [
     '/dashboard',
@@ -59,7 +69,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/signin'
     url.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-    return NextResponse.redirect(url)
+    return redirectWithSession(url)
   }
 
   // Admin area needs its own server-side gate: being logged in isn't enough,
@@ -72,7 +82,7 @@ export async function updateSession(request: NextRequest) {
     if (!isAdminOrModerator) {
       const url = request.nextUrl.clone()
       url.pathname = '/dashboard'
-      return NextResponse.redirect(url)
+      return redirectWithSession(url)
     }
   }
 

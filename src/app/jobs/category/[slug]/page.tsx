@@ -25,7 +25,7 @@ interface Job {
   salary_min: number | null;
   salary_max: number | null;
   experience_level: string;
-  is_remote: boolean;
+  remote: boolean | null;
   created_at: string;
   company: {
     id: string;
@@ -125,7 +125,15 @@ export default function JobCategoryPage() {
       setLoading(true);
 
       // Search for jobs that match this category in title or description
-      const searchTerms = category.keywords.join('|');
+      // PostgREST or() syntax: strip reserved chars, escape LIKE wildcards
+      const clean = (t: string) =>
+        t.replace(/[,()"\\*:]/g, ' ').replace(/\s+/g, ' ').trim().replace(/[%_]/g, (c) => `\\${c}`);
+      const terms = [slug.replaceAll('-', ' '), ...category.keywords]
+        .map(clean)
+        .filter(Boolean);
+      const orFilter = terms
+        .flatMap((t) => [`title.ilike.%${t}%`, `description.ilike.%${t}%`])
+        .join(',');
 
       const { data, error } = await supabase
         .from('jobs')
@@ -134,7 +142,7 @@ export default function JobCategoryPage() {
           company:companies(id, company_name, logo_url)
         `)
         .eq('status', 'active')
-        .or(`title.ilike.%${slug.replace('-', ' ')}%,description.ilike.%${searchTerms}%`)
+        .or(orFilter)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -310,7 +318,7 @@ export default function JobCategoryPage() {
                       <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                         <div className="flex items-center gap-1">
                           <MapPin className="w-4 h-4" />
-                          {job.is_remote ? 'Remote' : job.location}
+                          {job.remote ? 'Remote' : job.location}
                         </div>
                         <div className="flex items-center gap-1">
                           <Briefcase className="w-4 h-4" />

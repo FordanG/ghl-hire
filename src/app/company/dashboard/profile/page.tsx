@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Building2,
   Globe,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { ToastContainer } from '@/components/ui/toast';
 import {
   getCompanyProfile,
@@ -47,10 +48,9 @@ export default function CompanyProfilePage() {
     location: ''
   });
 
-  // Auto-save
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
+  const { refreshProfile } = useAuth();
   const { toasts, removeToast, success, error: showError } = useToast();
 
   // Load company profile on mount
@@ -97,6 +97,7 @@ export default function CompanyProfilePage() {
       setCompany(result.data);
       setIsEditing(false);
       setLastSaved(new Date());
+      await refreshProfile();
       success('Company profile updated successfully!');
     } else {
       showError(result.error || 'Failed to update company profile');
@@ -104,38 +105,6 @@ export default function CompanyProfilePage() {
 
     setIsSaving(false);
   };
-
-  const handleAutoSave = useCallback(async () => {
-    if (!isEditing) return;
-
-    const result = await updateCompanyProfile(formData);
-
-    if (result.success && result.data) {
-      setCompany(result.data);
-      setLastSaved(new Date());
-    }
-  }, [formData, isEditing]);
-
-  // Trigger auto-save on form changes
-  useEffect(() => {
-    if (!isEditing) return;
-
-    // Clear existing timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    // Set new timeout for auto-save (3 seconds after last change)
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      handleAutoSave();
-    }, 3000);
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, [formData, isEditing, handleAutoSave]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -150,6 +119,7 @@ export default function CompanyProfilePage() {
 
     if (result.success && result.data) {
       setCompany(result.data);
+      await refreshProfile();
       success('Company logo uploaded successfully!');
     } else {
       showError(result.error || 'Failed to upload logo');

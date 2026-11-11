@@ -40,8 +40,8 @@ interface Application {
     company: {
       company_name: string;
       logo_url: string | null;
-    };
-  };
+    } | null;
+  } | null;
 }
 
 export default function ApplicationsPage() {
@@ -118,9 +118,9 @@ export default function ApplicationsPage() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(app =>
-        app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.job.company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.job.location.toLowerCase().includes(searchTerm.toLowerCase())
+        app.job?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job?.company?.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job?.location.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -187,36 +187,41 @@ export default function ApplicationsPage() {
   };
 
   const ApplicationCard = ({ application }: { application: Application }) => {
-    const jobSlug = generateJobSlug(application.job.title, application.job.id);
-    const salary = application.job.salary_min && application.job.salary_max
-      ? `$${application.job.salary_min.toLocaleString()} - $${application.job.salary_max.toLocaleString()}`
+    const job = application.job;
+    const jobSlug = job ? generateJobSlug(job.title, job.id) : null;
+    const salary = job && job.salary_min && job.salary_max
+      ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
       : null;
 
     return (
       <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{application.job.title}</h3>
-            <div className="flex items-center gap-2 mb-2">
-              <Building2 className="w-4 h-4 text-gray-500" />
-              <p className="text-gray-600">{application.job.company.company_name}</p>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
-              <div className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {application.job.location}
-                {application.job.remote && ' (Remote)'}
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {application.job.job_type}
-              </div>
-              {salary && (
-                <div className="flex items-center gap-1">
-                  💰 {salary}
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">{job ? job.title : 'Job no longer available'}</h3>
+            {job && (
+              <>
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="w-4 h-4 text-gray-500" />
+                  <p className="text-gray-600">{job.company?.company_name ?? 'Unknown company'}</p>
                 </div>
-              )}
-            </div>
+                <div className="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    {job.location}
+                    {job.remote && ' (Remote)'}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {job.job_type}
+                  </div>
+                  {salary && (
+                    <div className="flex items-center gap-1">
+                      💰 {salary}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
             <div className="flex items-center gap-4 text-sm text-gray-500 mt-2">
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4" />
@@ -232,13 +237,15 @@ export default function ApplicationsPage() {
             <span className={`px-3 py-1 text-sm font-medium rounded-full whitespace-nowrap ${getApplicationStatusColor(application.status)}`}>
               {getApplicationStatusText(application.status)}
             </span>
-            <Link
-              href={`/jobs/${jobSlug}`}
-              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-              title="View job details"
-            >
-              <Eye className="w-4 h-4" />
-            </Link>
+            {jobSlug && (
+              <Link
+                href={`/jobs/${jobSlug}`}
+                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                title="View job details"
+              >
+                <Eye className="w-4 h-4" />
+              </Link>
+            )}
           </div>
         </div>
 

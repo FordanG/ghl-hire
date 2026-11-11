@@ -19,7 +19,7 @@ interface ApplyJobModalProps {
 }
 
 export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModalProps) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -94,9 +94,15 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
 
       // Upload resume if provided
       if (resumeFile) {
+        if (!user) {
+          setError('You must be logged in to apply');
+          setLoading(false);
+          return;
+        }
+
         const fileExt = resumeFile.name.split('.').pop();
-        const fileName = `${profile.id}-${Date.now()}.${fileExt}`;
-        const filePath = `resumes/${fileName}`;
+        // Storage policy requires the first folder to be the auth user id
+        const filePath = `${user.id}/resume-${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('resumes')
@@ -104,11 +110,13 @@ export default function ApplyJobModal({ job, onClose, onSuccess }: ApplyJobModal
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
-          // Continue with application even if upload fails
-        } else {
-          const { data } = supabase.storage.from('resumes').getPublicUrl(filePath);
-          resumeUrl = data.publicUrl;
+          setError('Failed to upload your resume. Please try again.');
+          setLoading(false);
+          return;
         }
+
+        const { data } = supabase.storage.from('resumes').getPublicUrl(filePath);
+        resumeUrl = data.publicUrl;
       }
 
       // Check for duplicate application

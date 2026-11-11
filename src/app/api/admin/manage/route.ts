@@ -5,6 +5,19 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
+// Raised by the enforce_job_post_limit trigger (018) when a job would push its
+// company past the plan's active job limit
+function isJobPostLimitError(error: { message?: string | null }) {
+  return (error.message ?? '').includes('JOB_POST_LIMIT_REACHED');
+}
+
+function notFound() {
+  return NextResponse.json(
+    { error: 'That record no longer exists.' },
+    { status: 404, headers: { 'Cache-Control': 'no-store' } }
+  );
+}
+
 export async function PATCH(request: Request) {
   const access = await getAdminAccess();
 
@@ -48,54 +61,73 @@ export async function PATCH(request: Request) {
     }
 
     if (resource === 'companies') {
-      const { error } = await adminClient
+      const { data, error } = await adminClient
         .from('companies')
         .update({ is_verified: value as boolean })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) return notFound();
     }
 
     if (resource === 'jobs') {
-      const { error } = await adminClient
+      const { data, error } = await adminClient
         .from('jobs')
         .update({ status: value as string })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
+      if (error && isJobPostLimitError(error)) {
+        return NextResponse.json(
+          {
+            error:
+              "This company has reached its plan's active job limit, so the job cannot be activated. Upgrade the plan or close another job first.",
+          },
+          { status: 409 }
+        );
+      }
       if (error) throw error;
+      if (!data?.length) return notFound();
     }
 
     if (resource === 'applications') {
-      const { error } = await adminClient
+      const { data, error } = await adminClient
         .from('applications')
         .update({ status: value as string })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) return notFound();
     }
 
     if (resource === 'reports') {
       const isComplete = value === 'resolved' || value === 'dismissed';
-      const { error } = await adminClient
+      const { data, error } = await adminClient
         .from('content_reports')
         .update({
           status: value as string,
           resolved_by: isComplete ? access.profileId : null,
           resolved_at: isComplete ? now : null,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) return notFound();
     }
 
     if (resource === 'tickets') {
       const isResolved = value === 'resolved';
       const isClosed = value === 'closed';
-      const { error } = await adminClient
+      const { data, error } = await adminClient
         .from('support_tickets')
         .update({
           status: value as string,
           resolved_at: isResolved || isClosed ? now : null,
           closed_at: isClosed ? now : null,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .select('id');
       if (error) throw error;
+      if (!data?.length) return notFound();
     }
 
     return NextResponse.json(

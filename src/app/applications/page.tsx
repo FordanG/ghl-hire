@@ -24,8 +24,8 @@ interface Application {
     company: {
       company_name: string;
       logo_url: string | null;
-    };
-  };
+    } | null;
+  } | null;
 }
 
 export default function ApplicationsPage() {
@@ -101,9 +101,9 @@ export default function ApplicationsPage() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(app =>
-        app.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.job.company.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.job.location.toLowerCase().includes(searchTerm.toLowerCase())
+        app.job?.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job?.company?.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.job?.location.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -218,7 +218,10 @@ export default function ApplicationsPage() {
           {/* Applications List */}
           {filteredApplications.length > 0 ? (
             <div className="space-y-4 fade-in fade-in-4">
-              {filteredApplications.map((application) => (
+              {filteredApplications.map((application) => {
+                const job = application.job;
+                const logoUrl = job?.company?.logo_url ?? null;
+                return (
                 <div
                   key={application.id}
                   className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
@@ -226,10 +229,10 @@ export default function ApplicationsPage() {
                   <div className="flex items-start gap-4">
                     {/* Company Logo */}
                     <div className="flex-shrink-0">
-                      {application.job.company.logo_url ? (
+                      {logoUrl ? (
                         <img
-                          src={application.job.company.logo_url}
-                          alt={application.job.company.company_name}
+                          src={logoUrl}
+                          alt={job?.company?.company_name ?? 'Company'}
                           className="w-16 h-16 rounded-lg object-cover"
                         />
                       ) : (
@@ -243,15 +246,21 @@ export default function ApplicationsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4 mb-2">
                         <div className="flex-1">
-                          <Link
-                            href={`/jobs/${application.job.id}`}
-                            className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors"
-                          >
-                            {application.job.title}
-                          </Link>
-                          <p className="text-blue-600 font-medium mt-1">
-                            {application.job.company.company_name}
-                          </p>
+                          {job ? (
+                            <Link
+                              href={`/jobs/${job.id}`}
+                              className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            >
+                              {job.title}
+                            </Link>
+                          ) : (
+                            <h3 className="text-lg font-semibold text-gray-900">Job no longer available</h3>
+                          )}
+                          {job?.company && (
+                            <p className="text-blue-600 font-medium mt-1">
+                              {job.company.company_name}
+                            </p>
+                          )}
                         </div>
                         <span className={`px-3 py-1 text-sm font-medium rounded-full ${getStatusColor(application.status)}`}>
                           {getStatusText(application.status)}
@@ -259,15 +268,19 @@ export default function ApplicationsPage() {
                       </div>
 
                       <div className="flex flex-wrap gap-4 text-sm text-gray-500 mb-4">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {application.job.location}
-                          {application.job.remote && ' (Remote)'}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {application.job.job_type}
-                        </span>
+                        {job && (
+                          <>
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {job.location}
+                              {job.remote && ' (Remote)'}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-4 h-4" />
+                              {job.job_type}
+                            </span>
+                          </>
+                        )}
                         <span className="flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
                           Applied {formatDate(application.applied_at)}
@@ -284,18 +297,21 @@ export default function ApplicationsPage() {
                       )}
 
                       <div className="flex flex-wrap gap-3">
-                        <Link
-                          href={`/jobs/${application.job.id}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          View Job
-                        </Link>
+                        {job && (
+                          <Link
+                            href={`/jobs/${job.id}`}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            View Job
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-lg p-12 text-center fade-in fade-in-4">

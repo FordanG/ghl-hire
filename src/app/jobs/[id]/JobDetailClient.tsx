@@ -13,6 +13,8 @@ interface JobDetailClientProps {
     id: string;
     title: string;
     applications_count: number;
+    status?: string | null;
+    expires_at?: string | null;
     company: { company_name: string } | null;
   };
 }
@@ -64,7 +66,12 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
     checkStatus();
   }, [profile, job.id]);
 
+  const isClosed =
+    (!!job.status && job.status !== 'active') ||
+    (!!job.expires_at && new Date(job.expires_at).getTime() < Date.now());
+
   const handleApply = () => {
+    if (isClosed) return;
     if (!user) {
       router.push(`/signin?redirect=/jobs/${job.id}`);
       return;
@@ -137,6 +144,10 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
           <div className="px-6 py-3 bg-green-100 text-green-800 font-semibold rounded-lg text-center">
             ✓ Applied
           </div>
+        ) : isClosed ? (
+          <div className="px-6 py-3 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center">
+            This job is no longer accepting applications
+          </div>
         ) : (
           <button
             onClick={handleApply}
@@ -166,7 +177,7 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
         </button>
       </div>
 
-      {showApplyModal && (
+      {showApplyModal && !isClosed && (
         <ApplyJobModal
           job={job}
           onClose={() => setShowApplyModal(false)}

@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       .from('applications')
       .select(`
         id,
+        status,
         profile:profiles!applications_profile_id_fkey (
           id,
           full_name,
@@ -94,6 +95,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // The email must describe the status actually stored, not whatever the
+    // client claims: the employer's update has already landed by the time the
+    // dashboard calls this route, so a mismatch means a stale or forged call.
+    const currentStatus = application.status;
+
+    if (!currentStatus || currentStatus !== newStatus) {
+      return NextResponse.json(
+        { error: 'Application status does not match the requested status' },
+        { status: 409 }
+      );
+    }
+
     // Check if user wants to receive this type of email
     const shouldSend = await shouldSendEmail(profile.id, 'application_status_changed');
 
@@ -113,7 +126,7 @@ export async function POST(request: NextRequest) {
           profile.full_name || 'Applicant',
           job.title,
           company.company_name,
-          newStatus,
+          currentStatus,
           applicationId
         );
 

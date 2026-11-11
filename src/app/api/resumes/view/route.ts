@@ -12,7 +12,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
  *
  * Authorization piggybacks on RLS: the application row is fetched with the
  * caller's session, and the "Users can view relevant applications" policy
- * already scopes it to the applicant and the job's employer.
+ * already scopes it to the applicant and the job's employer. The resolved
+ * path must also sit in the owning user's folder before it is signed.
  */
 
 // Signed link lifetime in seconds; long enough to open/download, short enough
@@ -41,15 +42,23 @@ export async function GET(request: NextRequest) {
 
     const applicationId = request.nextUrl.searchParams.get('applicationId');
     let resumeUrl: string | null = null;
+    // auth user id of whoever the resume belongs to; the signed path must live
+    // in that user's storage folder
+    let ownerUserId: string | null = null;
 
     if (applicationId) {
       const { data: application } = await supabase
         .from('applications')
-        .select('resume_url')
+        .select(`
+          resume_url,
+          profile:profiles!applications_profile_id_fkey ( user_id )
+        `)
         .eq('id', applicationId)
         .single();
 
+      const applicant = application?.profile as unknown as { user_id: string | null } | null;
       resumeUrl = application?.resume_url ?? null;
+      ownerUserId = applicant?.user_id ?? null;
     } else {
       const { data: profile } = await supabase
         .from('profiles')
@@ -58,11 +67,25 @@ export async function GET(request: NextRequest) {
         .single();
 
       resumeUrl = profile?.resume_url ?? null;
+      ownerUserId = user.id;
     }
 
     const path = resumeUrl ? resumeStoragePath(resumeUrl) : null;
 
-    if (!path) {
+    // resume_url is user-writable (profiles are public and owners edit their
+    // own row), so never sign a path just because it is stored: it must sit
+    // in the owner's folder, matching the bucket's first-folder = auth.uid()
+    // upload policy. Otherwise anyone could copy a victim's path into their
+    // own profile and mint a signed URL for it with the service role.
+    const segments = path ? path.split('/') : [];
+    const ownsPath =
+      !!ownerUserId &&
+      segments.length >= 2 &&
+      segments[0] === ownerUserId &&
+      !segments.includes('..') &&
+      !segments.includes('.');
+
+    if (!path || !ownsPath) {
       return NextResponse.json(
         { error: 'Resume not found' },
         { status: 404 }
