@@ -40,7 +40,7 @@ export default function CompanyDashboardLayout({ children }: CompanyDashboardLay
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? '' : 'pointer-events-none'}`}>
-        <div className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`} 
+        <div className={`fixed inset-0 bg-gray-600/75 transition-opacity ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`} 
              onClick={() => setSidebarOpen(false)} />
         
         <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-white transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
