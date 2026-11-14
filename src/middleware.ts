@@ -113,9 +113,65 @@ setInterval(() => {
 }, 60000); // Clean up every minute
 
 /**
+ * Waitlist mode: the public site is replaced by /waitlist while the platform
+ * and payments are being reworked.
+ *
+ * - WAITLIST_MODE=off  -> full site everywhere (set this to relaunch)
+ * - WAITLIST_MODE=on   -> waitlist everywhere (for testing locally)
+ * - unset              -> waitlist on the production domain only, so Netlify
+ *                         deploy previews and localhost keep the full app for
+ *                         development and QA
+ */
+const WAITLIST_OPEN_PREFIXES = [
+  '/waitlist',
+  '/api',
+  '/_next',
+  '/auth', // Supabase auth callback
+  '/signin', // lets the owner reach /admin
+  '/admin', // gated to admins by updateSession
+  '/privacy',
+  '/terms',
+];
+
+function isWaitlistMode(request: NextRequest): boolean {
+  const mode = process.env.WAITLIST_MODE;
+  if (mode === 'off') return false;
+  if (mode === 'on') return true;
+  // Check every place the public hostname can show up behind Netlify's proxy
+  const hosts = [
+    request.headers.get('x-forwarded-host'),
+    request.headers.get('host'),
+    request.nextUrl.hostname,
+  ];
+  return hosts.some((value) => {
+    const host = (value || '').split(',')[0].trim().split(':')[0].toLowerCase();
+    return host === 'ghlhire.com' || host.endsWith('.ghlhire.com');
+  });
+}
+
+function waitlistRedirect(request: NextRequest): NextResponse | null {
+  if (!isWaitlistMode(request)) return null;
+
+  const path = request.nextUrl.pathname;
+  const isOpen =
+    WAITLIST_OPEN_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`)) ||
+    /\.(svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$/.test(path);
+
+  if (isOpen) return null;
+
+  // 307: temporary, so browsers and search engines don't cache it past relaunch
+  return NextResponse.redirect(new URL('/waitlist', request.url), 307);
+}
+
+/**
  * Main middleware function
  */
 export async function middleware(request: NextRequest) {
+  const waitlistResponse = waitlistRedirect(request);
+  if (waitlistResponse) {
+    return waitlistResponse;
+  }
+
   // Apply rate limiting
   const rateLimitResponse = rateLimiter(request);
   if (rateLimitResponse) {

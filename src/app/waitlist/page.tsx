@@ -2,7 +2,44 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Briefcase, User, CheckCircle, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Briefcase, User, CheckCircle, Copy, Loader2 } from "lucide-react";
+
+const SUPER_CLONER_URL = "https://supercloner.app/?ref=3nojbk";
+
+/**
+ * Always-visible Super Cloner promotion. Unlike the dismissible top banner,
+ * this stays on the page for as long as the site is in waitlist mode.
+ */
+function SuperClonerCard() {
+  return (
+    <a
+      href={SUPER_CLONER_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group mt-6 block rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-xl transition-transform hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
+          <Copy className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">
+            While you wait
+          </p>
+          <h2 className="mt-1 text-xl font-bold">Super Cloner</h2>
+          <p className="mt-1 text-sm text-blue-50">
+            Clone GHL funnels and websites in seconds. Stop rebuilding client
+            pages from scratch.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition-colors group-hover:bg-blue-50">
+            Try Super Cloner
+            <ArrowUpRight className="h-4 w-4" />
+          </span>
+        </div>
+      </div>
+    </a>
+  );
+}
 
 type UserType = "employer" | "jobseeker" | null;
 
@@ -48,14 +85,17 @@ export default function WaitlistPage() {
   if (isSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 waitlist-bg">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-green-600" />
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re on the list!</h1>
+            <p className="text-gray-600">
+              Thanks for joining the GHL Hire waitlist. We&apos;ll email you as soon as we reopen.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">You&apos;re on the list!</h1>
-          <p className="text-gray-600 mb-6">
-            Thanks for joining the GHL Hire waitlist. We&apos;ll notify you as soon as we launch.
-          </p>
+          <SuperClonerCard />
         </div>
       </div>
     );
@@ -75,7 +115,7 @@ export default function WaitlistPage() {
             Join the Waitlist
           </h1>
           <p className="text-gray-600">
-            Be the first to know when GHL Hire launches. The premier job board for GoHighLevel professionals.
+            GHL Hire, the job board for GoHighLevel professionals, is being rebuilt. Leave your email and we&apos;ll tell you the moment it reopens.
           </p>
         </div>
 
@@ -163,6 +203,8 @@ export default function WaitlistPage() {
             We&apos;ll only email you about the launch. No spam, ever.
           </p>
         </div>
+
+        <SuperClonerCard />
 
       </div>
     </div>
