@@ -1,54 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getWhopClient, WhopPayment, WhopMembership } from '@/lib/payments/whop';
-import { getPlanById, getPlanByWhopPlanId, SubscriptionPlan } from '@/lib/payments/plans';
+import {
+  webhooks,
+  getPlanByPolarProductId,
+  type PolarOrder,
+  type PolarSubscription,
+} from '@/lib/payments/polar';
+import { getPlanById, type SubscriptionPlan } from '@/lib/payments/plans';
 import { createAdminClient } from '@/lib/supabase/admin';
 
+type Admin = ReturnType<typeof createAdminClient>;
+
 /**
- * Whop Webhook Handler
+ * Polar Webhook Handler
  *
- * Receives payment and membership notifications from Whop. Signatures are
- * verified by the SDK (webhook-id / webhook-timestamp / webhook-signature
- * headers against WHOP_WEBHOOK_SECRET).
+ * Polar is the source of truth for billing state. Two kinds of events matter:
  *
- * Register in Whop Dashboard > Developer > Webhooks:
- *   URL: https://<app-url>/api/payments/webhook
- *   Events: payment.succeeded, payment.failed, membership.deactivated,
- *           membership.cancel_at_period_end_changed
+ * - subscription.*  -> mirror the subscription (plan, status, period, cancel
+ *                      flag) into our `subscriptions` row. Covers activation,
+ *                      renewals, plan changes and cancellations made in the
+ *                      Polar customer portal, and revocation.
+ * - order.paid      -> record the money: an invoice plus a succeeded
+ *                      payment transaction (first purchase and every renewal).
+ *
+ * Signatures follow Standard Webhooks (webhook-id / webhook-timestamp /
+ * webhook-signature headers) and are verified against POLAR_WEBHOOK_SECRET.
+ *
+ * Register in Polar Dashboard > Settings > Webhooks:
+ *   URL: https://<app-url>/api/payments/webhook   Format: Raw
+ *   Events: order.paid, subscription.active, subscription.updated,
+ *           subscription.canceled, subscription.uncanceled,
+ *           subscription.past_due, subscription.revoked
  */
 export async function POST(request: NextRequest) {
+  const secret = process.env.POLAR_WEBHOOK_SECRET;
+  if (!secret) {
+    console.error('POLAR_WEBHOOK_SECRET is not configured');
+    return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+  }
+
   const body = await request.text();
 
   let event;
   try {
-    event = getWhopClient().webhooks.unwrap(body, {
-      headers: Object.fromEntries(request.headers),
-    });
-  } catch (error) {
-    console.error('Invalid webhook signature:', error);
-    return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 401 }
+    event = await webhooks.validateEvent(
+      body,
+      {
+        'webhook-id': request.headers.get('webhook-id') ?? '',
+        'webhook-timestamp': request.headers.get('webhook-timestamp') ?? '',
+        'webhook-signature': request.headers.get('webhook-signature') ?? '',
+      },
+      secret
     );
+  } catch (error) {
+    if (error instanceof webhooks.PolarWebhookVerificationError) {
+      console.error('Invalid webhook signature');
+      return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
+    }
+    if (error instanceof webhooks.PolarWebhookUnknownTypeError) {
+      // An event type this SDK version doesn't model: acknowledge so Polar
+      // doesn't keep retrying something we will never handle.
+      return NextResponse.json({ received: true }, { status: 202 });
+    }
+    console.error('Invalid webhook payload:', error);
+    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 
-  console.log('Whop webhook received:', event.type);
+  console.log('Polar webhook received:', event.type);
 
   try {
     switch (event.type) {
-      case 'payment.succeeded':
-        await handlePaymentSucceeded(event.data);
+      case 'subscription.active':
+      case 'subscription.updated':
+      case 'subscription.canceled':
+      case 'subscription.uncanceled':
+      case 'subscription.past_due':
+      case 'subscription.revoked':
+        await syncSubscription(event.data);
         break;
 
-      case 'payment.failed':
-        await handlePaymentFailed(event.data);
-        break;
-
-      case 'membership.deactivated':
-        await handleMembershipDeactivated(event.data);
-        break;
-
-      case 'membership.cancel_at_period_end_changed':
-        await handleCancelAtPeriodEndChanged(event.data);
+      case 'order.paid':
+        await handleOrderPaid(event.data);
         break;
 
       default:
@@ -58,255 +89,306 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
 
   } catch (error) {
-    // Non-2xx makes Whop retry, which is what we want for transient failures
+    // Non-2xx makes Polar retry, which is what we want for transient failures
     console.error('Webhook error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Webhook processing failed' },
+      { error: 'Webhook processing failed' },
       { status: 500 }
     );
   }
 }
 
-/**
- * Activate (or renew) a subscription after a successful payment.
- */
-async function handlePaymentSucceeded(payment: WhopPayment) {
-  const admin = createAdminClient();
-  const metadata = (payment.metadata || {}) as Record<string, string>;
+/** Statuses in which the company keeps its paid plan. */
+const ENTITLED_STATUSES = new Set(['active', 'trialing', 'past_due']);
 
-  // Locate our pending transaction: prefer the transaction_id we attached as
-  // checkout metadata, fall back to the checkout configuration ID.
-  let transaction = null;
-
-  if (metadata.transaction_id) {
-    const { data } = await admin
-      .from('payment_transactions')
-      .select('*')
-      .eq('id', metadata.transaction_id)
-      .maybeSingle()
-      .throwOnError();
-    transaction = data;
-  }
-
-  if (!transaction && payment.checkout_configuration_id) {
-    const { data } = await admin
-      .from('payment_transactions')
-      .select('*')
-      .eq('provider_checkout_id', payment.checkout_configuration_id)
-      .maybeSingle()
-      .throwOnError();
-    transaction = data;
-  }
-
-  // Idempotency: Whop retries webhooks; skip if this payment is already recorded
-  if (transaction?.status === 'succeeded') {
-    if (transaction.provider_payment_id === payment.id) {
-      console.log('Payment already processed, skipping:', payment.id);
-      return;
-    }
-    // Same checkout metadata but a new payment ID: this is a renewal charge.
-    // Don't overwrite the original transaction; record it separately.
-    await handleRenewalByMembership(payment);
-    return;
-  }
-
-  const transactionPlanId = (transaction?.metadata as Record<string, string> | null)?.plan_id;
-  const plan =
-    getPlanById(metadata.plan_id || '') ||
-    getPlanByWhopPlanId(payment.plan?.id) ||
-    (transactionPlanId ? getPlanById(transactionPlanId) : null);
-
-  const companyId = metadata.company_id || transaction?.company_id;
-
-  if (!transaction && !companyId && payment.membership?.id) {
-    // Renewal payments may arrive without our metadata: match the membership
-    // to an existing subscription instead.
-    await handleRenewalByMembership(payment);
-    return;
-  }
-
-  if (!plan || !companyId) {
-    console.error('Cannot attribute payment - missing plan or company:', payment.id);
-    return;
-  }
-
-  const now = new Date();
-  const periodEnd = addOneMonth(now);
-  const { amountCents, currency } = chargedAmount(payment, plan);
-
-  await activateSubscription(admin, {
-    companyId,
-    plan,
-    membershipId: payment.membership?.id || null,
-    customerId: payment.member?.id || null,
-    periodStart: now,
-    periodEnd,
-  });
-
-  await createPaidInvoice(admin, {
-    companyId,
-    amountCents,
-    currency,
-    description: plan.name,
-    paidAt: payment.paid_at || now.toISOString(),
-    periodStart: now,
-    periodEnd,
-    whopPaymentId: payment.id,
-  });
-
-  // Mark the transaction succeeded last: it is the idempotency marker the
-  // replay guard above checks, so it must only be written once the
-  // subscription and invoice work is actually done.
-  if (transaction) {
-    await admin
-      .from('payment_transactions')
-      .update({
-        status: 'succeeded',
-        provider_payment_id: payment.id,
-        amount_cents: amountCents,
-        currency,
-        paid_at: payment.paid_at || now.toISOString(),
-      })
-      .eq('id', transaction.id)
-      .throwOnError();
-  } else {
-    await admin
-      .from('payment_transactions')
-      .insert([{
-        company_id: companyId,
-        amount_cents: amountCents,
-        currency,
-        status: 'succeeded',
-        transaction_type: 'subscription',
-        reference_number: `WHOP-${payment.id}`,
-        description: `${plan.name} subscription`,
-        provider: 'whop',
-        provider_payment_id: payment.id,
-        provider_checkout_id: payment.checkout_configuration_id,
-        paid_at: payment.paid_at || now.toISOString(),
-        metadata: { plan_id: plan.id },
-      }])
-      .throwOnError();
-  }
-
-  console.log('Subscription activated for company:', companyId);
+function metadataString(metadata: Record<string, unknown> | null | undefined, key: string) {
+  const value = metadata?.[key];
+  return typeof value === 'string' && value ? value : null;
 }
 
 /**
- * Renewal payment with no checkout metadata: extend the subscription matched
- * by its Whop membership ID.
+ * Resolve which company a Polar subscription belongs to: the checkout metadata
+ * we attached, then the customer's external ID (also our company UUID), then an
+ * existing row already linked to this Polar subscription.
  */
-async function handleRenewalByMembership(payment: WhopPayment) {
-  const admin = createAdminClient();
-  const membershipId = payment.membership?.id;
+async function resolveCompanyId(
+  admin: Admin,
+  source: {
+    metadata?: Record<string, unknown> | null;
+    externalCustomerId?: string | null;
+    subscriptionId?: string | null;
+  }
+): Promise<string | null> {
+  const candidate =
+    metadataString(source.metadata, 'company_id') || source.externalCustomerId || null;
 
-  if (!membershipId) {
-    console.error('Renewal payment has no membership to match:', payment.id);
+  if (candidate) {
+    // Validate: metadata is ours, but never write against an ID that isn't a
+    // real company.
+    const { data } = await admin
+      .from('companies')
+      .select('id')
+      .eq('id', candidate)
+      .maybeSingle();
+    if (data) return data.id;
+  }
+
+  if (source.subscriptionId) {
+    const { data } = await admin
+      .from('subscriptions')
+      .select('company_id')
+      .eq('provider_subscription_id', source.subscriptionId)
+      .maybeSingle()
+      .throwOnError();
+    if (data) return data.company_id;
+  }
+
+  return null;
+}
+
+/**
+ * Mirror a Polar subscription into our subscriptions row. Idempotent: it
+ * writes the state carried by the event, so retries and repeats are harmless.
+ */
+async function syncSubscription(subscription: PolarSubscription) {
+  const admin = createAdminClient();
+
+  const companyId = await resolveCompanyId(admin, {
+    metadata: subscription.metadata,
+    externalCustomerId: subscription.customer?.external_id,
+    subscriptionId: subscription.id,
+  });
+
+  if (!companyId) {
+    console.error('Cannot attribute subscription to a company:', subscription.id);
     return;
   }
 
-  // Idempotency: Whop retries webhooks; skip if this payment is already recorded
-  const { data: existing } = await admin
+  const { data: current } = await admin
+    .from('subscriptions')
+    .select('id, provider_subscription_id, plan_type')
+    .eq('company_id', companyId)
+    .maybeSingle()
+    .throwOnError();
+
+  const entitled = ENTITLED_STATUSES.has(subscription.status);
+
+  if (!entitled) {
+    // Ended (revoked, canceled and lapsed, unpaid, never completed). Only
+    // downgrade if this is the subscription the company is actually on, so a
+    // stale event for an old subscription can't strip a newer one.
+    if (current?.provider_subscription_id !== subscription.id) {
+      console.log('Ignoring ended subscription not linked to company:', subscription.id);
+      return;
+    }
+
+    const freePlan = getPlanById('free')!;
+    const endedAt = subscription.ended_at || new Date().toISOString();
+
+    await admin
+      .from('subscriptions')
+      .update({
+        plan_type: freePlan.id,
+        status: 'active',
+        provider_subscription_id: null,
+        provider_plan_id: null,
+        job_post_limit: freePlan.limits.jobPosts,
+        featured_job_limit: freePlan.limits.featuredJobs,
+        team_member_limit: freePlan.limits.teamMembers,
+        price_cents: 0,
+        cancel_at_period_end: false,
+        canceled_at: subscription.canceled_at || endedAt,
+        ended_at: endedAt,
+      })
+      .eq('id', current.id)
+      .throwOnError();
+
+    console.log('Subscription downgraded to free for company:', companyId);
+    return;
+  }
+
+  // If the company is already on a different live Polar subscription, don't
+  // let an event for another one overwrite it.
+  if (
+    current?.provider_subscription_id &&
+    current.provider_subscription_id !== subscription.id &&
+    current.plan_type !== 'free' &&
+    subscription.status !== 'active'
+  ) {
+    console.log('Ignoring non-active event for a different subscription:', subscription.id);
+    return;
+  }
+
+  const plan =
+    getPlanByPolarProductId(subscription.product_id) ||
+    getPlanById(metadataString(subscription.metadata, 'plan_id') || '');
+
+  if (!plan || plan.id === 'free') {
+    console.error('Unknown Polar product for subscription:', subscription.id, subscription.product_id);
+    return;
+  }
+
+  await admin
+    .from('subscriptions')
+    .upsert({
+      company_id: companyId,
+      plan_type: plan.id,
+      status: subscription.status === 'past_due' ? 'past_due' : subscription.status,
+      provider: 'polar',
+      provider_subscription_id: subscription.id,
+      provider_customer_id: subscription.customer_id,
+      provider_plan_id: subscription.product_id,
+      current_period_start: subscription.current_period_start,
+      current_period_end: subscription.current_period_end,
+      job_post_limit: plan.limits.jobPosts,
+      featured_job_limit: plan.limits.featuredJobs,
+      team_member_limit: plan.limits.teamMembers,
+      price_cents: subscription.amount ?? plan.price,
+      currency: (subscription.currency || plan.currency).toUpperCase(),
+      billing_interval: plan.interval,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      canceled_at: subscription.cancel_at_period_end ? subscription.canceled_at : null,
+      ended_at: null,
+    }, {
+      onConflict: 'company_id',
+    })
+    .throwOnError();
+
+  console.log('Subscription synced for company:', companyId, plan.id, subscription.status);
+}
+
+/**
+ * Record a paid order (first purchase or renewal) as an invoice and a
+ * succeeded payment transaction.
+ */
+async function handleOrderPaid(order: PolarOrder) {
+  const admin = createAdminClient();
+
+  // Idempotency: Polar retries webhooks; skip if this order is already recorded.
+  // (The unique index on provider_payment_id is the final arbiter for races.)
+  const { data: recorded } = await admin
     .from('payment_transactions')
     .select('id')
-    .eq('provider_payment_id', payment.id)
+    .eq('provider_payment_id', order.id)
     .eq('status', 'succeeded')
     .limit(1)
     .throwOnError();
 
-  if (existing && existing.length > 0) {
-    console.log('Renewal payment already processed, skipping:', payment.id);
+  if (recorded && recorded.length > 0) {
+    console.log('Order already processed, skipping:', order.id);
     return;
   }
 
-  const { data: subscription } = await admin
-    .from('subscriptions')
-    .select('*')
-    .eq('provider_subscription_id', membershipId)
-    .maybeSingle()
-    .throwOnError();
-
-  if (!subscription) {
-    console.error('No subscription found for membership:', membershipId);
-    return;
-  }
-
-  const plan = getPlanById(subscription.plan_type) || getPlanByWhopPlanId(payment.plan?.id);
-  if (!plan) {
-    console.error('Unknown plan for renewal:', subscription.plan_type);
-    return;
-  }
-
-  const now = new Date();
-  const periodEnd = addOneMonth(now);
-  const { amountCents, currency } = chargedAmount(payment, plan);
-
-  await admin
-    .from('subscriptions')
-    .update({
-      status: 'active',
-      current_period_start: now.toISOString(),
-      current_period_end: periodEnd.toISOString(),
-    })
-    .eq('id', subscription.id)
-    .throwOnError();
-
-  await createPaidInvoice(admin, {
-    companyId: subscription.company_id,
-    amountCents,
-    currency,
-    description: `${plan.name} renewal`,
-    paidAt: payment.paid_at || now.toISOString(),
-    periodStart: now,
-    periodEnd,
-    whopPaymentId: payment.id,
+  const companyId = await resolveCompanyId(admin, {
+    metadata: order.metadata,
+    externalCustomerId: order.customer?.external_id,
+    subscriptionId: order.subscription_id,
   });
 
-  // Insert the transaction last: it is the idempotency marker the guard above
-  // checks, so it must only be written once the renewal work is actually done.
+  if (!companyId) {
+    console.error('Cannot attribute order to a company:', order.id);
+    return;
+  }
+
+  const plan: SubscriptionPlan | null =
+    getPlanByPolarProductId(order.product_id) ||
+    getPlanById(metadataString(order.metadata, 'plan_id') || '');
+
+  const isRenewal = order.billing_reason === 'subscription_cycle';
+  const description = plan
+    ? `${plan.name}${isRenewal ? ' renewal' : ' subscription'}`
+    : order.description || 'Subscription payment';
+
+  const amountCents = order.total_amount;
+  const currency = (order.currency || 'usd').toUpperCase();
+  const paidAt = order.modified_at || order.created_at || new Date().toISOString();
+  const periodStart = order.subscription?.current_period_start || paidAt;
+  const periodEnd = order.subscription?.current_period_end || paidAt;
+
+  await createPaidInvoice(admin, {
+    companyId,
+    amountCents,
+    currency,
+    description,
+    paidAt,
+    periodStart,
+    periodEnd,
+    polarOrderId: order.id,
+  });
+
+  // Write the transaction last: it is the idempotency marker the guard above
+  // checks, so it must only be written once the invoice work is done.
+  // The first purchase completes the pending transaction created at checkout;
+  // renewals (and anything we can't match) get their own row.
+  const transactionId = isRenewal ? null : metadataString(order.metadata, 'transaction_id');
+
+  if (transactionId) {
+    const { data: updated } = await admin
+      .from('payment_transactions')
+      .update({
+        status: 'succeeded',
+        provider_payment_id: order.id,
+        provider_checkout_id: order.checkout_id,
+        amount_cents: amountCents,
+        currency,
+        paid_at: paidAt,
+      })
+      .eq('id', transactionId)
+      .eq('company_id', companyId)
+      .in('status', ['pending', 'processing'])
+      .select('id')
+      .throwOnError();
+
+    if (updated && updated.length > 0) {
+      console.log('Order recorded for company:', companyId, order.id);
+      return;
+    }
+  }
+
   await admin
     .from('payment_transactions')
     .insert([{
-      company_id: subscription.company_id,
+      company_id: companyId,
       amount_cents: amountCents,
       currency,
       status: 'succeeded',
       transaction_type: 'subscription',
-      reference_number: `WHOP-${payment.id}`,
-      description: `${plan.name} renewal`,
-      provider: 'whop',
-      provider_payment_id: payment.id,
-      paid_at: payment.paid_at || now.toISOString(),
-      metadata: { plan_id: plan.id },
+      reference_number: `POLAR-${order.id}`,
+      description,
+      provider: 'polar',
+      provider_payment_id: order.id,
+      provider_checkout_id: isRenewal ? null : order.checkout_id,
+      paid_at: paidAt,
+      metadata: plan ? { plan_id: plan.id } : {},
     }])
     .throwOnError();
 
-  console.log('Subscription renewed:', subscription.id);
+  console.log('Order recorded for company:', companyId, order.id);
 }
 
 async function createPaidInvoice(
-  admin: ReturnType<typeof createAdminClient>,
+  admin: Admin,
   options: {
     companyId: string;
     amountCents: number;
     currency: string;
     description: string;
     paidAt: string;
-    periodStart: Date;
-    periodEnd: Date;
-    whopPaymentId: string;
+    periodStart: string;
+    periodEnd: string;
+    polarOrderId: string;
   }
 ) {
-  // Idempotency: Whop retries webhooks; skip if this payment is already invoiced
+  // Idempotency: skip if this order is already invoiced
   const { data: existing } = await admin
     .from('invoices')
     .select('id')
-    .eq('metadata->>whop_payment_id', options.whopPaymentId)
+    .eq('metadata->>polar_order_id', options.polarOrderId)
     .limit(1)
     .throwOnError();
 
   if (existing && existing.length > 0) {
-    console.log('Invoice already exists for payment, skipping:', options.whopPaymentId);
+    console.log('Invoice already exists for order, skipping:', options.polarOrderId);
     return;
   }
 
@@ -325,174 +407,15 @@ async function createPaidInvoice(
       amount_cents: options.amountCents,
       currency: options.currency,
       status: 'paid',
-      billing_period_start: options.periodStart.toISOString(),
-      billing_period_end: options.periodEnd.toISOString(),
+      billing_period_start: options.periodStart,
+      billing_period_end: options.periodEnd,
       paid_at: options.paidAt,
       line_items: [{
         description: options.description,
         quantity: 1,
         amount: options.amountCents,
       }],
-      metadata: { whop_payment_id: options.whopPaymentId },
+      metadata: { polar_order_id: options.polarOrderId },
     }])
     .throwOnError();
-}
-
-async function activateSubscription(
-  admin: ReturnType<typeof createAdminClient>,
-  options: {
-    companyId: string;
-    plan: SubscriptionPlan;
-    membershipId: string | null;
-    customerId: string | null;
-    periodStart: Date;
-    periodEnd: Date;
-  }
-) {
-  const { companyId, plan, membershipId, customerId, periodStart, periodEnd } = options;
-
-  await admin
-    .from('subscriptions')
-    .upsert({
-      company_id: companyId,
-      plan_type: plan.id,
-      status: 'active',
-      provider: 'whop',
-      provider_subscription_id: membershipId,
-      provider_customer_id: customerId,
-      provider_plan_id: plan.whopPlanId,
-      current_period_start: periodStart.toISOString(),
-      current_period_end: periodEnd.toISOString(),
-      job_post_limit: plan.limits.jobPosts,
-      featured_job_limit: plan.limits.featuredJobs,
-      team_member_limit: plan.limits.teamMembers,
-      price_cents: plan.price,
-      currency: plan.currency,
-      billing_interval: plan.interval,
-      cancel_at_period_end: false,
-      canceled_at: null,
-      ended_at: null,
-    }, {
-      onConflict: 'company_id',
-    })
-    .throwOnError();
-}
-
-async function handlePaymentFailed(payment: WhopPayment) {
-  const admin = createAdminClient();
-  const metadata = (payment.metadata || {}) as Record<string, string>;
-
-  const transactionId = metadata.transaction_id;
-  const checkoutConfigId = payment.checkout_configuration_id;
-
-  if (!transactionId && !checkoutConfigId) {
-    console.log('Payment failed with no attributable transaction:', payment.id);
-    return;
-  }
-
-  // Only flip pending attempts: a failed renewal charge (or an out-of-order
-  // event) carries the original checkout metadata and must not overwrite an
-  // already-succeeded transaction.
-  const query = admin
-    .from('payment_transactions')
-    .update({
-      status: 'failed',
-      provider_payment_id: payment.id,
-      failed_at: new Date().toISOString(),
-      failure_message: payment.failure_message,
-    })
-    .in('status', ['pending', 'processing']);
-
-  if (transactionId) {
-    await query.eq('id', transactionId).throwOnError();
-  } else {
-    await query.eq('provider_checkout_id', checkoutConfigId!).throwOnError();
-  }
-
-  console.log('Payment failed:', payment.id);
-}
-
-/**
- * Membership ended (canceled subscription lapsed, refund, etc.) - drop the
- * company back to the free plan so job-post limits apply immediately.
- */
-async function handleMembershipDeactivated(membership: WhopMembership) {
-  const admin = createAdminClient();
-
-  const { data: subscription } = await admin
-    .from('subscriptions')
-    .select('id, company_id')
-    .eq('provider_subscription_id', membership.id)
-    .maybeSingle()
-    .throwOnError();
-
-  if (!subscription) {
-    console.log('No subscription found for deactivated membership:', membership.id);
-    return;
-  }
-
-  const freePlan = getPlanById('free')!;
-
-  await admin
-    .from('subscriptions')
-    .update({
-      plan_type: freePlan.id,
-      status: 'active',
-      provider_subscription_id: null,
-      provider_plan_id: null,
-      job_post_limit: freePlan.limits.jobPosts,
-      featured_job_limit: freePlan.limits.featuredJobs,
-      team_member_limit: freePlan.limits.teamMembers,
-      price_cents: 0,
-      cancel_at_period_end: false,
-      canceled_at: new Date().toISOString(),
-      ended_at: new Date().toISOString(),
-    })
-    .eq('id', subscription.id)
-    .throwOnError();
-
-  console.log('Subscription downgraded to free for company:', subscription.company_id);
-}
-
-async function handleCancelAtPeriodEndChanged(membership: WhopMembership) {
-  const admin = createAdminClient();
-
-  await admin
-    .from('subscriptions')
-    .update({
-      cancel_at_period_end: Boolean(membership.cancel_at_period_end),
-      canceled_at: membership.cancel_at_period_end ? new Date().toISOString() : null,
-    })
-    .eq('provider_subscription_id', membership.id)
-    .throwOnError();
-
-  console.log('cancel_at_period_end updated for membership:', membership.id);
-}
-
-/**
- * Add one calendar month, clamping to the last day of the target month.
- * (Bare Date.setMonth overflows: Jan 31 + 1 month would become Mar 3.)
- */
-function addOneMonth(from: Date): Date {
-  const result = new Date(from);
-  result.setDate(1);
-  result.setMonth(result.getMonth() + 1);
-  const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
-  result.setDate(Math.min(from.getDate(), lastDay));
-  return result;
-}
-
-/**
- * Amount/currency to record for a payment. Prefer what Whop actually charged
- * (settlement_amount is in decimal currency units and reflects promos,
- * discounts, and dashboard price changes; our tables store cents), falling
- * back to the local plan price if the payload omits it.
- */
-function chargedAmount(payment: WhopPayment, plan: SubscriptionPlan) {
-  const amountCents =
-    typeof payment.settlement_amount === 'number'
-      ? Math.round(payment.settlement_amount * 100)
-      : plan.price;
-  const currency = payment.currency ? payment.currency.toUpperCase() : plan.currency;
-  return { amountCents, currency };
 }

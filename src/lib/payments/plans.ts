@@ -2,11 +2,9 @@
  * Subscription plan configuration.
  *
  * Client-safe: no secrets, importable from client components for display.
- * Prices are in USD cents and must match the corresponding plans configured
- * in the Whop dashboard (the Whop plan is the billing source of truth).
- *
- * - NEXT_PUBLIC_WHOP_PLAN_ID_BASIC: Whop plan ID (plan_...) for the Basic plan
- * - NEXT_PUBLIC_WHOP_PLAN_ID_PREMIUM: Whop plan ID (plan_...) for the Premium plan
+ * Prices are in USD cents and must match the corresponding products configured
+ * in the Polar dashboard (the Polar product is the billing source of truth).
+ * The plan -> Polar product ID mapping is server-only: see ./polar.ts.
  */
 
 export interface SubscriptionPlan {
@@ -16,7 +14,6 @@ export interface SubscriptionPlan {
   priceDisplay: number; // USD
   currency: 'USD';
   interval: 'month';
-  whopPlanId: string | null;
   features: string[];
   limits: {
     jobPosts: number; // -1 = unlimited
@@ -33,7 +30,6 @@ export const subscriptionPlans: Record<SubscriptionPlan['id'], SubscriptionPlan>
     priceDisplay: 0,
     currency: 'USD',
     interval: 'month',
-    whopPlanId: null,
     features: [
       '1 job posting',
       'Basic applicant tracking',
@@ -52,7 +48,6 @@ export const subscriptionPlans: Record<SubscriptionPlan['id'], SubscriptionPlan>
     priceDisplay: 29.99,
     currency: 'USD',
     interval: 'month',
-    whopPlanId: process.env.NEXT_PUBLIC_WHOP_PLAN_ID_BASIC || null,
     features: [
       '5 active job postings',
       'Advanced applicant tracking',
@@ -73,7 +68,6 @@ export const subscriptionPlans: Record<SubscriptionPlan['id'], SubscriptionPlan>
     priceDisplay: 59.99,
     currency: 'USD',
     interval: 'month',
-    whopPlanId: process.env.NEXT_PUBLIC_WHOP_PLAN_ID_PREMIUM || null,
     features: [
       'Unlimited job postings',
       'Advanced analytics & insights',
@@ -92,17 +86,6 @@ export const subscriptionPlans: Record<SubscriptionPlan['id'], SubscriptionPlan>
 
 export function getPlanById(planId: string): SubscriptionPlan | null {
   return subscriptionPlans[planId as SubscriptionPlan['id']] || null;
-}
-
-/**
- * Map a Whop plan ID (plan_...) back to our internal plan. Used by the webhook
- * to attribute payments when metadata is missing.
- */
-export function getPlanByWhopPlanId(whopPlanId: string | null | undefined): SubscriptionPlan | null {
-  if (!whopPlanId) return null;
-  return (
-    Object.values(subscriptionPlans).find((plan) => plan.whopPlanId === whopPlanId) || null
-  );
 }
 
 export function formatPriceForDisplay(amount: number, currency: string = 'USD'): string {

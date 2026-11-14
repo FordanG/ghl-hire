@@ -2,7 +2,7 @@
 
 - **Date:** 2026-07-03
 - **Author:** Claude (with Gabriel Fordan)
-- **Status:** Approved
+- **Status:** Deprecated (replaced by Polar, see ../setup/2026-11-11_polar-payments-setup.md)
 - **Last Updated:** 2026-07-03
 
 ## Overview
