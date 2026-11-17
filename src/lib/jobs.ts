@@ -22,6 +22,8 @@ export interface BoardJob {
   source_name?: string | null;
   external_company_name?: string | null;
   external_company_url?: string | null;
+  /** Jobs list only: every distinct word of the listing, lowercased, for in-browser search. */
+  search_text?: string;
   company?: { company_name?: string | null; logo_url?: string | null; is_verified?: boolean | null } | null;
 }
 
