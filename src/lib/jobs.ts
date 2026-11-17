@@ -113,5 +113,14 @@ export function safeSearchTerm(raw: string): string {
     .replace(/[%_]/g, (c) => `\\${c}`);
 }
 
+/**
+ * Splits text into lowercase search words. The jobs page builds its word
+ * index with this and the board splits the visitor's query with it, so
+ * punctuation is treated the same on both sides ("Go-High" finds "go high").
+ */
+export function searchTokens(text: string): string[] {
+  return text.toLowerCase().split(/[^\p{L}\p{N}+#.]+/u).filter(Boolean);
+}
+
 export const JOB_TYPES = ['Full-Time', 'Part-Time', 'Contract', 'Freelance'] as const;
 export const EXPERIENCE_LEVELS = ['Entry Level', 'Mid Level', 'Senior Level', 'Lead'] as const;

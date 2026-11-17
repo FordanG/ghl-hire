@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import JobRow from './JobRow';
-import { EXPERIENCE_LEVELS, JOB_TYPES, companyName, type BoardJob } from '@/lib/jobs';
+import { EXPERIENCE_LEVELS, JOB_TYPES, companyName, searchTokens, type BoardJob } from '@/lib/jobs';
 
 const JOBS_PER_PAGE = 20;
 
@@ -51,9 +51,11 @@ function matches(job: BoardJob, filters: Filters): boolean {
   if (filters.level && job.experience_level !== filters.level) return false;
   if (filters.remote && !job.remote) return false;
   if (!filters.q) return true;
-  const haystack = job.search_text ?? `${job.title} ${companyName(job)} ${job.location} ${job.description}`.toLowerCase();
-  // Every word must appear somewhere in the listing, in any order.
-  return filters.q.toLowerCase().split(/\s+/).filter(Boolean).every((word) => haystack.includes(word));
+  const haystack =
+    job.search_text ?? searchTokens(`${job.title} ${companyName(job)} ${job.location} ${job.description}`).join(' ');
+  // Every word must appear somewhere in the listing, in any order. The query
+  // is split the same way as the index, so punctuation cannot hide a match.
+  return searchTokens(filters.q).every((word) => haystack.includes(word));
 }
 
 const fieldClass =

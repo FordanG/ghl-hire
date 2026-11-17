@@ -6,7 +6,7 @@ import JobsBoard from '@/components/JobsBoard';
 import SubscribeForm from '@/components/SubscribeForm';
 import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
-import { BOARD_JOB_SELECT, type BoardJob } from '@/lib/jobs';
+import { BOARD_JOB_SELECT, searchTokens, type BoardJob } from '@/lib/jobs';
 import { FEATURED_REQUEST_PATH } from '@/lib/site';
 import { createPublicClient } from '@/lib/supabase/public';
 
@@ -36,9 +36,8 @@ function searchText(job: BoardJob & { requirements?: string | null }): string {
     job.requirements,
   ]
     .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return [...new Set(text.split(/[^\p{L}\p{N}+#.]+/u).filter(Boolean))].join(' ');
+    .join(' ');
+  return [...new Set(searchTokens(text))].join(' ');
 }
 
 async function getJobs(): Promise<BoardJob[]> {
