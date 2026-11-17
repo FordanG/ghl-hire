@@ -1,27 +1,31 @@
 import type { Metadata, Viewport } from "next";
+import { Hanken_Grotesk } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import CookieConsent from "@/components/CookieConsent";
 import PromoBanner from "@/components/PromoBanner";
 import "./globals.css";
 
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-hanken",
+  display: "swap",
+});
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
-  ],
+  themeColor: '#0b1f3a',
 };
 
 export const metadata: Metadata = {
   title: {
-    default: "GHL Hire - Premier Job Board for GoHighLevel Professionals",
+    default: "GHL Hire: the free job board for GoHighLevel work",
     template: "%s | GHL Hire"
   },
-  description: "The dedicated career platform connecting talented professionals with exciting opportunities in the GoHighLevel ecosystem. Find your perfect GHL job or hire expert talent.",
+  description: "GoHighLevel jobs for automation specialists, funnel builders, Voice AI builders, VAs and developers. Free to post, free to apply.",
   keywords: ["GoHighLevel jobs", "GHL careers", "marketing automation jobs", "CRM jobs", "funnel builder jobs", "GoHighLevel careers", "SaaS jobs", "automation specialist jobs"],
   authors: [{ name: "GHL Hire" }],
   creator: "GHL Hire",
@@ -36,8 +40,8 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "GHL Hire - Premier Job Board for GoHighLevel Professionals",
-    description: "Connect with the best GoHighLevel opportunities and talent in the industry.",
+    title: "GHL Hire: the free job board for GoHighLevel work",
+    description: "GoHighLevel jobs, free to post and free to apply.",
     type: "website",
     locale: "en_US",
     url: "https://ghlhire.com",
@@ -54,8 +58,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GHL Hire - Premier Job Board for GoHighLevel Professionals",
-    description: "Connect with the best GoHighLevel opportunities and talent in the industry.",
+    title: "GHL Hire: the free job board for GoHighLevel work",
+    description: "GoHighLevel jobs, free to post and free to apply.",
     images: ["/og-image.png"],
   },
   robots: {
@@ -77,7 +81,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={hanken.variable}>
       <body className="font-sans antialiased">
         <PromoBanner />
         <AuthProvider>

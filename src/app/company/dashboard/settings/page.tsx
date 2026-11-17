@@ -89,7 +89,7 @@ export default function CompanySettingsPage() {
     { id: 'notifications', name: 'Notifications', icon: Bell },
     { id: 'team', name: 'Team Members', icon: Users },
     { id: 'privacy', name: 'Privacy', icon: Shield },
-    { id: 'billing', name: 'Billing', icon: Users }
+    { id: 'billing', name: 'Featured', icon: Users }
   ];
 
   const handleSaveSettings = () => {
@@ -490,16 +490,11 @@ export default function CompanySettingsPage() {
 
             {activeTab === 'billing' && (
               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Settings</h3>
-                <p className="text-gray-600 mb-6">
-                  Manage your billing preferences in the <a href="/company/dashboard/billing" className="text-blue-600 hover:underline">Billing section</a>.
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Featured listings</h3>
+                <p className="text-gray-600">
+                  GHL Hire is free, so there is nothing to bill. To pin a role to the top of the board, see{' '}
+                  <a href="/company/dashboard/billing" className="text-blue-600 hover:underline">Featured listings</a>.
                 </p>
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <h4 className="font-medium text-blue-900">Current Plan: Professional</h4>
-                    <p className="text-sm text-blue-700">Next billing date: February 1, 2026</p>
-                  </div>
-                </div>
               </div>
             )}
 

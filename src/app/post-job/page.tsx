@@ -7,16 +7,14 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link';
+import { FEATURED_REQUEST_PATH } from '@/lib/site';
 
 export default function PostJobPage() {
   const router = useRouter();
   const { user, company, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [canPostJob, setCanPostJob] = useState(true);
-  const [jobCount, setJobCount] = useState(0);
-  const [jobLimit, setJobLimit] = useState(1);
-  const [planType, setPlanType] = useState('free');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -28,6 +26,8 @@ export default function PostJobPage() {
     experience_level: 'Mid Level',
     salary_min: '',
     salary_max: '',
+    salary_period: 'year',
+    apply_url: '',
     status: 'draft' as 'draft' | 'active',
   });
 
@@ -40,47 +40,6 @@ export default function PostJobPage() {
       router.push('/signup?redirect=/post-job');
     }
   }, [authLoading, user, company, router]);
-
-  useEffect(() => {
-    const checkJobLimit = async () => {
-      if (!company) return;
-
-      try {
-        // Get subscription info
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('company_id', company.id)
-          .single();
-
-        if (subscription) {
-          setPlanType(subscription.plan_type);
-          setJobLimit(subscription.job_post_limit);
-
-          // Count active jobs (drafts are free and don't count toward the limit)
-          const { data: jobs } = await supabase
-            .from('jobs')
-            .select('id')
-            .eq('company_id', company.id)
-            .eq('status', 'active');
-
-          const count = jobs?.length || 0;
-          setJobCount(count);
-
-          // Check if can post more jobs
-          if (subscription.plan_type === 'premium') {
-            setCanPostJob(true);
-          } else {
-            setCanPostJob(count < subscription.job_post_limit);
-          }
-        }
-      } catch (err) {
-        console.error('Error checking job limit:', err);
-      }
-    };
-
-    checkJobLimit();
-  }, [company]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -99,11 +58,6 @@ export default function PostJobPage() {
 
     if (!company) {
       setError('You must be logged in as an employer to post jobs');
-      return;
-    }
-
-    if (!canPostJob && publishNow) {
-      setError(`You've reached your job posting limit (${jobLimit}). Please upgrade your plan to post more jobs.`);
       return;
     }
 
@@ -128,6 +82,13 @@ export default function PostJobPage() {
         return;
       }
 
+      const applyUrl = formData.apply_url.trim();
+      if (applyUrl && !/^https:\/\/\S+$/i.test(applyUrl)) {
+        setError('The application link must be a full address starting with https://');
+        setLoading(false);
+        return;
+      }
+
       // Create job
       const { data: job, error: insertError } = await supabase
         .from('jobs')
@@ -143,6 +104,8 @@ export default function PostJobPage() {
           experience_level: formData.experience_level,
           salary_min: salaryMin,
           salary_max: salaryMax,
+          salary_period: formData.salary_period,
+          apply_url: applyUrl || null,
           status: publishNow ? 'active' : 'draft',
         })
         .select()
@@ -162,7 +125,7 @@ export default function PostJobPage() {
       console.error('Job posting error:', err);
       const message = err instanceof Error ? err.message : '';
       if (message.includes('JOB_POST_LIMIT_REACHED')) {
-        setError("You've reached your plan's active job limit. Upgrade your plan to post more jobs.");
+        setError('You already have 25 active listings. Close one first, or email inquiries@ghlhire.com.');
       } else {
         setError(message || 'Failed to post job. Please try again.');
       }
@@ -193,48 +156,20 @@ export default function PostJobPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8 fade-in fade-in-1">
-            <h1 className="text-3xl font-semibold tracking-tight mb-2">Post a New Job</h1>
+            <h1 className="text-3xl font-semibold tracking-tight mb-2">Post a job</h1>
             <p className="text-gray-600">
-              Fill out the form below to create a new job listing for your company
+              Free to post. Describe the role and publish it to the board.
             </p>
           </div>
 
-          {/* Job Limit Warning */}
-          {!canPostJob && (
-            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3 fade-in fade-in-2">
-              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-yellow-800 font-medium">
-                  Job Posting Limit Reached
-                </p>
-                <p className="text-sm text-yellow-700 mt-1">
-                  You&apos;ve used {jobCount} of {jobLimit} job posts on your {planType} plan.
-                  Upgrade to post more jobs or close existing ones.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Current Plan Info */}
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 fade-in fade-in-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-900">
-                  Current Plan: <span className="capitalize">{planType}</span>
-                </p>
-                <p className="text-sm text-blue-700 mt-1">
-                  Job Posts: {jobCount} / {planType === 'premium' ? 'Unlimited' : jobLimit}
-                </p>
-              </div>
-              {planType !== 'premium' && (
-                <button
-                  onClick={() => router.push('/pricing')}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  Upgrade Plan
-                </button>
-              )}
-            </div>
+          <div className="mb-6 rounded-lg border border-rule bg-surface p-4 text-[15px] text-ink-soft">
+            <p>
+              <span className="font-semibold text-ink">Posting is free.</span> Your listing goes live as soon as you publish.
+              Want it pinned to the top of the board? <Link href={FEATURED_REQUEST_PATH} className="inline min-h-0 min-w-0 font-semibold text-brand underline underline-offset-2">
+                Request a featured listing
+              </Link>{' '}
+              after you publish.
+            </p>
           </div>
 
           {/* Error Message */}
@@ -409,14 +344,13 @@ export default function PostJobPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="salary_min" className="block text-sm font-medium text-gray-700 mb-2">
-                    Minimum Salary (USD)
+                    Minimum pay (USD)
                   </label>
                   <input
                     id="salary_min"
                     name="salary_min"
                     type="number"
                     min="0"
-                    step="1000"
                     value={formData.salary_min}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
@@ -426,14 +360,13 @@ export default function PostJobPage() {
 
                 <div>
                   <label htmlFor="salary_max" className="block text-sm font-medium text-gray-700 mb-2">
-                    Maximum Salary (USD)
+                    Maximum pay (USD)
                   </label>
                   <input
                     id="salary_max"
                     name="salary_max"
                     type="number"
                     min="0"
-                    step="1000"
                     value={formData.salary_max}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
@@ -442,9 +375,47 @@ export default function PostJobPage() {
                 </div>
               </div>
 
+              <div className="mt-4 md:w-1/2 md:pr-2">
+                <label htmlFor="salary_period" className="block text-sm font-medium text-gray-700 mb-2">
+                  Pay is per
+                </label>
+                <select
+                  id="salary_period"
+                  name="salary_period"
+                  value={formData.salary_period}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                >
+                  <option value="year">Year</option>
+                  <option value="month">Month</option>
+                  <option value="hour">Hour</option>
+                </select>
+              </div>
+
               <p className="text-sm text-gray-500 mt-2">
-                Leave blank to hide salary information
+                Leave blank to hide pay. Listings that show pay get more applications.
               </p>
+            </div>
+
+            {/* How to apply */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-2">How people apply</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                By default, candidates apply here and you review them in your dashboard. If you take applications on your own site, add the link and we send candidates there instead.
+              </p>
+              <label htmlFor="apply_url" className="block text-sm font-medium text-gray-700 mb-2">
+                Application link (optional)
+              </label>
+              <input
+                id="apply_url"
+                name="apply_url"
+                type="url"
+                inputMode="url"
+                value={formData.apply_url}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                placeholder="https://yourcompany.com/careers/role"
+              />
             </div>
 
             {/* Action Buttons */}
@@ -459,7 +430,7 @@ export default function PostJobPage() {
               </button>
               <button
                 type="submit"
-                disabled={loading || !canPostJob}
+                disabled={loading}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? 'Publishing...' : 'Publish Job'}
@@ -468,7 +439,7 @@ export default function PostJobPage() {
             </div>
 
             <p className="text-sm text-gray-500 text-center">
-              By posting a job, you agree to our Terms of Service and Community Guidelines
+              By posting a job, you agree to our Terms of Service
             </p>
           </form>
         </div>

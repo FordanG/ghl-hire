@@ -630,7 +630,7 @@ export default function AdminDashboard({ data }: { data: AdminDashboardData }) {
               {filtered.jobs.length ? (
                 <TableFrame>
                   <table className="min-w-[980px] w-full text-left">
-                    <thead className="bg-slate-50 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-5 py-3">Listing</th><th className="px-5 py-3">Location</th><th className="px-5 py-3">Performance</th><th className="px-5 py-3">Published</th><th className="px-5 py-3 text-right">Status</th></tr></thead>
+                    <thead className="bg-slate-50 font-mono text-[10px] uppercase tracking-[0.14em] text-slate-500"><tr><th className="px-5 py-3">Listing</th><th className="px-5 py-3">Location</th><th className="px-5 py-3">Performance</th><th className="px-5 py-3">Published</th><th className="px-5 py-3">Featured</th><th className="px-5 py-3 text-right">Status</th></tr></thead>
                     <tbody className="divide-y divide-slate-100">
                       {filtered.jobs.map((job) => (
                         <tr key={job.id} className="transition hover:bg-slate-50/70">
@@ -638,6 +638,7 @@ export default function AdminDashboard({ data }: { data: AdminDashboardData }) {
                           <td className="px-5 py-4 text-sm text-slate-600">{job.remote ? 'Remote · ' : ''}{job.location}</td>
                           <td className="px-5 py-4 text-sm text-slate-600"><span className="font-semibold text-slate-900">{job.applications}</span> applications · {job.views} views</td>
                           <td className="px-5 py-4 text-sm text-slate-500">{formatDate(job.createdAt)}</td>
+                          <td className="px-5 py-4"><button type="button" aria-pressed={job.featured} disabled={pendingAction === `jobs-${job.id}`} onClick={() => runAction('jobs', job.id, 'set-featured', !job.featured, job.featured ? `${job.title} is no longer featured.` : `${job.title} is now featured.`)} className={`h-10 rounded-lg border px-3 text-xs font-semibold outline-none transition focus-visible:border-blue-400 disabled:opacity-50 ${job.featured ? 'border-amber-300 bg-amber-100 text-amber-900' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'}`}>{job.featured ? 'Featured' : 'Feature'}</button></td>
                           <td className="px-5 py-4 text-right"><select aria-label={`Status for ${job.title}`} disabled={pendingAction === `jobs-${job.id}`} value={job.status} onChange={(event) => runAction('jobs', job.id, 'set-status', event.target.value, `${job.title} is now ${event.target.value}.`, ['closed', 'archived'].includes(event.target.value) ? `Change ${job.title} to ${event.target.value}? It will no longer appear as an active opportunity.` : undefined)} className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400">{jobStatuses.map((status) => <option key={status} value={status}>{titleCase(status)}</option>)}</select></td>
                         </tr>
                       ))}

@@ -1,14 +1,38 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Calendar, ExternalLink, Share2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import Reveal from '@/components/ui/Reveal';
+import CompanyMark from '@/components/CompanyMark';
+import JobText from '@/components/JobText';
+import SubscribeForm from '@/components/SubscribeForm';
+import GhlStartLinks from '@/components/GhlStartLinks';
+import SuperClonerPanel from '@/components/SuperClonerPanel';
 import JobDetailClient from './JobDetailClient';
 import ShareButtons from './ShareButtons';
-import { supabase } from '@/lib/supabase';
+import ViewCounter from './ViewCounter';
+import { createPublicClient } from '@/lib/supabase/public';
 import { extractJobIdFromSlug, generateJobSlug } from '@/lib/utils';
+import { companyName, formatSalary, locationLabel, postedAgo } from '@/lib/jobs';
+import { FEATURED_REQUEST_PATH } from '@/lib/site';
+
+// Job pages are prebuilt and refreshed hourly, so a visit (or a crawler hit)
+// is served from the CDN instead of rendering in a server function. A job
+// posted after the last build is generated on its first visit, then cached.
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+const supabase = createPublicClient();
+
+export async function generateStaticParams() {
+  const { data } = await supabase
+    .from('jobs')
+    .select('id, title')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  return (data ?? []).map((job) => ({ id: generateJobSlug(job.title, job.id) }));
+}
 
 interface JobDetailPageProps {
   params: Promise<{
@@ -22,46 +46,30 @@ export async function generateMetadata({ params }: JobDetailPageProps): Promise<
   const job = await getJob(id);
 
   if (!job) {
-    return {
-      title: 'Job Not Found | GHL Hire',
-    };
+    return { title: 'Job not found' };
   }
 
-  const title = `${job.title} at ${job.company?.company_name || 'Company'} | GHL Hire`;
-  const description = job.description.length > 155
-    ? job.description.substring(0, 155) + '...'
-    : job.description;
-
-  const salary = job.salary_min && job.salary_max
-    ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
-    : null;
-
-  // Generate SEO-friendly slug for URLs
+  const title = `${job.title} at ${job.company.company_name}`;
+  const plain = job.description.replace(/\s+/g, ' ').trim();
+  const description = plain.length > 155 ? `${plain.substring(0, 155)}...` : plain;
   const jobSlug = generateJobSlug(job.title, job.id);
+  const closed = job.status !== 'active';
 
   return {
     title,
     description,
+    robots: closed ? { index: false, follow: true } : undefined,
     openGraph: {
-      title,
+      title: `${title} | GHL Hire`,
       description,
       type: 'website',
       url: `https://ghlhire.com/jobs/${jobSlug}`,
       siteName: 'GHL Hire',
-      images: job.company?.logo_url ? [
-        {
-          url: job.company.logo_url,
-          width: 1200,
-          height: 630,
-          alt: `${job.company.company_name} logo`,
-        }
-      ] : [],
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: `${title} | GHL Hire`,
       description,
-      images: job.company?.logo_url ? [job.company.logo_url] : [],
     },
     alternates: {
       canonical: `https://ghlhire.com/jobs/${jobSlug}`,
@@ -105,8 +113,12 @@ async function getJob(slugOrId: string) {
     expires_at: job.expires_at,
     created_at: job.created_at,
     updated_at: job.updated_at,
+    apply_url: (job.apply_url ?? null) as string | null,
+    source_name: (job.source_name ?? null) as string | null,
+    salary_period: (job.salary_period ?? null) as string | null,
+    is_curated: Boolean(job.is_curated),
     company: {
-      company_name: job.company_name,
+      company_name: (job.company_name as string | null) || 'Company',
       description: job.company_description,
       logo_url: job.company_logo_url,
       website: job.company_website,
@@ -116,9 +128,20 @@ async function getJob(slugOrId: string) {
   };
 }
 
-async function getSimilarJobs(currentJobId: string, companyId: string, limit: number = 3) {
+async function getSimilarJobs(currentJobId: string, companyId: string | null, limit: number = 4) {
+  if (!companyId) {
+    const { data } = await supabase
+      .from('jobs')
+      .select('*, company:companies(company_name)')
+      .eq('status', 'active')
+      .neq('id', currentJobId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    return data || [];
+  }
+
   // First try to get jobs from the same company
-  const { data: companyJobs, error: companyError } = await supabase
+  const { data: companyJobs } = await supabase
     .from('jobs')
     .select(`
       *,
@@ -137,7 +160,7 @@ async function getSimilarJobs(currentJobId: string, companyId: string, limit: nu
 
   // Otherwise, get other recent jobs to fill the list
   const remaining = limit - (companyJobs?.length || 0);
-  const { data: otherJobs, error: otherError } = await supabase
+  const { data: otherJobs } = await supabase
     .from('jobs')
     .select(`
       *,
@@ -145,30 +168,21 @@ async function getSimilarJobs(currentJobId: string, companyId: string, limit: nu
     `)
     .eq('status', 'active')
     .neq('id', currentJobId)
-    .neq('company_id', companyId)
+    .or(`company_id.is.null,company_id.neq.${companyId}`)
     .order('created_at', { ascending: false })
     .limit(remaining);
 
   return [...(companyJobs || []), ...(otherJobs || [])];
 }
 
-async function incrementViewCount(jobId: string) {
-  // Increment the view count
-  await supabase.rpc('increment_job_views', { job_id: jobId });
-}
+const EMPLOYMENT_TYPE: Record<string, string> = {
+  'Full-Time': 'FULL_TIME',
+  'Part-Time': 'PART_TIME',
+  Contract: 'CONTRACTOR',
+  Freelance: 'CONTRACTOR',
+};
 
-function formatDate(dateString: string) {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffTime = Math.abs(now.getTime() - date.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return 'today';
-  if (diffDays === 1) return '1 day ago';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  return `${Math.floor(diffDays / 30)} months ago`;
-}
+const SALARY_UNIT: Record<string, string> = { year: 'YEAR', month: 'MONTH', hour: 'HOUR' };
 
 export default async function JobDetailPage({ params }: JobDetailPageProps) {
   const { id } = await params;
@@ -178,287 +192,234 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
     notFound();
   }
 
-  // Increment view count (fire and forget - don't await to avoid blocking page load)
-  incrementViewCount(job.id);
+  const similarJobs = await getSimilarJobs(job.id, job.company_id, 4);
+  const name = job.company.company_name;
+  const salary = formatSalary(job);
+  const isOpen = job.status === 'active' && !(job.expires_at && new Date(job.expires_at).getTime() < Date.now());
+  const period = job.salary_period || ((job.salary_max ?? job.salary_min ?? 0) < 1000 ? 'hour' : 'year');
 
-  const similarJobs = await getSimilarJobs(job.id, job.company_id, 3);
-
-  const salary = job.salary_min && job.salary_max
-    ? `$${job.salary_min.toLocaleString()} - $${job.salary_max.toLocaleString()}`
-    : null;
-
-  // Generate JSON-LD structured data for job posting
   const jobPostingSchema = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
     title: job.title,
-    description: job.description,
+    description: [job.description, job.requirements, job.benefits].filter(Boolean).join('\n\n'),
     datePosted: job.created_at,
     validThrough: job.expires_at || undefined,
-    employmentType: job.job_type === 'Full-Time' ? 'FULL_TIME' :
-                    job.job_type === 'Part-Time' ? 'PART_TIME' :
-                    job.job_type === 'Contract' ? 'CONTRACTOR' :
-                    job.job_type === 'Freelance' ? 'CONTRACTOR' : undefined,
+    employmentType: EMPLOYMENT_TYPE[job.job_type],
+    directApply: !job.apply_url,
     hiringOrganization: {
       '@type': 'Organization',
-      name: job.company?.company_name || 'Company',
-      sameAs: job.company?.website || undefined,
-      logo: job.company?.logo_url || undefined,
+      name,
+      sameAs: job.company.website || undefined,
+      logo: job.company.logo_url || undefined,
     },
     jobLocation: {
       '@type': 'Place',
-      address: {
-        '@type': 'PostalAddress',
-        addressLocality: job.location,
-        addressCountry: 'US',
-      }
+      address: { '@type': 'PostalAddress', addressLocality: job.location },
     },
-    baseSalary: job.salary_min && job.salary_max ? {
-      '@type': 'MonetaryAmount',
-      currency: job.salary_currency || 'USD',
-      value: {
-        '@type': 'QuantitativeValue',
-        minValue: job.salary_min,
-        maxValue: job.salary_max,
-        unitText: 'YEAR',
-      }
-    } : undefined,
-    experienceRequirements: job.experience_level ? {
-      '@type': 'OccupationalExperienceRequirements',
-      monthsOfExperience: job.experience_level === 'Entry Level' ? 0 :
-                          job.experience_level === 'Mid Level' ? 24 :
-                          job.experience_level === 'Senior Level' ? 60 :
-                          job.experience_level === 'Lead' ? 84 : 0,
-    } : undefined,
-    workHours: job.remote ? 'Remote' : undefined,
     jobLocationType: job.remote ? 'TELECOMMUTE' : undefined,
+    baseSalary:
+      job.salary_min || job.salary_max
+        ? {
+            '@type': 'MonetaryAmount',
+            currency: job.salary_currency || 'USD',
+            value: {
+              '@type': 'QuantitativeValue',
+              minValue: job.salary_min || undefined,
+              maxValue: job.salary_max || undefined,
+              unitText: SALARY_UNIT[period],
+            },
+          }
+        : undefined,
   };
 
+  const facts: [string, string][] = [
+    ['Job type', job.job_type],
+    ['Location', locationLabel(job)],
+  ];
+  if (job.experience_level) facts.push(['Experience', job.experience_level]);
+  facts.push(['Pay', salary || 'Not listed']);
+  facts.push(['Posted', postedAgo(job.created_at)]);
+
   return (
-    <div className="min-h-screen flex flex-col text-gray-900 bg-white">
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }}
-      />
+    <div className="flex min-h-screen flex-col bg-white text-ink">
+      {isOpen && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }} />
+      )}
 
+      <ViewCounter jobId={job.id} />
       <Header />
-      
-      {/* Job Header */}
-      <section className="max-w-4xl mx-auto px-4 py-12">
-        {/* Back Button */}
-        <Link 
-          href="/jobs" 
-          className="inline-flex items-center gap-2 text-blue-500 hover:text-blue-600 mb-8 fade-in fade-in-1"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Jobs
-        </Link>
 
-        {/* Job Title and Meta */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 border-b border-gray-200 pb-8 mb-8">
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4 text-gray-900 fade-in fade-in-2">
-              {job.title}
-            </h1>
-            
-            <div className="flex flex-wrap gap-4 text-gray-500 text-base mb-4 fade-in fade-in-3">
-              <span className="inline-flex items-center gap-1">
-                <Building2 className="w-4 h-4" />
-                {job.company?.company_name}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                {job.location}
-                {job.remote && ' (Remote)'}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                {job.job_type}
-              </span>
-              {salary && (
-                <span className="inline-flex items-center gap-1">
-                  <DollarSign className="w-4 h-4" />
-                  {salary}
-                </span>
-              )}
-              <span className="inline-flex items-center gap-1">
-                <Calendar className="w-4 h-4" />
-                Posted {formatDate(job.created_at)}
-              </span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div id="apply-actions" className="flex flex-col gap-3 scroll-mt-24 fade-in fade-in-5">
-            <JobDetailClient job={job} />
-            <ShareButtons job={job} />
-          </div>
-        </div>
-
-        {/* Job Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-10">
-            {/* Description */}
-            <div className="fade-in fade-in-6">
-              <h2 className="mb-4 flex items-center gap-2.5 text-xl font-semibold tracking-tight text-gray-900">
-                <span className="h-5 w-1 rounded-full bg-blue-500" aria-hidden="true"></span>
-                Job Description
-              </h2>
-              <div className="whitespace-pre-line leading-7 text-gray-700">
-                {job.description}
-              </div>
-            </div>
-
-            {/* Requirements */}
-            {job.requirements && (
-              <Reveal>
-                <h2 className="mb-4 flex items-center gap-2.5 text-xl font-semibold tracking-tight text-gray-900">
-                  <span className="h-5 w-1 rounded-full bg-blue-500" aria-hidden="true"></span>
-                  Requirements
-                </h2>
-                <div className="whitespace-pre-line leading-7 text-gray-700">
-                  {job.requirements}
-                </div>
-              </Reveal>
-            )}
-
-            {/* Benefits */}
-            {job.benefits && (
-              <Reveal>
-                <h2 className="mb-4 flex items-center gap-2.5 text-xl font-semibold tracking-tight text-gray-900">
-                  <span className="h-5 w-1 rounded-full bg-blue-500" aria-hidden="true"></span>
-                  Benefits
-                </h2>
-                <div className="whitespace-pre-line leading-7 text-gray-700">
-                  {job.benefits}
-                </div>
-              </Reveal>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            {/* Company Info */}
-            <div className="bg-gray-50 rounded-xl p-6 fade-in fade-in-3">
-              <h3 className="font-semibold mb-4">About {job.company?.company_name}</h3>
-              <p className="text-gray-600 text-sm mb-4">
-                {job.company?.description || 'A company in the GoHighLevel ecosystem.'}
-              </p>
-              {job.company?.website && (
-                <a
-                  href={job.company.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 font-medium hover:underline text-sm"
-                >
-                  Visit Website →
-                </a>
-              )}
-            </div>
-
-            {/* Job Stats */}
-            <div className="bg-gray-50 rounded-xl p-6 fade-in fade-in-4">
-              <h3 className="font-semibold mb-4">Job Details</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Job Type:</span>
-                  <span className="font-medium">{job.job_type}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Location:</span>
-                  <span className="font-medium">{job.location}</span>
-                </div>
-                {salary && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Salary:</span>
-                    <span className="font-medium">{salary}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Posted:</span>
-                  <span className="font-medium">{formatDate(job.created_at)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Views:</span>
-                  <span className="font-medium">{job.views_count.toLocaleString()}</span>
-                </div>
-                {job.applications_count > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Applications:</span>
-                    <span className="font-medium">{job.applications_count}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Similar Jobs */}
-            <div className="bg-gray-50 rounded-xl p-6 fade-in fade-in-5">
-              <h3 className="font-semibold mb-4">
-                {similarJobs.length > 0 && similarJobs[0].company_id === job.company_id
-                  ? `More from ${job.company?.company_name}`
-                  : 'Related Jobs'}
-              </h3>
-              <div className="space-y-3">
-                {similarJobs.length > 0 ? (
-                  similarJobs.map((similarJob) => {
-                    const similarJobSlug = generateJobSlug(similarJob.title, similarJob.id);
-                    return (
-                      <Link
-                        key={similarJob.id}
-                        href={`/jobs/${similarJobSlug}`}
-                        className="block p-3 bg-white rounded-lg hover:shadow-sm transition-shadow"
-                      >
-                      <div className="font-medium text-sm text-gray-900 mb-1">
-                        {similarJob.title}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {similarJob.company?.company_name} • {similarJob.location}
-                      </div>
-                      {similarJob.company_id === job.company_id && (
-                        <div className="text-xs text-blue-600 mt-1">Same company</div>
-                      )}
-                    </Link>
-                    );
-                  })
-                ) : (
-                  <p className="text-sm text-gray-500">No related jobs found</p>
-                )}
-              </div>
-              <Link
-                href="/jobs"
-                className="block text-blue-500 font-medium hover:underline text-sm mt-4"
-              >
-                View All Jobs →
+      <main>
+        <section className="border-b border-rule bg-surface">
+          <div className="page-wrap py-8 md:py-12">
+            <p className="text-sm">
+              <Link href="/jobs" className="inline-flex min-h-[40px] items-center font-medium text-brand hover:underline">
+                All jobs
               </Link>
+            </p>
+
+            <div className="mt-3 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+              <div className="flex min-w-0 gap-4 sm:gap-5">
+                <CompanyMark name={name} logoUrl={job.company.logo_url} featured={Boolean(job.is_featured)} size="lg" />
+                <div className="min-w-0">
+                  <h1 className="display text-3xl font-semibold md:text-[2.75rem]">{job.title}</h1>
+                  <p className="mt-2 text-lg text-ink-soft">
+                    <span className="font-semibold text-ink">{name}</span>
+                    <span className="mx-2 text-mute" aria-hidden="true">·</span>
+                    {locationLabel(job)}
+                  </p>
+                  <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] text-ink-soft">
+                    {job.is_featured && (
+                      <span className="rounded-sm bg-gold px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-ink">Featured</span>
+                    )}
+                    <span>{job.job_type}</span>
+                    {job.experience_level && <span>{job.experience_level}</span>}
+                    {salary && <span className="font-semibold text-ink">{salary}</span>}
+                    <span className="text-mute">Posted {postedAgo(job.created_at).toLowerCase()}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div id="apply-actions" className="w-full shrink-0 scroll-mt-24 lg:w-72">
+                <JobDetailClient job={job} />
+                {job.apply_url && isOpen && (
+                  <p className="mt-2 text-sm text-mute">
+                    {job.is_curated
+                      ? `Opens the original posting${job.source_name ? ` on ${job.source_name}` : ''}.`
+                      : `You apply on ${name}'s own site.`}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Bottom CTA */}
-        <Reveal className="mt-12 rounded-xl bg-blue-50 p-8 text-center">
-          <h3 className="mb-2 text-xl font-semibold tracking-tight text-gray-900">Ready to Apply?</h3>
-          <p className="mb-6 text-gray-600">
-            Join the GoHighLevel community and take your career to the next level.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <a
-              href="#apply-actions"
-              className="press inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              <ExternalLink className="w-5 h-5" />
-              Apply Now
-            </a>
-            <Link
-              href="/jobs"
-              className="press inline-flex items-center justify-center px-6 py-3 border border-gray-200 font-semibold rounded-lg hover:bg-white transition-colors"
-            >
-              Browse More Jobs
-            </Link>
-          </div>
-        </Reveal>
-      </section>
+        <div className="page-wrap grid gap-12 py-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:py-14">
+          <article className="min-w-0 max-w-3xl space-y-10">
+            {job.is_curated && (
+              <p className="rounded-md border border-rule bg-surface px-4 py-3 text-[15px] text-ink-soft">
+                We found this role{job.source_name ? ` on ${job.source_name}` : ''} and summarised it here. The original posting is the source of truth for details and deadlines, and it is where you apply.
+              </p>
+            )}
+
+            <section aria-labelledby="about-role">
+              <h2 id="about-role" className="mb-4 text-2xl font-semibold tracking-tight">About the role</h2>
+              <JobText text={job.description} />
+            </section>
+
+            {job.is_curated && job.benefits && (
+              <section aria-labelledby="duties">
+                <h2 id="duties" className="mb-4 text-2xl font-semibold tracking-tight">
+                  What you will do
+                </h2>
+                <JobText text={job.benefits} />
+              </section>
+            )}
+
+            {job.requirements && (
+              <section aria-labelledby="requirements">
+                <h2 id="requirements" className="mb-4 text-2xl font-semibold tracking-tight">What you need</h2>
+                <JobText text={job.requirements} />
+              </section>
+            )}
+
+            {!job.is_curated && job.benefits && (
+              <section aria-labelledby="benefits">
+                <h2 id="benefits" className="mb-4 text-2xl font-semibold tracking-tight">
+                  What you get
+                </h2>
+                <JobText text={job.benefits} />
+              </section>
+            )}
+
+            <section className="flex flex-col gap-4 border-t border-rule pt-8 sm:flex-row sm:items-center sm:justify-between">
+              {isOpen ? (
+                <a href="#apply-actions" className="press inline-flex h-12 items-center justify-center rounded-md bg-brand px-6 text-base font-semibold text-white hover:bg-brand-dark">
+                  Apply now
+                </a>
+              ) : (
+                <Link href="/jobs" className="press inline-flex h-12 items-center justify-center rounded-md bg-brand px-6 text-base font-semibold text-white hover:bg-brand-dark">
+                  Browse open roles
+                </Link>
+              )}
+              <ShareButtons job={job} />
+            </section>
+          </article>
+
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-xl border border-rule p-6">
+              <h2 className="text-lg font-semibold tracking-tight">At a glance</h2>
+              <dl className="mt-3 divide-y divide-rule text-[15px]">
+                {facts.map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 py-2.5">
+                    <dt className="text-mute">{label}</dt>
+                    <dd className="text-right font-medium text-ink">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <div className="rounded-xl border border-rule p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Get roles like this by email</h2>
+              <p className="mt-1 mb-4 text-[15px] text-ink-soft">New GoHighLevel jobs, once a week.</p>
+              <SubscribeForm source="job-detail" buttonLabel="Subscribe" stacked />
+            </div>
+
+            {(job.company.description || job.company.website) && (
+              <div className="rounded-xl border border-rule p-6">
+                <h2 className="text-lg font-semibold tracking-tight">About {name}</h2>
+                {job.company.description && (
+                  <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">{job.company.description}</p>
+                )}
+                {job.company.website && (
+                  <a
+                    href={job.company.website}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="mt-2 inline-flex min-h-[44px] items-center text-[15px] font-semibold text-brand hover:underline"
+                  >
+                    Visit company website
+                  </a>
+                )}
+              </div>
+            )}
+
+            {similarJobs.length > 0 && (
+              <div className="rounded-xl border border-rule p-6">
+                <h2 className="text-lg font-semibold tracking-tight">More open roles</h2>
+                <ul className="mt-2 divide-y divide-rule">
+                  {similarJobs.map((similarJob) => (
+                    <li key={similarJob.id}>
+                      <Link href={`/jobs/${generateJobSlug(similarJob.title, similarJob.id)}`} className="group block py-3">
+                        <span className="block text-[15px] font-semibold text-ink group-hover:text-brand">{similarJob.title}</span>
+                        <span className="block text-sm text-mute">
+                          {companyName(similarJob)} · {similarJob.location}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-rule p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Hiring too?</h2>
+              <p className="mt-1 text-[15px] leading-relaxed text-ink-soft">
+                Post your GoHighLevel role for free, or feature it at the top of the board.
+              </p>
+              <p className="mt-3 flex flex-wrap gap-x-5 text-[15px] font-semibold">
+                <Link href="/post-job" className="inline-flex min-h-[44px] items-center text-brand hover:underline">Post a job free</Link>
+                <Link href={FEATURED_REQUEST_PATH} className="inline-flex min-h-[44px] items-center text-brand hover:underline">Feature a job</Link>
+              </p>
+            </div>
+
+            <SuperClonerPanel variant="card" title="Hired to rebuild funnels? Clone them in one click." />
+
+            <GhlStartLinks variant="card" />
+          </aside>
+        </div>
+      </main>
 
       <Footer />
     </div>

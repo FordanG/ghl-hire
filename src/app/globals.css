@@ -21,21 +21,30 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-hanken), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Brand roles. Ink is the navy from the logo lockup; brand is the hexagon
+     blue. Gold is used for one thing only: paid featured listings. */
+  --color-ink: #0b1f3a;
+  --color-ink-2: #12305a;
+  --color-ink-soft: #40536e;
+  --color-mute: #64748b;
+  --color-brand: #2563eb;
+  --color-brand-dark: #1d4fd7;
+  --color-brand-soft: #eaf1ff;
+  --color-surface: #f4f6fa;
+  --color-rule: #e2e8f0;
+  --color-gold: #f2b01e;
+  --color-gold-soft: #fff7e0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* The product UI is designed light-only; pages set their own white ground. */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-hanken), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   scrollbar-width: thin;
   scrollbar-color: #e2e8f0 #fff;
 }
@@ -128,14 +137,63 @@ body {
   transform: scale(0.98);
 }
 
+/* --- Page container ---------------------------------------------
+   One width for every public page. Grows once on very wide screens so
+   34-inch monitors do not get a narrow strip. */
+.page-wrap {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+@media (min-width: 768px) {
+  .page-wrap { padding-inline: 32px; }
+}
+
+@media (min-width: 1920px) {
+  .page-wrap { max-width: 1440px; padding-inline: 48px; }
+}
+
+.page-wrap-narrow {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+/* Hexagon from the logo mark: company monograms and markers. */
+.hex {
+  clip-path: polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%);
+}
+
+/* Dark brand field: navy with the logo's hexagon grid, drawn in CSS. */
+.field-ink {
+  background-color: var(--color-ink);
+  background-image:
+    radial-gradient(1200px 520px at 78% -10%, rgba(37, 99, 235, 0.38), transparent 62%),
+    url("/brand/hex-grid.svg");
+  background-size: auto, 56px 97px;
+}
+
+.display {
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+h1, h2, h3 { text-wrap: balance; }
+
+/* Article body */
+.prose-article p { margin: 0 0 1.25em; }
+.prose-article a { color: var(--color-brand); text-decoration: underline; text-underline-offset: 3px; min-height: 0; min-width: 0; }
+.prose-article a:hover { color: var(--color-brand-dark); }
+.prose-article strong { font-weight: 600; color: var(--color-ink); }
+
 /* Mobile Optimizations */
 
 /* Touch-friendly tap targets (minimum 44x44px) */
-button,
-a,
-input[type="button"],
-input[type="submit"],
-input[type="reset"] {
+:where(button, a, input[type="button"], input[type="submit"], input[type="reset"]) {
   min-height: 44px;
   min-width: 44px;
 }

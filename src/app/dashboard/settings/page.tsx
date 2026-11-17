@@ -53,8 +53,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'account', name: 'Account', icon: User },
     { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'privacy', name: 'Privacy', icon: Shield },
-    { id: 'billing', name: 'Billing', icon: CreditCard }
+    { id: 'privacy', name: 'Privacy', icon: Shield }
   ];
 
   const handleSaveSettings = async () => {
@@ -388,39 +387,6 @@ export default function SettingsPage() {
                         Download My Data
                       </button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'billing' && (
-              <div className="space-y-6">
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Plan</h3>
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div>
-                      <h4 className="font-medium text-blue-900">Free Plan</h4>
-                      <p className="text-sm text-blue-700">Basic job search features</p>
-                    </div>
-                    <button type="button" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                      Upgrade Plan
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Method</h3>
-                  <p className="text-gray-600 mb-4">No payment method on file</p>
-                  <button type="button" className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    Add Payment Method
-                  </button>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing History</h3>
-                  <div className="text-center py-8">
-                    <CreditCard className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">No billing history available</p>
                   </div>
                 </div>
               </div>

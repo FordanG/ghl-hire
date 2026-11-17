@@ -5,37 +5,6 @@ import { updateSession } from '@/lib/supabase/middleware';
 // Rate limiting storage (in production, use Redis or similar)
 const rateLimit = new Map<string, { count: number; resetTime: number }>();
 
-// Security headers
-const securityHeaders = {
-  'X-DNS-Prefetch-Control': 'on',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-  'X-Frame-Options': 'SAMEORIGIN',
-  'X-Content-Type-Options': 'nosniff',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-};
-
-// Content Security Policy
-// googletagmanager/google-analytics entries: layout.tsx loads GA4 via
-// @next/third-parties, which injects the gtag.js script and beacons to
-// regional *.google-analytics.com endpoints -- without these the tag is
-// silently blocked in production and analytics collects nothing.
-const CSP = `
-  default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data: https: blob:;
-  font-src 'self' data:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.resend.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com;
-  frame-src 'self';
-  object-src 'none';
-  base-uri 'self';
-  form-action 'self';
-  frame-ancestors 'self';
-  upgrade-insecure-requests;
-`.replace(/\s{2,}/g, ' ').trim();
-
 /**
  * Rate limiting middleware
  */
@@ -51,7 +20,6 @@ function rateLimiter(request: NextRequest): NextResponse | null {
   // Different limits for different endpoints
   const limits: Record<string, { requests: number; window: number }> = {
     '/api/auth': { requests: 5, window: 60000 }, // 5 requests per minute
-    '/api/payments': { requests: 10, window: 60000 }, // 10 requests per minute
     '/api/ai': { requests: 20, window: 60000 }, // 20 requests per minute
     '/api': { requests: 100, window: 60000 }, // 100 requests per minute for other API routes
   };
@@ -113,65 +81,9 @@ setInterval(() => {
 }, 60000); // Clean up every minute
 
 /**
- * Waitlist mode: the public site is replaced by /waitlist while the platform
- * and payments are being reworked.
- *
- * - WAITLIST_MODE=off  -> full site everywhere (set this to relaunch)
- * - WAITLIST_MODE=on   -> waitlist everywhere (for testing locally)
- * - unset              -> waitlist on the production domain only, so Netlify
- *                         deploy previews and localhost keep the full app for
- *                         development and QA
- */
-const WAITLIST_OPEN_PREFIXES = [
-  '/waitlist',
-  '/api',
-  '/_next',
-  '/auth', // Supabase auth callback
-  '/signin', // lets the owner reach /admin
-  '/admin', // gated to admins by updateSession
-  '/privacy',
-  '/terms',
-];
-
-function isWaitlistMode(request: NextRequest): boolean {
-  const mode = process.env.WAITLIST_MODE;
-  if (mode === 'off') return false;
-  if (mode === 'on') return true;
-  // Check every place the public hostname can show up behind Netlify's proxy
-  const hosts = [
-    request.headers.get('x-forwarded-host'),
-    request.headers.get('host'),
-    request.nextUrl.hostname,
-  ];
-  return hosts.some((value) => {
-    const host = (value || '').split(',')[0].trim().split(':')[0].toLowerCase();
-    return host === 'ghlhire.com' || host.endsWith('.ghlhire.com');
-  });
-}
-
-function waitlistRedirect(request: NextRequest): NextResponse | null {
-  if (!isWaitlistMode(request)) return null;
-
-  const path = request.nextUrl.pathname;
-  const isOpen =
-    WAITLIST_OPEN_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`)) ||
-    /\.(svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$/.test(path);
-
-  if (isOpen) return null;
-
-  // 307: temporary, so browsers and search engines don't cache it past relaunch
-  return NextResponse.redirect(new URL('/waitlist', request.url), 307);
-}
-
-/**
  * Main middleware function
  */
 export async function middleware(request: NextRequest) {
-  const waitlistResponse = waitlistRedirect(request);
-  if (waitlistResponse) {
-    return waitlistResponse;
-  }
-
   // Apply rate limiting
   const rateLimitResponse = rateLimiter(request);
   if (rateLimitResponse) {
@@ -180,16 +92,6 @@ export async function middleware(request: NextRequest) {
 
   // Update Supabase session first
   const response = await updateSession(request);
-
-  // Apply security headers
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
-
-  // Apply CSP header (only in production)
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Content-Security-Policy', CSP);
-  }
 
   // Add CORS headers for API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
@@ -216,16 +118,27 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Configure which routes use this middleware
+/**
+ * Only signed-in areas and API routes run this middleware.
+ *
+ * Public pages (home, jobs, guides, employers) are prebuilt and served from
+ * the CDN. Matching them here would turn every visit, including every crawler
+ * hit, into an edge function call plus a serverless function call, which is
+ * what pushed the Netlify team past its free function limit. Security headers
+ * for all routes are set in netlify.toml instead.
+ */
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/dashboard/:path*',
+    '/company/:path*',
+    '/post-job/:path*',
+    '/admin/:path*',
+    '/edit-job/:path*',
+    '/applications/:path*',
+    '/profile/:path*',
+    '/notifications/:path*',
+    '/job-alerts/:path*',
+    '/auth/:path*',
+    '/api/:path*',
   ],
 };

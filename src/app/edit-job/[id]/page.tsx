@@ -32,6 +32,8 @@ export default function EditJobPage({ params }: EditJobPageProps) {
     experience_level: 'Mid Level',
     salary_min: '',
     salary_max: '',
+    salary_period: 'year',
+    apply_url: '',
     status: 'draft' as 'draft' | 'active' | 'closed',
   });
 
@@ -85,6 +87,8 @@ export default function EditJobPage({ params }: EditJobPageProps) {
           experience_level: job.experience_level || 'Mid Level',
           salary_min: job.salary_min ? job.salary_min.toString() : '',
           salary_max: job.salary_max ? job.salary_max.toString() : '',
+          salary_period: job.salary_period || 'year',
+          apply_url: job.apply_url || '',
           status: job.status || 'draft',
         });
 
@@ -135,6 +139,12 @@ export default function EditJobPage({ params }: EditJobPageProps) {
       // Validate salary range if provided
       const salaryMin = formData.salary_min ? parseInt(formData.salary_min) : null;
       const salaryMax = formData.salary_max ? parseInt(formData.salary_max) : null;
+      const applyUrl = formData.apply_url.trim();
+      if (applyUrl && !/^https:\/\/\S+$/i.test(applyUrl)) {
+        setError('The application link must be a full address starting with https://');
+        setSaving(false);
+        return;
+      }
 
       if (salaryMin && salaryMax && salaryMin > salaryMax) {
         setError('Minimum salary cannot be greater than maximum salary');
@@ -158,6 +168,8 @@ export default function EditJobPage({ params }: EditJobPageProps) {
           experience_level: formData.experience_level,
           salary_min: salaryMin,
           salary_max: salaryMax,
+          salary_period: formData.salary_period,
+          apply_url: applyUrl || null,
           status: statusToUpdate,
         })
         .eq('id', jobId);
@@ -176,7 +188,7 @@ export default function EditJobPage({ params }: EditJobPageProps) {
       console.error('Job update error:', err);
       const message = err instanceof Error ? err.message : '';
       if (message.includes('JOB_POST_LIMIT_REACHED')) {
-        setError("You've reached your plan's active job limit. Upgrade your plan to post more jobs.");
+        setError('You already have 25 active listings. Close one first, or email inquiries@ghlhire.com.');
       } else {
         setError(message || 'Failed to update job. Please try again.');
       }
@@ -478,7 +490,6 @@ export default function EditJobPage({ params }: EditJobPageProps) {
                     name="salary_min"
                     type="number"
                     min="0"
-                    step="1000"
                     value={formData.salary_min}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
@@ -495,7 +506,6 @@ export default function EditJobPage({ params }: EditJobPageProps) {
                     name="salary_max"
                     type="number"
                     min="0"
-                    step="1000"
                     value={formData.salary_max}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
@@ -504,9 +514,47 @@ export default function EditJobPage({ params }: EditJobPageProps) {
                 </div>
               </div>
 
+              <div className="mt-4 md:w-1/2 md:pr-2">
+                <label htmlFor="salary_period" className="block text-sm font-medium text-gray-700 mb-2">
+                  Pay is per
+                </label>
+                <select
+                  id="salary_period"
+                  name="salary_period"
+                  value={formData.salary_period}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                >
+                  <option value="year">Year</option>
+                  <option value="month">Month</option>
+                  <option value="hour">Hour</option>
+                </select>
+              </div>
+
               <p className="text-sm text-gray-500 mt-2">
-                Leave blank to hide salary information
+                Leave blank to hide pay.
               </p>
+            </div>
+
+            {/* How to apply */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6">
+              <h2 className="text-xl font-semibold mb-2">How people apply</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Leave this empty to collect applications in your dashboard, or add a link to send candidates to your own site.
+              </p>
+              <label htmlFor="apply_url" className="block text-sm font-medium text-gray-700 mb-2">
+                Application link (optional)
+              </label>
+              <input
+                id="apply_url"
+                name="apply_url"
+                type="url"
+                inputMode="url"
+                value={formData.apply_url}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none"
+                placeholder="https://yourcompany.com/careers/role"
+              />
             </div>
 
             {/* Action Buttons */}

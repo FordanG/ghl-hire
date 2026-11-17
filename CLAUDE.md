@@ -187,6 +187,10 @@ mv old-doc.md documents/archive/$(date +%Y-%m-%d)_old-doc.md
 
 ## Implementation Notes
 
+- **Free job board (2026-11-18):** no subscriptions or checkout. Posting is free; featured listings are paid by email (hello@vendrato.com) and switched on by an admin. Site purpose: traffic for Super Cloner and email capture. See `documents/sessions/2026-11-18_free-job-board-relaunch.md`.
+- Shared constants (Super Cloner link, featured email) are in `src/lib/site.ts`; job display helpers in `src/lib/jobs.ts`; guides in `src/content/articles/`.
+- Copy rules: no em dashes, no emojis, no invented statistics, testimonials or salary figures.
+
 - Backend infrastructure is complete and production-ready
 - Database has 24 tables with comprehensive RLS policies
 - TypeScript types auto-generated from schema (1,601 lines)

@@ -17,7 +17,11 @@ type AdminActionDefinition = {
 const ACTIONS: Record<AdminResource, readonly AdminActionDefinition[]> = {
   users: [{ action: 'set-suspended', values: [true, false] }],
   companies: [{ action: 'set-verified', values: [true, false] }],
-  jobs: [{ action: 'set-status', values: ['draft', 'active', 'closed', 'archived'] }],
+  jobs: [
+    { action: 'set-status', values: ['draft', 'active', 'closed', 'archived'] },
+    // Featured placement is paid and arranged by email, then switched on here.
+    { action: 'set-featured', values: [true, false] },
+  ],
   applications: [
     {
       action: 'set-status',

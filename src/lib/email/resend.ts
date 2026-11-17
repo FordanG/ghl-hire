@@ -293,7 +293,7 @@ export const emailTemplates = {
           `}
 
           <p style="margin: 24px 0 0; font-size: 14px; color: ${brandColors.textLight};">
-            Questions? Contact us at <a href="mailto:support@ghlhire.com" style="color: ${brandColors.primary};">support@ghlhire.com</a>
+            Questions? Contact us at <a href="mailto:inquiries@ghlhire.com" style="color: ${brandColors.primary};">inquiries@ghlhire.com</a>
           </p>
         `
       ),

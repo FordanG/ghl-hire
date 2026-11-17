@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Bookmark, ExternalLink, BookmarkCheck } from 'lucide-react';
+import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import ApplyJobModal from '@/components/ApplyJobModal';
@@ -15,6 +14,7 @@ interface JobDetailClientProps {
     applications_count: number;
     status?: string | null;
     expires_at?: string | null;
+    apply_url?: string | null;
     company: { company_name: string } | null;
   };
 }
@@ -129,49 +129,49 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
 
   const handleApplicationSuccess = () => {
     setHasApplied(true);
-    // Increment view count
-    supabase
-      .from('jobs')
-      .update({ applications_count: job.applications_count + 1 })
-      .eq('id', job.id)
-      .then(() => router.refresh());
+    // The application count is maintained by a database trigger.
+    router.refresh();
   };
+
+  const primary =
+    'press inline-flex h-12 w-full items-center justify-center rounded-md bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-dark';
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-3 lg:flex-col fade-in fade-in-5">
-        {hasApplied ? (
-          <div className="px-6 py-3 bg-green-100 text-green-800 font-semibold rounded-lg text-center">
-            ✓ Applied
+      <div className="flex flex-col gap-3">
+        {isClosed ? (
+          <div className="rounded-md bg-white px-4 py-3 text-center text-[15px] font-semibold text-ink-soft ring-1 ring-rule">
+            This role is no longer accepting applications
           </div>
-        ) : isClosed ? (
-          <div className="px-6 py-3 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center">
-            This job is no longer accepting applications
+        ) : job.apply_url ? (
+          <a href={job.apply_url} target="_blank" rel="noopener noreferrer nofollow" className={primary}>
+            Apply on employer site
+          </a>
+        ) : hasApplied ? (
+          <div role="status" className="rounded-md bg-emerald-50 px-4 py-3 text-center text-[15px] font-semibold text-emerald-800">
+            You applied for this role
           </div>
         ) : (
-          <button
-            onClick={handleApply}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            <ExternalLink className="w-5 h-5" />
-            Apply Now
+          <button onClick={handleApply} disabled={loading} className={`${primary} disabled:opacity-70`}>
+            Apply now
           </button>
         )}
 
         <button
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-gray-200 font-semibold rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          aria-pressed={isSaved}
+          className="press inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-rule bg-white px-6 text-base font-semibold text-ink transition-colors hover:bg-brand-soft disabled:opacity-50"
         >
           {isSaved ? (
             <>
-              <BookmarkCheck className="w-5 h-5 text-blue-600" />
-              <span>Saved</span>
+              <BookmarkCheck className="h-5 w-5 text-brand" />
+              Saved
             </>
           ) : (
             <>
-              <Bookmark className="w-5 h-5" />
-              <span>Save Job</span>
+              <Bookmark className="h-5 w-5" />
+              Save job
             </>
           )}
         </button>

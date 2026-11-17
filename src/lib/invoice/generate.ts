@@ -194,7 +194,7 @@ export function generateInvoiceHTML(data: InvoiceData): string {
     <div class="address-block">
       <h3>From</h3>
       <p class="company-name">GHL Hire</p>
-      <p>support@ghlhire.com</p>
+      <p>inquiries@ghlhire.com</p>
       <p>https://ghlhire.com</p>
     </div>
     <div class="address-block">

@@ -79,7 +79,7 @@ export default function PrivacyPage() {
               <li>Facilitate communication between employers and candidates</li>
               <li>Process job applications and manage recruitment workflows</li>
               <li>Deliver job alerts and platform notifications</li>
-              <li>Process payments and manage subscriptions</li>
+              <li>Arrange featured listings you ask for</li>
             </ul>
 
             <h3 className="text-xl font-semibold mb-3 mt-4">2.2 Platform Improvement</h3>

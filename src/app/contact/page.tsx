@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { submitSiteForm } from '@/lib/site-forms';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -29,15 +30,8 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to send message. Please try again.');
-      }
+      const problem = await submitSiteForm('contact', formData);
+      if (problem) throw new Error(problem);
       alert('Thank you for your message! We\'ll get back to you soon.');
       setFormData({ name: '', email: '', subject: '', message: '', type: 'general' });
     } catch (err) {
@@ -76,7 +70,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Email Us</h3>
-                    <p className="text-gray-600">support@ghlhire.com</p>
+                    <p className="text-gray-600">inquiries@ghlhire.com</p>
                     <p className="text-gray-600">hello@ghlhire.com</p>
                   </div>
                 </div>
@@ -125,8 +119,8 @@ export default function ContactPage() {
                 <a href="/help" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   How do I apply for jobs?
                 </a>
-                <a href="/pricing" className="block text-blue-600 hover:text-blue-500 transition-colors">
-                  Pricing information
+                <a href="/featured" className="block text-blue-600 hover:text-blue-500 transition-colors">
+                  Featured listings
                 </a>
                 <a href="/dashboard/settings" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   Account management
