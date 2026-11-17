@@ -3,6 +3,8 @@ import { SUPER_CLONER_URL } from '@/lib/site';
 interface SuperClonerPanelProps {
   /** 'band' is the full-width homepage section; 'card' sits inside articles and sidebars. */
   variant?: 'band' | 'card';
+  /** Card only: a line that fits the page it sits on. */
+  title?: string;
 }
 
 const pages = ['Opt-in page', 'Sales page', 'Order form', 'Upsell', 'Thank-you page'];
@@ -40,16 +42,16 @@ function CloneDiagram() {
   );
 }
 
-export default function SuperClonerPanel({ variant = 'band' }: SuperClonerPanelProps) {
+export default function SuperClonerPanel({
+  variant = 'band',
+  title = 'Rebuilding a funnel by hand? Clone it in one click.',
+}: SuperClonerPanelProps) {
   if (variant === 'card') {
     return (
       <aside className="field-ink rounded-xl p-6 text-white sm:p-7">
-        <p className="text-sm font-medium text-gold">From the team behind GHL Hire</p>
-        <h2 className="mt-2 text-xl font-semibold tracking-tight">
-          Super Cloner copies a whole GoHighLevel funnel in one click
-        </h2>
+        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
         <p className="mt-2 text-[15px] leading-relaxed text-slate-300">
-          Every page lands in your own builder, fully editable. From $20, no subscription, credits never expire.
+          Super Cloner, from the team behind GHL Hire, copies a whole GoHighLevel funnel into your own builder, fully editable. From $20, no subscription.
         </p>
         <a
           href={SUPER_CLONER_URL}
@@ -67,12 +69,11 @@ export default function SuperClonerPanel({ variant = 'band' }: SuperClonerPanelP
     <section className="field-ink text-white" aria-labelledby="super-cloner-heading">
       <div className="page-wrap grid items-center gap-10 py-16 md:grid-cols-2 md:gap-14 md:py-24">
         <div>
-          <p className="text-sm font-medium text-gold">From the team behind GHL Hire</p>
-          <h2 id="super-cloner-heading" className="display mt-3 text-3xl font-semibold md:text-[2.75rem]">
+          <h2 id="super-cloner-heading" className="display text-3xl font-semibold md:text-[2.75rem]">
             Clone an entire GoHighLevel funnel in one click
           </h2>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-300">
-            Super Cloner is a Chrome extension that copies any GHL funnel or website you can open and pastes it into your own builder. Every page arrives fully editable, so a rebuild that takes days is done before your coffee is.
+            Super Cloner is our own Chrome extension. It copies any GHL funnel or website you can open and pastes it into your own builder. Every page arrives fully editable, so a rebuild that takes days is done before your coffee is.
           </p>
           <ul className="mt-6 grid max-w-xl gap-x-6 gap-y-2 text-[15px] text-slate-200 sm:grid-cols-3">
             <li>Starts at $20</li>
@@ -88,7 +89,7 @@ export default function SuperClonerPanel({ variant = 'band' }: SuperClonerPanelP
             Try Super Cloner
           </a>
         </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5 sm:p-7">
+        <div className="hidden rounded-xl border border-white/10 bg-white/[0.04] p-7 sm:block">
           <CloneDiagram />
         </div>
       </div>

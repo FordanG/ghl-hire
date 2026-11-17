@@ -75,7 +75,7 @@ export default function SubscribeForm({ source, tone = 'light', buttonLabel = 'G
           placeholder="you@example.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className={`h-12 w-full min-w-0 flex-1 rounded-md border px-4 text-base outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 ${
+          className={`h-12 w-full min-w-0 shrink-0 rounded-md border ${stacked ? '' : 'sm:flex-1 sm:shrink'} px-4 text-base outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30 ${
             dark ? 'border-white/20 bg-white text-ink placeholder:text-slate-400' : 'border-rule bg-white text-ink placeholder:text-slate-400'
           }`}
         />

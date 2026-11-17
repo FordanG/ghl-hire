@@ -8,6 +8,7 @@ import {
   isNew,
   locationLabel,
   postedAgo,
+  splitEmployer,
 } from '@/lib/jobs';
 
 interface JobRowProps {
@@ -21,7 +22,8 @@ interface JobRowProps {
  * gold edge so paid placement is always visibly labelled.
  */
 export default function JobRow({ job, compact = false }: JobRowProps) {
-  const name = companyName(job);
+  const fullName = companyName(job);
+  const { name, unnamed } = splitEmployer(fullName);
   const salary = formatSalary(job);
   const featured = Boolean(job.is_featured);
   const fresh = isNew(job.created_at);
@@ -33,7 +35,7 @@ export default function JobRow({ job, compact = false }: JobRowProps) {
         href={`/jobs/${generateJobSlug(job.title, job.id)}`}
         className="group grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 px-4 py-4 outline-none transition-colors hover:bg-brand-soft/60 focus-visible:bg-brand-soft sm:px-6 md:grid-cols-[auto_minmax(0,1fr)_auto] md:gap-x-5 md:py-5"
       >
-        <CompanyMark name={name} logoUrl={job.company?.logo_url} featured={featured} />
+        <CompanyMark name={fullName} logoUrl={job.company?.logo_url} featured={featured} />
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
@@ -46,38 +48,37 @@ export default function JobRow({ job, compact = false }: JobRowProps) {
               </span>
             )}
             {!featured && fresh && (
-              <span className="rounded-sm bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand">
+              <span className="hidden rounded-sm bg-brand-soft px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand sm:inline">
                 New
               </span>
             )}
           </div>
-          <p className="mt-0.5 truncate text-[15px] text-ink-soft">
+          <p className="mt-0.5 text-[15px] text-ink-soft">
             <span className="font-medium text-ink">{name}</span>
-            <span className="mx-1.5 text-mute" aria-hidden="true">·</span>
-            {locationLabel(job)}
+            {unnamed && <span className="text-mute">, employer not named</span>}
           </p>
-          {!compact && (
-            <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-sm text-mute">
-              <span>{job.job_type}</span>
-              {job.experience_level && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span>{job.experience_level}</span>
-                </>
-              )}
-              {job.apply_url && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span>Apply on company site</span>
-                </>
-              )}
-            </p>
-          )}
+          <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-sm text-mute">
+            <span>{locationLabel(job)}</span>
+            <span aria-hidden="true">·</span>
+            <span>{job.job_type}</span>
+            {!compact && job.experience_level && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>{job.experience_level}</span>
+              </>
+            )}
+            {!compact && job.apply_url && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span>Apply on employer site</span>
+              </>
+            )}
+          </p>
         </div>
 
         <div className="col-start-2 flex items-baseline justify-between gap-4 md:col-start-3 md:flex-col md:items-end md:justify-center md:gap-1">
           <span className="text-[15px] font-semibold tabular-nums text-ink">
-            {salary || <span className="font-normal text-mute">{compact ? job.job_type : 'Pay not listed'}</span>}
+            {salary || <span className="font-normal text-mute">Pay not listed</span>}
           </span>
           <span className="text-sm text-mute">{postedAgo(job.created_at)}</span>
         </div>

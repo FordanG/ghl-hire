@@ -127,8 +127,8 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             </p>
 
             <form action="/jobs" method="get" role="search" className="mt-7 rounded-xl bg-white p-3 text-ink sm:p-4">
-              <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-                <div>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-[2fr_1fr_1fr_auto]">
+                <div className="col-span-2 md:col-span-1">
                   <label htmlFor="q" className="sr-only">Search</label>
                   <input id="q" name="q" type="search" defaultValue={filters.q} placeholder="Role, skill or company" className={fieldClass} />
                 </div>
@@ -150,7 +150,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                     ))}
                   </select>
                 </div>
-                <button type="submit" className="press h-12 rounded-md bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-dark">
+                <button type="submit" className="press col-span-2 h-12 rounded-md bg-brand px-6 md:col-span-1 text-base font-semibold text-white transition-colors hover:bg-brand-dark">
                   Search
                 </button>
               </div>
@@ -271,7 +271,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
               </div>
             </div>
 
-            <SuperClonerPanel variant="card" />
+            <SuperClonerPanel variant="card" title="Hired to rebuild funnels? Clone them in one click." />
           </aside>
         </div>
       </main>

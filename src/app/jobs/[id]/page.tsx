@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CompanyMark from '@/components/CompanyMark';
 import JobText from '@/components/JobText';
+import SubscribeForm from '@/components/SubscribeForm';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import JobDetailClient from './JobDetailClient';
 import ShareButtons from './ShareButtons';
@@ -322,7 +323,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
             <section className="flex flex-col gap-4 border-t border-rule pt-8 sm:flex-row sm:items-center sm:justify-between">
               {isOpen ? (
                 <a href="#apply-actions" className="press inline-flex h-12 items-center justify-center rounded-md bg-brand px-6 text-base font-semibold text-white hover:bg-brand-dark">
-                  Apply for this role
+                  Apply now
                 </a>
               ) : (
                 <Link href="/jobs" className="press inline-flex h-12 items-center justify-center rounded-md bg-brand px-6 text-base font-semibold text-white hover:bg-brand-dark">
@@ -344,6 +345,12 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                   </div>
                 ))}
               </dl>
+            </div>
+
+            <div className="rounded-xl border border-rule p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Get roles like this by email</h2>
+              <p className="mt-1 mb-4 text-[15px] text-ink-soft">New GoHighLevel jobs, once a week.</p>
+              <SubscribeForm source="job-detail" buttonLabel="Subscribe" stacked />
             </div>
 
             {(job.company.description || job.company.website) && (
@@ -394,7 +401,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               </p>
             </div>
 
-            <SuperClonerPanel variant="card" />
+            <SuperClonerPanel variant="card" title="Hired to rebuild funnels? Clone them in one click." />
           </aside>
         </div>
       </main>

@@ -223,7 +223,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {splitAt < article.body.length && (
             <div className="my-12">
-              <SuperClonerPanel variant="card" />
+              <SuperClonerPanel variant="card" title="Building funnels for clients? Clone a proven one in one click." />
             </div>
           )}
 

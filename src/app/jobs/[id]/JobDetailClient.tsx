@@ -145,7 +145,7 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
           </div>
         ) : job.apply_url ? (
           <a href={job.apply_url} target="_blank" rel="noopener noreferrer nofollow" className={primary}>
-            Apply on company site
+            Apply on employer site
           </a>
         ) : hasApplied ? (
           <div role="status" className="rounded-md bg-emerald-50 px-4 py-3 text-center text-[15px] font-semibold text-emerald-800">

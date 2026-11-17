@@ -21,7 +21,8 @@ export const metadata: Metadata = {
 };
 
 export default function BlogPage() {
-  const [lead, ...rest] = articles;
+  // Two large cards, then rows of three: eight guides leave no orphan card.
+  const [first, second, ...rest] = articles;
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-ink">
@@ -38,10 +39,24 @@ export default function BlogPage() {
         </section>
 
         <section className="page-wrap pb-14">
-          <ArticleCard article={lead} lead priority />
+          <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2">
+            <ArticleCard article={first} priority />
+            <ArticleCard article={second} priority />
+          </div>
         </section>
 
-        <section className="border-y border-rule bg-surface">
+        <SuperClonerPanel />
+
+        <section className="page-wrap py-14 md:py-16">
+          <h2 className="sr-only">All guides</h2>
+          <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            {rest.map((article) => (
+              <ArticleCard key={article.slug} article={article} />
+            ))}
+          </div>
+        </section>
+
+        <section className="border-t border-rule bg-surface">
           <div className="page-wrap grid gap-6 py-10 md:grid-cols-[1fr_1.1fr] md:items-center md:gap-12">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">New guides and new GHL roles, once a week</h2>
@@ -53,16 +68,6 @@ export default function BlogPage() {
           </div>
         </section>
 
-        <section className="page-wrap py-14 md:py-16">
-          <h2 className="sr-only">All guides</h2>
-          <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-            {rest.map((article) => (
-              <ArticleCard key={article.slug} article={article} />
-            ))}
-          </div>
-        </section>
-
-        <SuperClonerPanel />
       </main>
 
       <Footer />

@@ -56,7 +56,7 @@ export default function EmployersPage() {
               Hire people who already know GoHighLevel. Posting is free.
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-300 md:text-xl">
-              GHL Hire is a job board for one platform. Everyone who reads it works in HighLevel, so you skip the part where you explain what a snapshot is.
+              GHL Hire is a job board for one platform. It is written for people who work in HighLevel, so you skip the part where you explain what a snapshot is.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/post-job" className="press inline-flex h-12 items-center rounded-md bg-brand px-6 text-base font-semibold text-white hover:bg-brand-dark">
@@ -70,22 +70,22 @@ export default function EmployersPage() {
         </section>
 
         <section className="page-wrap py-16 md:py-24" aria-labelledby="included-heading">
-          <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:gap-16">
-            <h2 id="included-heading" className="display text-3xl font-semibold md:text-[2.5rem]">
-              What a free listing includes
-            </h2>
-            <dl className="divide-y divide-rule border-y border-rule">
-              {included.map(([title, text]) => (
-                <div key={title} className="grid gap-1 py-5 sm:grid-cols-[14rem_1fr] sm:gap-6">
-                  <dt className="font-semibold text-ink">{title}</dt>
-                  <dd className="text-ink-soft">{text}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+          <h2 id="included-heading" className="display max-w-2xl text-3xl font-semibold md:text-[2.5rem]">
+            What a free listing includes
+          </h2>
+          <dl className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {included.map(([title, text]) => (
+              <div key={title} className="border-t-2 border-ink pt-4">
+                <dt className="text-lg font-semibold text-ink">{title}</dt>
+                <dd className="mt-2 text-[15px] leading-relaxed text-ink-soft">{text}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
 
-        <section className="border-y border-rule bg-surface" aria-labelledby="featured-heading">
+        <SuperClonerPanel />
+
+        <section className="border-b border-rule bg-surface" aria-labelledby="featured-heading">
           <div className="page-wrap grid gap-10 py-16 md:grid-cols-2 md:items-center md:gap-16 md:py-20">
             <div>
               <h2 id="featured-heading" className="display text-3xl font-semibold md:text-[2.5rem]">
@@ -137,7 +137,6 @@ export default function EmployersPage() {
           </div>
         </section>
 
-        <SuperClonerPanel />
       </main>
 
       <Footer />

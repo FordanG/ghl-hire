@@ -99,17 +99,17 @@ export default async function Home() {
                 name="q"
                 type="search"
                 placeholder="Role, skill or company"
-                className="h-14 w-full min-w-0 flex-1 rounded-md border border-transparent bg-white px-4 text-base text-ink outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-gold"
+                className="h-14 w-full min-w-0 shrink-0 rounded-md sm:flex-1 sm:shrink border border-transparent bg-white px-4 text-base text-ink outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-gold"
               />
               <button type="submit" className="press h-14 shrink-0 rounded-md bg-brand px-7 text-base font-semibold text-white transition-colors hover:bg-brand-dark">
                 Search jobs
               </button>
             </form>
 
-            <ul className="mt-4 flex flex-wrap gap-x-1 gap-y-1 text-[15px]">
+            <ul className="mt-5 flex flex-wrap gap-2 text-[15px]">
               {quickSearches.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="inline-flex min-h-[44px] min-w-0 items-center rounded-md px-2.5 text-slate-300 underline decoration-white/25 underline-offset-4 hover:text-white hover:decoration-white">
+                  <Link href={item.href} className="inline-flex h-11 min-w-0 items-center rounded-md border border-white/20 px-3.5 text-slate-200 transition-colors hover:border-white/60 hover:text-white">
                     {item.label}
                   </Link>
                 </li>
@@ -156,8 +156,23 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* Email capture */}
+        <section id="subscribe" className="mt-16 scroll-mt-20 border-y border-rule bg-surface md:mt-20" aria-labelledby="subscribe-heading">
+          <div className="page-wrap grid gap-8 py-12 md:grid-cols-2 md:items-center md:gap-16 md:py-14">
+            <div>
+              <h2 id="subscribe-heading" className="display text-3xl font-semibold md:text-4xl">
+                New GHL roles in your inbox every week
+              </h2>
+              <p className="mt-4 max-w-md text-lg leading-relaxed text-ink-soft">
+                One short email: the roles added this week and the newest guide. Nothing else.
+              </p>
+            </div>
+            <SubscribeForm source="home" />
+          </div>
+        </section>
+
         {/* Employers */}
-        <section className="page-wrap py-20 md:py-28" aria-labelledby="employers-heading">
+        <section className="page-wrap py-16 md:py-24" aria-labelledby="employers-heading">
           <div className="grid gap-12 md:grid-cols-[1.1fr_1fr] md:gap-16">
             <div>
               <h2 id="employers-heading" className="display text-3xl font-semibold md:text-[2.75rem]">
@@ -240,20 +255,6 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Email capture */}
-        <section id="subscribe" className="scroll-mt-20 border-t border-rule bg-surface" aria-labelledby="subscribe-heading">
-          <div className="page-wrap grid gap-8 py-16 md:grid-cols-2 md:items-center md:gap-16 md:py-20">
-            <div>
-              <h2 id="subscribe-heading" className="display text-3xl font-semibold md:text-4xl">
-                New GHL roles in your inbox every week
-              </h2>
-              <p className="mt-4 max-w-md text-lg leading-relaxed text-ink-soft">
-                One short email: the roles added this week and the newest guide. Nothing else.
-              </p>
-            </div>
-            <SubscribeForm source="home" />
-          </div>
-        </section>
       </main>
 
       <Footer />

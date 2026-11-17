@@ -32,9 +32,18 @@ export function companyName(job: Pick<BoardJob, 'external_company_name' | 'compa
   return job.external_company_name?.trim() || job.company?.company_name?.trim() || 'Company';
 }
 
+const UNNAMED = ' (employer not named)';
+
+/** Splits "Marketing agency (employer not named)" so the note can be shown quietly. */
+export function splitEmployer(name: string): { name: string; unnamed: boolean } {
+  return name.endsWith(UNNAMED)
+    ? { name: name.slice(0, -UNNAMED.length), unnamed: true }
+    : { name, unnamed: false };
+}
+
 /** Two-letter monogram for the hexagon tile. */
 export function monogram(name: string): string {
-  const words = name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim().split(/\s+/).filter(Boolean);
+  const words = splitEmployer(name).name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return 'GH';
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
@@ -81,7 +90,7 @@ export function postedAgo(dateString?: string | null, now: Date = new Date()): s
 
 export function isNew(dateString?: string | null, now: Date = new Date()): boolean {
   if (!dateString) return false;
-  return now.getTime() - new Date(dateString).getTime() < 4 * 86400000;
+  return now.getTime() - new Date(dateString).getTime() < 2 * 86400000;
 }
 
 /** Location line without repeating "Remote" twice. */
