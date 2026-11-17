@@ -1,5 +1,31 @@
 import type { NextConfig } from "next";
 
+// Security headers for every route. Set here (not in middleware) so prebuilt
+// pages carry them without invoking a function. netlify.toml headers do not
+// reach pages served by the Next.js runtime, so this is the source of truth.
+const securityHeaders = [
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+];
+
+const contentSecurityPolicy = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: https: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.resend.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
+  "frame-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  'upgrade-insecure-requests',
+].join('; ');
+
 const nextConfig: NextConfig = {
   // Performance Optimizations
   compress: true, // Enable gzip compression
@@ -87,6 +113,13 @@ const nextConfig: NextConfig = {
   // Headers for caching and security
   async headers() {
     return [
+      {
+        source: '/:path*',
+        headers:
+          process.env.NODE_ENV === 'production'
+            ? [...securityHeaders, { key: 'Content-Security-Policy', value: contentSecurityPolicy }]
+            : securityHeaders,
+      },
       {
         source: '/:all*(svg|jpg|png|webp|avif)',
         headers: [

@@ -125,7 +125,7 @@ export async function middleware(request: NextRequest) {
  * the CDN. Matching them here would turn every visit, including every crawler
  * hit, into an edge function call plus a serverless function call, which is
  * what pushed the Netlify team past its free function limit. Security headers
- * for all routes are set in netlify.toml instead.
+ * for all routes are set in next.config.ts instead.
  */
 export const config = {
   matcher: [
