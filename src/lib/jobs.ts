@@ -22,6 +22,8 @@ export interface BoardJob {
   source_name?: string | null;
   external_company_name?: string | null;
   external_company_url?: string | null;
+  /** Jobs list only: every distinct word of the listing, lowercased, for in-browser search. */
+  search_text?: string;
   company?: { company_name?: string | null; logo_url?: string | null; is_verified?: boolean | null } | null;
 }
 
@@ -109,6 +111,15 @@ export function safeSearchTerm(raw: string): string {
     .trim()
     .slice(0, 80)
     .replace(/[%_]/g, (c) => `\\${c}`);
+}
+
+/**
+ * Splits text into lowercase search words. The jobs page builds its word
+ * index with this and the board splits the visitor's query with it, so
+ * punctuation is treated the same on both sides ("Go-High" finds "go high").
+ */
+export function searchTokens(text: string): string[] {
+  return text.toLowerCase().split(/[^\p{L}\p{N}+#.]+/u).filter(Boolean);
 }
 
 export const JOB_TYPES = ['Full-Time', 'Part-Time', 'Contract', 'Freelance'] as const;

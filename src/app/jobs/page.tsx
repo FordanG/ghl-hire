@@ -6,7 +6,7 @@ import JobsBoard from '@/components/JobsBoard';
 import SubscribeForm from '@/components/SubscribeForm';
 import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
-import { BOARD_JOB_SELECT, type BoardJob } from '@/lib/jobs';
+import { BOARD_JOB_SELECT, searchTokens, type BoardJob } from '@/lib/jobs';
 import { FEATURED_REQUEST_PATH } from '@/lib/site';
 import { createPublicClient } from '@/lib/supabase/public';
 
@@ -21,23 +21,54 @@ export const metadata: Metadata = {
   alternates: { canonical: 'https://ghlhire.com/jobs' },
 };
 
+const BATCH = 1000;
+
+/** Every distinct word in the listing, so search still covers the full text. */
+function searchText(job: BoardJob & { requirements?: string | null }): string {
+  const text = [
+    job.title,
+    job.external_company_name,
+    job.company?.company_name,
+    job.location,
+    job.job_type,
+    job.experience_level,
+    job.description,
+    job.requirements,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return [...new Set(searchTokens(text))].join(' ');
+}
+
 async function getJobs(): Promise<BoardJob[]> {
-  const { data, error } = await createPublicClient()
-    .from('jobs')
-    .select(BOARD_JOB_SELECT)
-    .eq('status', 'active')
-    .order('is_featured', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(300);
+  const supabase = createPublicClient();
+  const rows: BoardJob[] = [];
 
-  // Throwing keeps the last good copy of the page instead of caching an empty board.
-  if (error) throw new Error(`Could not load jobs: ${error.message}`);
+  // Read every active listing in batches: the board filters and pages in the
+  // browser, so anything not loaded here could not be found at all.
+  for (let from = 0; ; from += BATCH) {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select(BOARD_JOB_SELECT)
+      .eq('status', 'active')
+      .order('is_featured', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: true })
+      .range(from, from + BATCH - 1);
 
-  // Only what the list needs: long text is trimmed to keep the page light.
-  return ((data ?? []) as unknown as BoardJob[]).map((job) => ({
+    // Throwing keeps the last good copy of the page instead of caching an empty board.
+    if (error) throw new Error(`Could not load jobs: ${error.message}`);
+    rows.push(...((data ?? []) as unknown as BoardJob[]));
+    if (!data || data.length < BATCH) break;
+  }
+
+  // Only what the list needs. The long text is replaced by a word index so
+  // search still matches anything in the description or requirements.
+  return rows.map((job) => ({
     id: job.id,
     title: job.title,
-    description: (job.description || '').slice(0, 600),
+    description: '',
+    search_text: searchText(job),
     location: job.location,
     job_type: job.job_type,
     experience_level: job.experience_level,

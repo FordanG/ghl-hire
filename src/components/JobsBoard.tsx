@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import JobRow from './JobRow';
-import { EXPERIENCE_LEVELS, JOB_TYPES, companyName, type BoardJob } from '@/lib/jobs';
+import { EXPERIENCE_LEVELS, JOB_TYPES, companyName, searchTokens, type BoardJob } from '@/lib/jobs';
 
 const JOBS_PER_PAGE = 20;
 
@@ -51,9 +51,11 @@ function matches(job: BoardJob, filters: Filters): boolean {
   if (filters.level && job.experience_level !== filters.level) return false;
   if (filters.remote && !job.remote) return false;
   if (!filters.q) return true;
-  const haystack = `${job.title} ${companyName(job)} ${job.location} ${job.description}`.toLowerCase();
-  // Every word must appear somewhere in the listing, in any order.
-  return filters.q.toLowerCase().split(/\s+/).filter(Boolean).every((word) => haystack.includes(word));
+  const haystack =
+    job.search_text ?? searchTokens(`${job.title} ${companyName(job)} ${job.location} ${job.description}`).join(' ');
+  // Every word must appear somewhere in the listing, in any order. The query
+  // is split the same way as the index, so punctuation cannot hide a match.
+  return searchTokens(filters.q).every((word) => haystack.includes(word));
 }
 
 const fieldClass =
@@ -61,6 +63,15 @@ const fieldClass =
 
 function Board({ jobs, initial }: { jobs: BoardJob[]; initial: Filters }) {
   const [filters, setFilters] = useState<Filters>(initial);
+
+  // A link to /jobs?... clicked while already on this page changes the URL
+  // without remounting the board, so follow the URL when it stops matching.
+  // Our own edits write the URL first, so they compare equal and are skipped.
+  const initialQuery = toQuery(initial);
+  useEffect(() => {
+    setFilters((current) => (toQuery(current) === initialQuery ? current : initial));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   // Filtering happens in the browser on the prebuilt list, so searching costs
   // no server calls. The address bar is kept in step so results can be shared.
