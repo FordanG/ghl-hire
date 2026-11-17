@@ -1,453 +1,280 @@
-'use client';
-
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Filter, Search, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import JobCard from '@/components/JobCard';
-import JobCardSkeleton from '@/components/JobCardSkeleton';
-import Reveal from '@/components/ui/Reveal';
-import { supabase, Job } from '@/lib/supabase';
+import JobRow from '@/components/JobRow';
+import SubscribeForm from '@/components/SubscribeForm';
+import SuperClonerPanel from '@/components/SuperClonerPanel';
+import {
+  BOARD_JOB_SELECT,
+  EXPERIENCE_LEVELS,
+  JOB_TYPES,
+  safeSearchTerm,
+  type BoardJob,
+} from '@/lib/jobs';
+import { featuredMailto } from '@/lib/site';
+import { createPublicClient } from '@/lib/supabase/public';
 
 const JOBS_PER_PAGE = 20;
 
-export default function JobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
+type SearchParams = Record<string, string | string[] | undefined>;
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+interface JobsPageProps {
+  searchParams: Promise<SearchParams>;
+}
 
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-  const [jobType, setJobType] = useState('');
-  const [location, setLocation] = useState('');
-  const [experienceLevel, setExperienceLevel] = useState('');
-  const [remoteOnly, setRemoteOnly] = useState(false);
-  const [salaryMin, setSalaryMin] = useState('');
-  const [sortBy, setSortBy] = useState('newest');
+function first(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value)?.trim() ?? '';
+}
 
-  const searchDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+function readFilters(params: SearchParams) {
+  // ?search= and ?category= are older link formats that still arrive from outside.
+  const q = first(params.q) || first(params.search) || first(params.category).replaceAll('-', ' ');
+  const type = JOB_TYPES.find((value) => value === first(params.type)) ?? '';
+  const level = EXPERIENCE_LEVELS.find((value) => value === first(params.level)) ?? '';
+  const remote = first(params.remote) === '1';
+  const sort = first(params.sort) === 'pay' ? 'pay' : 'newest';
+  const page = Math.max(1, Math.min(500, parseInt(first(params.page), 10) || 1));
+  return { q, type, level, remote, sort, page };
+}
 
-  // Debounce search input
-  useEffect(() => {
-    if (searchDebounceTimer.current) {
-      clearTimeout(searchDebounceTimer.current);
-    }
+type Filters = ReturnType<typeof readFilters>;
 
-    searchDebounceTimer.current = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page on search
-    }, 300);
+function buildHref(filters: Filters, overrides: Partial<Filters> = {}): string {
+  const next = { ...filters, ...overrides };
+  const query = new URLSearchParams();
+  if (next.q) query.set('q', next.q);
+  if (next.type) query.set('type', next.type);
+  if (next.level) query.set('level', next.level);
+  if (next.remote) query.set('remote', '1');
+  if (next.sort !== 'newest') query.set('sort', next.sort);
+  if (next.page > 1) query.set('page', String(next.page));
+  const text = query.toString();
+  return text ? `/jobs?${text}` : '/jobs';
+}
 
-    return () => {
-      if (searchDebounceTimer.current) {
-        clearTimeout(searchDebounceTimer.current);
-      }
-    };
-  }, [searchTerm]);
-
-  // Seed the search filter from ?category=<slug> (e.g. links from category pages)
-  useEffect(() => {
-    const category = new URLSearchParams(window.location.search).get('category');
-    if (category) {
-      const term = category.replaceAll('-', ' ').trim();
-      setSearchTerm(term);
-      setDebouncedSearchTerm(term);
-    }
-  }, []);
-
-  // Fetch jobs when filters or pagination change
-  useEffect(() => {
-    fetchJobs();
-  }, [currentPage, debouncedSearchTerm, jobType, location, experienceLevel, remoteOnly, salaryMin, sortBy]);
-
-  const fetchJobs = async () => {
-    try {
-      setLoading(true);
-
-      // Build query
-      let query = supabase
-        .from('jobs')
-        .select(`
-          *,
-          company:companies(
-            company_name,
-            logo_url
-          )
-        `, { count: 'exact' })
-        .eq('status', 'active');
-
-      // Apply filters server-side
-      if (jobType) {
-        query = query.eq('job_type', jobType);
-      }
-
-      if (experienceLevel) {
-        query = query.eq('experience_level', experienceLevel);
-      }
-
-      if (remoteOnly) {
-        query = query.eq('remote', true);
-      }
-
-      if (salaryMin) {
-        const minSalary = parseInt(salaryMin);
-        query = query.gte('salary_min', minSalary);
-      }
-
-      // Location search (server-side)
-      if (location) {
-        query = query.ilike('location', `%${location}%`);
-      }
-
-      // Search across title, description, and company name
-      if (debouncedSearchTerm) {
-        // Strip PostgREST-reserved chars and escape LIKE wildcards
-        const safe = debouncedSearchTerm
-          .replace(/[,()"\\*:]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .replace(/[%_]/g, (c) => `\\${c}`);
-        if (safe) {
-          query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
-        }
-      }
-
-      // Apply sorting
-      switch (sortBy) {
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'oldest':
-          query = query.order('created_at', { ascending: true });
-          break;
-        case 'most-viewed':
-          query = query.order('views_count', { ascending: false });
-          break;
-        case 'salary-high':
-          query = query.order('salary_max', { ascending: false, nullsFirst: false });
-          break;
-        case 'salary-low':
-          query = query.order('salary_min', { ascending: true, nullsFirst: false });
-          break;
-      }
-
-      // Apply pagination
-      const from = (currentPage - 1) * JOBS_PER_PAGE;
-      const to = from + JOBS_PER_PAGE - 1;
-      query = query.range(from, to);
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
-      setJobs(data || []);
-      setTotalCount(count || 0);
-    } catch (error) {
-      console.error('Error fetching jobs:', error);
-      setJobs([]);
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
-      setInitialLoad(false);
-    }
+export async function generateMetadata({ searchParams }: JobsPageProps): Promise<Metadata> {
+  const filters = readFilters(await searchParams);
+  const filtered = Boolean(filters.q || filters.type || filters.level || filters.remote || filters.page > 1);
+  return {
+    title: filters.q ? `${filters.q} jobs in GoHighLevel` : 'GoHighLevel jobs: browse open GHL roles',
+    description:
+      'Open GoHighLevel roles for automation specialists, funnel builders, Voice AI builders, VAs and developers. Free to apply, free to post.',
+    alternates: { canonical: 'https://ghlhire.com/jobs' },
+    // Filtered views are for people, not the index.
+    robots: filtered ? { index: false, follow: true } : undefined,
   };
+}
 
-  const clearFilters = () => {
-    setSearchTerm('');
-    setJobType('');
-    setLocation('');
-    setExperienceLevel('');
-    setRemoteOnly(false);
-    setSalaryMin('');
-    setCurrentPage(1);
-  };
+async function getJobs(filters: Filters): Promise<{ jobs: BoardJob[]; total: number; failed: boolean }> {
+  try {
+    const supabase = createPublicClient();
+    let query = supabase
+      .from('jobs')
+      .select(BOARD_JOB_SELECT, { count: 'exact' })
+      .eq('status', 'active');
 
-  const activeFilterCount = [
-    searchTerm,
-    jobType,
-    location,
-    experienceLevel,
-    remoteOnly,
-    salaryMin
-  ].filter(Boolean).length;
+    if (filters.type) query = query.eq('job_type', filters.type);
+    if (filters.level) query = query.eq('experience_level', filters.level);
+    if (filters.remote) query = query.eq('remote', true);
 
-  const totalPages = Math.ceil(totalCount / JOBS_PER_PAGE);
-  const startJob = totalCount === 0 ? 0 : (currentPage - 1) * JOBS_PER_PAGE + 1;
-  const endJob = Math.min(currentPage * JOBS_PER_PAGE, totalCount);
+    // Every word must appear somewhere in the listing, in any order.
+    const words = safeSearchTerm(filters.q).split(' ').filter(Boolean).slice(0, 5);
+    for (const word of words) {
+      query = query.or(
+        `title.ilike.%${word}%,description.ilike.%${word}%,requirements.ilike.%${word}%,location.ilike.%${word}%,external_company_name.ilike.%${word}%`
+      );
+    }
+
+    query = query.order('is_featured', { ascending: false });
+    query =
+      filters.sort === 'pay'
+        ? query.order('salary_max', { ascending: false, nullsFirst: false })
+        : query.order('created_at', { ascending: false });
+
+    const from = (filters.page - 1) * JOBS_PER_PAGE;
+    const { data, count, error } = await query.range(from, from + JOBS_PER_PAGE - 1);
+    if (error) throw error;
+
+    return { jobs: (data ?? []) as unknown as BoardJob[], total: count ?? 0, failed: false };
+  } catch (error) {
+    console.error('Error loading jobs:', error);
+    return { jobs: [], total: 0, failed: true };
+  }
+}
+
+const fieldClass =
+  'h-12 w-full rounded-md border border-rule bg-white px-3 text-base text-ink outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/30';
+
+export default async function JobsPage({ searchParams }: JobsPageProps) {
+  const filters = readFilters(await searchParams);
+  const { jobs, total, failed } = await getJobs(filters);
+  const hasFilters = Boolean(filters.q || filters.type || filters.level || filters.remote);
+  const totalPages = Math.max(1, Math.ceil(total / JOBS_PER_PAGE));
+  const start = total === 0 ? 0 : (filters.page - 1) * JOBS_PER_PAGE + 1;
+  const end = Math.min(filters.page * JOBS_PER_PAGE, total);
 
   return (
-    <div className="min-h-screen flex flex-col text-gray-900 bg-white">
+    <div className="flex min-h-screen flex-col bg-white text-ink">
       <Header />
 
-      {/* Page Header */}
-      <section className="max-w-6xl mx-auto px-4 pt-12 pb-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4 fade-in fade-in-1">
-            GoHighLevel Jobs
-          </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto fade-in fade-in-2">
-            Discover amazing opportunities in the GoHighLevel ecosystem. From technical roles to client management, find your perfect match.
-          </p>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8 fade-in fade-in-3">
-          {/* Filter header */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <Filter className="w-4 h-4 text-blue-500" />
-              Filter jobs
-            </span>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="press inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-                Clear all ({activeFilterCount})
-              </button>
-            )}
-          </div>
-
-          {/* Search Bar */}
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search jobs, companies, or skills..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-colors"
-            />
-          </div>
-
-          {/* Filters Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            <select
-              value={jobType}
-              onChange={(e) => {
-                setJobType(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white transition-colors"
-            >
-              <option value="">All Job Types</option>
-              <option value="Full-Time">Full-Time</option>
-              <option value="Part-Time">Part-Time</option>
-              <option value="Contract">Contract</option>
-              <option value="Freelance">Freelance</option>
-            </select>
-
-            <select
-              value={experienceLevel}
-              onChange={(e) => {
-                setExperienceLevel(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white transition-colors"
-            >
-              <option value="">All Experience Levels</option>
-              <option value="Entry Level">Entry Level</option>
-              <option value="Mid Level">Mid Level</option>
-              <option value="Senior Level">Senior Level</option>
-              <option value="Lead">Lead</option>
-            </select>
-
-            <input
-              type="text"
-              placeholder="Location"
-              value={location}
-              onChange={(e) => {
-                setLocation(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-colors"
-            />
-
-            <input
-              type="number"
-              placeholder="Min Salary (USD)"
-              value={salaryMin}
-              onChange={(e) => {
-                setSalaryMin(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition-colors"
-            />
-
-            <label className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-              <input
-                type="checkbox"
-                checked={remoteOnly}
-                onChange={(e) => {
-                  setRemoteOnly(e.target.checked);
-                  setCurrentPage(1);
-                }}
-                className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <span className="text-sm font-medium text-gray-700">Remote Only</span>
-            </label>
-          </div>
-        </div>
-
-        {/* Results Count and Sort */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 fade-in fade-in-4">
-          <p className="text-gray-600">
-            Showing <span className="font-semibold text-gray-900">{startJob}-{endJob}</span> of <span className="font-semibold text-gray-900">{totalCount}</span> {totalCount === 1 ? 'job' : 'jobs'}
-          </p>
-          <label className="inline-flex items-center gap-2 text-sm text-gray-500">
-            <span className="font-medium">Sort by</span>
-            <select
-              value={sortBy}
-              onChange={(e) => {
-                setSortBy(e.target.value);
-                setCurrentPage(1); // Reset to first page on sort change
-              }}
-              className="px-3 py-2 border border-gray-200 rounded-md text-sm text-gray-700 cursor-pointer focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white transition-colors"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="most-viewed">Most Viewed</option>
-              <option value="salary-high">Salary: High to Low</option>
-              <option value="salary-low">Salary: Low to High</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      {/* Job Listings */}
-      <section className="max-w-6xl mx-auto px-4 pb-16">
-        {initialLoad || loading ? (
-          // Skeleton loading state (mirrors JobCard layout)
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <JobCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : jobs.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-            <Filter className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No jobs found
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {activeFilterCount > 0
-                ? 'Try adjusting your filters to see more results'
-                : 'Check back soon for new opportunities!'}
+      <main>
+        <section className="field-ink text-white">
+          <div className="page-wrap py-10 md:py-14">
+            <h1 className="display text-4xl font-semibold md:text-5xl">GoHighLevel jobs</h1>
+            <p className="mt-3 max-w-2xl text-lg text-slate-300">
+              Every open role on the board. Free to apply, and free for employers to post.
             </p>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <X className="w-5 h-5" />
-                Clear All Filters
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {jobs.map((job, index) =>
-                // First row (above the fold) fades in on load; the rest
-                // reveal on scroll, staggered in a repeating 1→4 wave.
-                index < 2 ? (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    className={`fade-in fade-in-${index + 1}`}
-                  />
-                ) : (
-                  <Reveal
-                    key={job.id}
-                    className="h-full"
-                    delay={(((index - 2) % 4) + 1) as 1 | 2 | 3 | 4}
-                  >
-                    <JobCard job={job} />
-                  </Reveal>
-                )
-              )}
-            </div>
 
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex items-center justify-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="press inline-flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Previous
-                </button>
-
-                <div className="flex items-center gap-2">
-                  {/* First page */}
-                  {currentPage > 3 && (
-                    <>
-                      <button
-                        onClick={() => setCurrentPage(1)}
-                        className="press w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        1
-                      </button>
-                      {currentPage > 4 && (
-                        <span className="text-gray-400">...</span>
-                      )}
-                    </>
-                  )}
-
-                  {/* Page numbers around current page */}
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter(page => page === currentPage || Math.abs(page - currentPage) <= 1)
-                    .map(page => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`press w-10 h-10 flex items-center justify-center border rounded-lg font-medium transition-colors ${
-                          page === currentPage
-                            ? 'bg-blue-500 text-white border-blue-500'
-                            : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-
-                  {/* Last page */}
-                  {currentPage < totalPages - 2 && (
-                    <>
-                      {currentPage < totalPages - 3 && (
-                        <span className="text-gray-400">...</span>
-                      )}
-                      <button
-                        onClick={() => setCurrentPage(totalPages)}
-                        className="press w-10 h-10 flex items-center justify-center border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                      >
-                        {totalPages}
-                      </button>
-                    </>
-                  )}
+            <form action="/jobs" method="get" role="search" className="mt-7 rounded-xl bg-white p-3 text-ink sm:p-4">
+              <div className="grid gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+                <div>
+                  <label htmlFor="q" className="sr-only">Search</label>
+                  <input id="q" name="q" type="search" defaultValue={filters.q} placeholder="Role, skill or company" className={fieldClass} />
                 </div>
-
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="press inline-flex items-center gap-1 px-4 py-2 border border-gray-200 rounded-lg text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4" />
+                <div>
+                  <label htmlFor="type" className="sr-only">Job type</label>
+                  <select id="type" name="type" defaultValue={filters.type} className={fieldClass}>
+                    <option value="">Any job type</option>
+                    {JOB_TYPES.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="level" className="sr-only">Experience level</label>
+                  <select id="level" name="level" defaultValue={filters.level} className={fieldClass}>
+                    <option value="">Any level</option>
+                    {EXPERIENCE_LEVELS.map((value) => (
+                      <option key={value} value={value}>{value}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="press h-12 rounded-md bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-dark">
+                  Search
                 </button>
               </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-1">
+                <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 text-[15px] text-ink-soft">
+                  <input type="checkbox" name="remote" value="1" defaultChecked={filters.remote} className="h-4 w-4 accent-[#2563eb]" />
+                  Remote only
+                </label>
+                {hasFilters && (
+                  <Link href="/jobs" className="inline-flex min-h-[44px] items-center text-[15px] font-medium text-brand hover:underline">
+                    Clear filters
+                  </Link>
+                )}
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <div className="page-wrap grid gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-12 lg:py-12">
+          <section aria-labelledby="results-heading">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 id="results-heading" className="text-[15px] text-ink-soft">
+                {total === 0 ? (
+                  'No roles found'
+                ) : (
+                  <>
+                    Showing <span className="font-semibold text-ink">{start} to {end}</span> of{' '}
+                    <span className="font-semibold text-ink">{total}</span> {total === 1 ? 'role' : 'roles'}
+                    {filters.q && <> for &ldquo;{filters.q}&rdquo;</>}
+                  </>
+                )}
+              </h2>
+              <p className="flex items-center gap-1 text-[15px] text-mute">
+                Sort:
+                <Link
+                  href={buildHref(filters, { sort: 'newest', page: 1 })}
+                  aria-current={filters.sort === 'newest' ? 'true' : undefined}
+                  className={`inline-flex min-h-[44px] min-w-0 items-center rounded-md px-2 ${filters.sort === 'newest' ? 'font-semibold text-ink' : 'text-brand hover:underline'}`}
+                >
+                  Newest
+                </Link>
+                <Link
+                  href={buildHref(filters, { sort: 'pay', page: 1 })}
+                  aria-current={filters.sort === 'pay' ? 'true' : undefined}
+                  className={`inline-flex min-h-[44px] min-w-0 items-center rounded-md px-2 ${filters.sort === 'pay' ? 'font-semibold text-ink' : 'text-brand hover:underline'}`}
+                >
+                  Highest pay
+                </Link>
+              </p>
+            </div>
+
+            {jobs.length > 0 ? (
+              <ul className="divide-y divide-rule overflow-hidden rounded-xl border border-rule">
+                {jobs.map((job) => (
+                  <JobRow key={job.id} job={job} />
+                ))}
+              </ul>
+            ) : (
+              <div className="rounded-xl border border-rule bg-surface px-6 py-14 text-center">
+                <p className="text-xl font-semibold">
+                  {failed ? 'The board did not load' : hasFilters ? 'Nothing matches those filters' : 'No open roles right now'}
+                </p>
+                <p className="mx-auto mt-2 max-w-md text-ink-soft">
+                  {failed
+                    ? 'Something went wrong on our side. Refresh the page to try again.'
+                    : hasFilters
+                      ? 'Try a broader search, or clear the filters to see every open role.'
+                      : 'New roles are added every week. Leave your email and we will send them to you.'}
+                </p>
+                {hasFilters && !failed && (
+                  <Link href="/jobs" className="press mt-5 inline-flex h-12 items-center rounded-md bg-brand px-5 font-semibold text-white hover:bg-brand-dark">
+                    See all jobs
+                  </Link>
+                )}
+              </div>
             )}
-          </>
-        )}
-      </section>
+
+            {totalPages > 1 && (
+              <nav className="mt-8 flex items-center justify-between gap-4" aria-label="Pagination">
+                {filters.page > 1 ? (
+                  <Link href={buildHref(filters, { page: filters.page - 1 })} rel="prev" className="press inline-flex h-11 items-center rounded-md border border-rule px-4 font-semibold text-ink hover:bg-surface">
+                    Previous
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                <span className="text-[15px] text-mute">Page {filters.page} of {totalPages}</span>
+                {filters.page < totalPages ? (
+                  <Link href={buildHref(filters, { page: filters.page + 1 })} rel="next" className="press inline-flex h-11 items-center rounded-md border border-rule px-4 font-semibold text-ink hover:bg-surface">
+                    Next
+                  </Link>
+                ) : (
+                  <span />
+                )}
+              </nav>
+            )}
+          </section>
+
+          <aside className="space-y-6">
+            <div className="rounded-xl border border-rule p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Get new roles by email</h2>
+              <p className="mt-1 mb-4 text-[15px] text-ink-soft">The week&apos;s new GHL jobs in one short email.</p>
+              <SubscribeForm source="jobs-sidebar" buttonLabel="Subscribe" stacked />
+            </div>
+
+            <div className="rounded-xl border border-rule p-6">
+              <h2 className="text-lg font-semibold tracking-tight">Hiring for GoHighLevel work?</h2>
+              <p className="mt-1 text-[15px] leading-relaxed text-ink-soft">
+                Posting is free. Featured listings sit at the top of this page and are arranged by email.
+              </p>
+              <div className="mt-4 flex flex-col gap-2">
+                <Link href="/post-job" className="press inline-flex h-11 items-center justify-center rounded-md bg-brand px-4 font-semibold text-white hover:bg-brand-dark">
+                  Post a job free
+                </Link>
+                <a href={featuredMailto()} className="press inline-flex h-11 items-center justify-center rounded-md border border-rule px-4 font-semibold text-ink hover:bg-surface">
+                  Ask about featuring
+                </a>
+              </div>
+            </div>
+
+            <SuperClonerPanel variant="card" />
+          </aside>
+        </div>
+      </main>
 
       <Footer />
     </div>

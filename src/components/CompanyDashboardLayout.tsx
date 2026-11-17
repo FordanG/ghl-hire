@@ -24,7 +24,7 @@ const navigation = [
   { name: 'Applications', href: '/company/dashboard/applications', icon: Users },
   { name: 'Company Profile', href: '/company/dashboard/profile', icon: Building2 },
   { name: 'Analytics', href: '/company/dashboard/analytics', icon: BarChart3 },
-  { name: 'Billing', href: '/company/dashboard/billing', icon: CreditCard },
+  { name: 'Featured', href: '/company/dashboard/billing', icon: CreditCard },
   { name: 'Settings', href: '/company/dashboard/settings', icon: Settings },
 ];
 

@@ -1,371 +1,144 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Metadata } from 'next';
-import {
-  Users,
-  Target,
-  Clock,
-  TrendingUp,
-  Shield,
-  CheckCircle,
-  Star,
-  FileText,
-  ClipboardList,
-  BarChart3,
-  ArrowRight,
-} from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import Reveal from '@/components/ui/Reveal';
+import SuperClonerPanel from '@/components/SuperClonerPanel';
+import { FEATURED_EMAIL, featuredMailto } from '@/lib/site';
 
 export const metadata: Metadata = {
-  title: 'For Employers - Hire GoHighLevel Talent',
-  description: 'Connect with pre-vetted GoHighLevel professionals. From automation specialists to API developers, find the perfect talent for your agency or SaaS company. 95% match success rate.',
-  keywords: ['hire GHL experts', 'GoHighLevel recruitment', 'GHL talent pool', 'marketing automation hiring'],
+  title: 'Hire GoHighLevel talent: post a job free',
+  description:
+    'Post GoHighLevel jobs for free on GHL Hire. Reach automation specialists, funnel builders, Voice AI builders and VAs. Featured listings available by email.',
+  alternates: { canonical: 'https://ghlhire.com/employers' },
   openGraph: {
-    title: 'For Employers - Hire GoHighLevel Talent',
-    description: 'Connect with pre-vetted GoHighLevel professionals for your agency or SaaS company.',
+    title: 'Hire GoHighLevel talent: post a job free | GHL Hire',
+    description: 'Free job posts for agencies and SaaS teams hiring GoHighLevel specialists.',
     type: 'website',
     url: 'https://ghlhire.com/employers',
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'For Employers - Hire GoHighLevel Talent',
-    description: 'Connect with pre-vetted GoHighLevel professionals for your agency or SaaS company.',
-  },
-  alternates: {
-    canonical: 'https://ghlhire.com/employers',
-  },
 };
 
-const primaryBtn =
-  'inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md bg-blue-500 text-white font-semibold text-base shadow hover:bg-blue-600 transition-colors outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 press';
-const secondaryBtn =
-  'inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md border border-gray-200 font-semibold text-base text-gray-900 hover:bg-blue-50 hover:border-blue-500 transition-colors outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 press';
-
-const benefits = [
-  {
-    icon: Target,
-    title: 'Specialized Talent Pool',
-    body: 'Access thousands of pre-vetted GoHighLevel professionals with proven experience in marketing automation, funnel building, and CRM management.',
-  },
-  {
-    icon: Clock,
-    title: 'Faster Hiring Process',
-    body: 'Reduce your time-to-hire with candidates who already understand GoHighLevel, eliminating the need for extensive platform training.',
-  },
-  {
-    icon: Shield,
-    title: 'Quality Assurance',
-    body: 'Every candidate is verified for their GoHighLevel expertise, ensuring you get professionals who can contribute from day one.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Grow Your Business',
-    body: 'Scale your operations with talent that understands the nuances of GoHighLevel implementations and client success strategies.',
-  },
-  {
-    icon: Users,
-    title: 'Dedicated Support',
-    body: 'Our team provides personalized assistance throughout your hiring process, ensuring you find the perfect match for your needs.',
-  },
-  {
-    icon: Star,
-    title: 'Premium Experience',
-    body: 'Enjoy a streamlined, professional hiring experience designed specifically for the GoHighLevel ecosystem.',
-  },
+const included = [
+  ['Unlimited free listings', 'Post as many roles as you are hiring for. No card and no plan to pick.'],
+  ['Applications in one place', 'Candidates apply with a profile and resume. Review, shortlist and update each one from your dashboard.'],
+  ['Or use your own apply link', 'Already take applications on your site or ATS? Add the link and we send candidates there.'],
+  ['Views and applications per role', 'See how many people opened each listing and how many applied.'],
 ];
 
-const employerFeatures = [
-  {
-    icon: FileText,
-    title: 'Job Postings',
-    body: 'Publish roles across your agency or SaaS and keep them live while you hire — start with your first posting free.',
-  },
-  {
-    icon: Star,
-    title: 'Featured Listings',
-    body: 'Boost priority roles to the top of search so the strongest GoHighLevel candidates see them first.',
-  },
-  {
-    icon: ClipboardList,
-    title: 'Applicant Tracking',
-    body: 'Review, shortlist, and manage every applicant from one organized dashboard built for hiring teams.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Analytics & Insights',
-    body: 'Track views, applications, and conversion on every listing so you always know what is working.',
-  },
+const faqs = [
+  ['Is it really free to post?', 'Yes. Creating an employer account and publishing listings costs nothing. The only paid option is a featured listing.'],
+  ['What is a featured listing?', 'A listing pinned above the free ones on the jobs page and the homepage, marked Featured in gold. It is arranged by email and switched on by our team.'],
+  ['How much does featuring cost?', `Email ${FEATURED_EMAIL} with the role you want to feature and we will reply with the current rate and available dates.`],
+  ['Who sees my listing?', 'People looking for GoHighLevel work: automation specialists, funnel builders, Voice AI builders, virtual assistants, account managers and developers.'],
+  ['How long does a listing stay up?', 'Until you close it. Please close roles once they are filled so the board stays accurate.'],
 ];
-
-const steps = [
-  {
-    title: 'Post Your Job',
-    body: 'Create a detailed job posting with your specific GoHighLevel requirements, budget, and timeline.',
-  },
-  {
-    title: 'Review Candidates',
-    body: 'Browse through qualified candidates or let our AI matching system recommend the best fits for your role.',
-  },
-  {
-    title: 'Make Your Hire',
-    body: 'Interview your top choices and make an offer. We’ll help facilitate the entire process from start to finish.',
-  },
-];
-
-const testimonials = [
-  {
-    quote:
-      'GHL Hire helped us find the perfect GoHighLevel specialist in just 3 days. The quality of candidates was exceptional.',
-    name: 'Sarah Johnson',
-    role: 'CEO, Marketing Pro Agency',
-  },
-  {
-    quote:
-      'The platform’s focus on GoHighLevel talent made all the difference. We found developers who understood our needs immediately.',
-    name: 'Mike Chen',
-    role: 'CTO, AutomateCore',
-  },
-  {
-    quote:
-      'Outstanding service and results. GHL Hire has become our go-to platform for all GoHighLevel hiring needs.',
-    name: 'Lisa Rodriguez',
-    role: 'Director, Scale Solutions',
-  },
-];
-
-const stats = [
-  { value: '10,000+', label: 'GHL Professionals' },
-  { value: '500+', label: 'Companies Hiring' },
-  { value: '95%', label: 'Match Success Rate' },
-  { value: '48hrs', label: 'Average Hire Time' },
-];
-
-const planTiers = ['Free', 'Basic', 'Premium'];
 
 export default function EmployersPage() {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(([q, a]) => ({
+      '@type': 'Question',
+      name: q,
+      acceptedAnswer: { '@type': 'Answer', text: a },
+    })),
+  };
+
   return (
-    <div className="min-h-screen flex flex-col text-gray-900 bg-white">
+    <div className="flex min-h-screen flex-col bg-white text-ink">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <Header />
 
-      {/* Hero Section */}
-      <section className="max-w-6xl mx-auto w-full pt-16 md:pt-20 pb-16 px-4">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-center lg:text-left">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-sm font-medium mb-5 fade-in fade-in-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" aria-hidden="true" />
-              Built for the GoHighLevel ecosystem
-            </span>
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight leading-tight mb-4 fade-in fade-in-2">
-              Hire the Best <span className="text-blue-500">GoHighLevel</span> Talent
+      <main>
+        <section className="field-ink text-white">
+          <div className="page-wrap py-16 md:py-24">
+            <h1 className="display max-w-3xl text-[2.6rem] font-semibold sm:text-6xl">
+              Hire people who already know GoHighLevel. Posting is free.
             </h1>
-            <p className="text-lg text-gray-500 max-w-xl mx-auto lg:mx-0 mb-8 fade-in fade-in-3">
-              Connect with pre-vetted GoHighLevel professionals who understand your platform inside and out. From automation specialists to API developers, find the perfect talent for your agency or SaaS company.
+            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-300 md:text-xl">
+              GHL Hire is a job board for one platform. Everyone who reads it works in HighLevel, so you skip the part where you explain what a snapshot is.
             </p>
-            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 fade-in fade-in-4">
-              <Link href="/post-job" className={primaryBtn}>
-                Post a Job
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/post-job" className="press inline-flex h-12 items-center rounded-md bg-brand px-6 text-base font-semibold text-white hover:bg-brand-dark">
+                Post a job free
               </Link>
-              <Link href="#pricing" className={secondaryBtn}>
-                View Pricing
+              <Link href="/featured" className="press inline-flex h-12 items-center rounded-md border border-white/30 px-6 text-base font-semibold text-white hover:bg-white/10">
+                Featured listings
               </Link>
             </div>
-            <p className="mt-5 text-sm text-gray-400 fade-in fade-in-5">
-              Start free · Post your first job in minutes · No setup fees
-            </p>
           </div>
+        </section>
 
-          <div className="fade-in fade-in-3">
-            <Image
-              src="/hero-illustration.png"
-              alt="Employers reviewing GoHighLevel candidate profiles on GHL Hire"
-              width={1376}
-              height={768}
-              priority
-              className="w-full h-auto rounded-xl"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="bg-blue-50 py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {stats.map((stat, i) => (
-              <Reveal key={stat.label} delay={Math.min(i + 1, 4) as 1 | 2 | 3 | 4}>
-                <div className="text-3xl font-bold text-blue-600 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Why Choose GHL Hire */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <Reveal className="text-center mb-12">
-          <h2 className="text-3xl font-semibold tracking-tight mb-4">
-            Why Choose GHL Hire for Your Hiring Needs?
-          </h2>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            We specialize exclusively in GoHighLevel talent, ensuring you connect with professionals who truly understand your platform and business needs.
-          </p>
-        </Reveal>
-
-        <Reveal className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {benefits.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="text-center p-6">
-              <div className="bg-blue-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Icon className="w-8 h-8 text-blue-500" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">{title}</h3>
-              <p className="text-gray-600">{body}</p>
-            </div>
-          ))}
-        </Reveal>
-      </section>
-
-      {/* Everything you need to hire (mirrors plan capabilities) */}
-      <section className="bg-gray-50 py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <Reveal className="text-center mb-12">
-            <h2 className="text-3xl font-semibold tracking-tight mb-4">
-              Everything You Need to Hire
+        <section className="page-wrap py-16 md:py-24" aria-labelledby="included-heading">
+          <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:gap-16">
+            <h2 id="included-heading" className="display text-3xl font-semibold md:text-[2.5rem]">
+              What a free listing includes
             </h2>
-            <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              A complete toolkit for GoHighLevel hiring — from posting the role to tracking every applicant and measuring what drives the best candidates.
-            </p>
-          </Reveal>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {employerFeatures.map(({ icon: Icon, title, body }, i) => (
-              <Reveal key={title} delay={Math.min(i + 1, 4) as 1 | 2 | 3 | 4}>
-                <div className="h-full bg-white border border-gray-200 rounded-xl p-6 flex items-start gap-4 hover-lift">
-                  <div className="bg-blue-50 rounded-lg w-12 h-12 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-6 h-6 text-blue-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1.5">{title}</h3>
-                    <p className="text-gray-600">{body}</p>
-                  </div>
+            <dl className="divide-y divide-rule border-y border-rule">
+              {included.map(([title, text]) => (
+                <div key={title} className="grid gap-1 py-5 sm:grid-cols-[14rem_1fr] sm:gap-6">
+                  <dt className="font-semibold text-ink">{title}</dt>
+                  <dd className="text-ink-soft">{text}</dd>
                 </div>
-              </Reveal>
-            ))}
+              ))}
+            </dl>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* How It Works */}
-      <section className="max-w-6xl mx-auto px-4 py-16">
-        <Reveal className="text-center mb-12">
-          <h2 className="text-3xl font-semibold tracking-tight mb-4">How It Works</h2>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Our simple, three-step process gets you connected with top GoHighLevel talent quickly and efficiently.
-          </p>
-        </Reveal>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((step, i) => (
-            <Reveal key={step.title} delay={Math.min(i + 1, 4) as 1 | 2 | 3 | 4}>
-              <div className="text-center">
-                <div className="bg-blue-500 text-white rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 text-xl font-bold">
-                  {i + 1}
-                </div>
-                <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
-                <p className="text-gray-600">{step.body}</p>
+        <section className="border-y border-rule bg-surface" aria-labelledby="featured-heading">
+          <div className="page-wrap grid gap-10 py-16 md:grid-cols-2 md:items-center md:gap-16 md:py-20">
+            <div>
+              <h2 id="featured-heading" className="display text-3xl font-semibold md:text-[2.5rem]">
+                Need more eyes on a role? Feature it.
+              </h2>
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-ink-soft">
+                Featured listings are pinned to the top of the board and the homepage. It is the one paid option, and it is arranged by email so you talk to a person.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <a href={featuredMailto()} className="press inline-flex h-12 items-center rounded-md bg-ink px-6 text-base font-semibold text-white hover:bg-ink-2">
+                  Email {FEATURED_EMAIL}
+                </a>
+                <Link href="/featured" className="press inline-flex h-12 items-center rounded-md border border-rule bg-white px-6 text-base font-semibold text-ink hover:bg-brand-soft">
+                  How it works
+                </Link>
               </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+            </div>
 
-      {/* Pricing Teaser */}
-      <section id="pricing" className="max-w-6xl mx-auto w-full px-4 py-16">
-        <Reveal className="rounded-2xl border border-gray-200 bg-gradient-to-b from-blue-50 to-white p-8 sm:p-12 text-center">
-          <h2 className="text-3xl font-semibold tracking-tight mb-4">
-            Pricing That Scales With Your Hiring
-          </h2>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
-            Start free with your first job posting. Upgrade to Basic or Premium for featured listings, advanced analytics, and AI-powered screening as your team grows.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
-            {planTiers.map((tier) => (
-              <span
-                key={tier}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 text-gray-700 font-medium text-sm"
-              >
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                {tier}
-              </span>
-            ))}
-          </div>
-          <Link href="/pricing" className={primaryBtn}>
-            View Full Pricing
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Reveal>
-      </section>
-
-      {/* Testimonials */}
-      <section className="bg-blue-50 py-16">
-        <div className="max-w-6xl mx-auto px-4">
-          <Reveal className="text-center mb-12">
-            <h2 className="text-3xl font-semibold tracking-tight">What Our Clients Say</h2>
-          </Reveal>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((t, i) => (
-              <Reveal key={t.name} delay={Math.min(i + 1, 4) as 1 | 2 | 3 | 4}>
-                <div className="h-full bg-white rounded-xl p-6 shadow-sm hover-lift">
-                  <div className="flex items-center mb-4">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, s) => (
-                        <Star key={s} className="w-5 h-5 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-gray-600 mb-4">&ldquo;{t.quote}&rdquo;</p>
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
-                    <div>
-                      <div className="font-semibold">{t.name}</div>
-                      <div className="text-sm text-gray-500">{t.role}</div>
-                    </div>
-                  </div>
+            <div aria-hidden="true" className="overflow-hidden rounded-xl border border-rule bg-white">
+              <div className="relative bg-gold-soft px-5 py-4">
+                <span className="absolute inset-y-0 left-0 w-1 bg-gold" />
+                <p className="flex items-center gap-2 font-semibold text-ink">
+                  Your role
+                  <span className="rounded-sm bg-gold px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide">Featured</span>
+                </p>
+                <p className="text-sm text-ink-soft">Your company · Remote</p>
+              </div>
+              {[0, 1, 2].map((row) => (
+                <div key={row} className="border-t border-rule px-5 py-4">
+                  <div className="h-3 w-2/5 rounded bg-slate-200" />
+                  <div className="mt-2 h-2.5 w-1/4 rounded bg-slate-100" />
                 </div>
-              </Reveal>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Band */}
-      <section className="max-w-6xl mx-auto w-full px-4 py-16">
-        <Reveal className="rounded-2xl bg-gradient-to-r from-blue-600 to-blue-700 p-8 sm:p-12 text-center text-white">
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-4">
-            Ready to Find Your Next GoHighLevel Expert?
-          </h2>
-          <p className="text-blue-100 text-base sm:text-lg mb-8 max-w-2xl mx-auto">
-            Join hundreds of companies who have successfully hired through GHL Hire. Post your first job today and connect with qualified candidates within hours.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link
-              href="/post-job"
-              className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-white text-blue-600 font-semibold hover:bg-blue-50 transition-colors outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 press"
-            >
-              Post Your First Job
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex items-center justify-center px-8 py-3 rounded-lg bg-blue-500 text-white font-semibold hover:bg-blue-400 transition-colors outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 press"
-            >
-              Talk to Sales
-            </Link>
+        <section className="page-wrap py-16 md:py-24" aria-labelledby="faq-heading">
+          <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:gap-16">
+            <h2 id="faq-heading" className="display text-3xl font-semibold md:text-[2.5rem]">Questions employers ask</h2>
+            <dl className="divide-y divide-rule border-y border-rule">
+              {faqs.map(([q, a]) => (
+                <div key={q} className="py-5">
+                  <dt className="text-lg font-semibold text-ink">{q}</dt>
+                  <dd className="mt-1.5 leading-relaxed text-ink-soft">{a}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-        </Reveal>
-      </section>
+        </section>
+
+        <SuperClonerPanel />
+      </main>
 
       <Footer />
     </div>

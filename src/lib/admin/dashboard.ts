@@ -40,6 +40,7 @@ export type AdminJob = {
   status: string;
   location: string;
   remote: boolean;
+  featured: boolean;
   applications: number;
   views: number;
   createdAt: string;
@@ -253,7 +254,7 @@ export async function getAdminDashboardData(access: AdminAccess): Promise<AdminD
       .limit(DISPLAY_LIMIT),
     adminClient
       .from('jobs')
-      .select('id, company_id, title, status, location, remote, applications_count, views_count, created_at')
+      .select('*')
       .order('created_at', { ascending: false })
       .limit(DISPLAY_LIMIT),
     adminClient
@@ -379,7 +380,7 @@ export async function getAdminDashboardData(access: AdminAccess): Promise<AdminD
   const extraCompanies = await fetchByIds(
     'related companies',
     [
-      ...[...jobLookup.values()].map((job) => job.company_id),
+      ...[...jobLookup.values()].map((job) => job.company_id).filter(Boolean),
       ...subscriptions.map((subscription) => subscription.company_id),
       ...transactions.map((transaction) => transaction.company_id),
     ].filter((id) => !companyNamesById.has(id)),
@@ -444,10 +445,14 @@ export async function getAdminDashboardData(access: AdminAccess): Promise<AdminD
   const jobRows: AdminJob[] = jobs.map((job) => ({
     id: job.id,
     title: job.title,
-    companyName: companyName(job.company_id),
+    // Curated listings have no company account; they carry the employer name.
+    companyName:
+      (job as { external_company_name?: string | null }).external_company_name ||
+      companyName(job.company_id),
     status: job.status || 'draft',
     location: job.location,
     remote: job.remote ?? false,
+    featured: job.is_featured ?? false,
     applications: job.applications_count || 0,
     views: job.views_count || 0,
     createdAt: safeDate(job.created_at),

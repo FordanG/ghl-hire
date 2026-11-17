@@ -1,59 +1,23 @@
-"use client";
+import { SUPER_CLONER_URL } from '@/lib/site';
 
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
-
-const STORAGE_KEY = "promo-banner-dismissed";
-
-const messages = [
-  "Need a quick page clone?",
-  "Clone GHL funnels & websites instantly!",
-  "Save hours duplicating client setups.",
-  "Managing multiple GHL clients? Clone pages in seconds.",
-  "Stop rebuilding funnels from scratch.",
-];
-
+/**
+ * Site-wide Super Cloner strip. Always visible: the board exists to send
+ * GoHighLevel builders to Super Cloner, so it is not dismissible.
+ */
 export default function PromoBanner() {
-  const [isDismissed, setIsDismissed] = useState(true);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    let dismissed: string | null = null;
-    try {
-      dismissed = localStorage.getItem(STORAGE_KEY);
-    } catch {
-      // Storage blocked: show the banner
-    }
-    if (!dismissed) {
-      setIsDismissed(false);
-      // Pick a random message
-      const randomIndex = Math.floor(Math.random() * messages.length);
-      setMessage(messages[randomIndex]);
-    }
-  }, []);
-
-  const handleDismiss = () => {
-    setIsDismissed(true);
-    try {
-      localStorage.setItem(STORAGE_KEY, "true");
-    } catch {
-      // Storage blocked: the banner is still hidden for this page view
-    }
-  };
-
-  if (isDismissed) return null;
-
   return (
-    <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 px-4 pr-12">
-      <p className="text-center text-sm">{message} <a href="https://supercloner.app/?ref=3nojbk" target="_blank" rel="noopener noreferrer" className="inline font-semibold underline underline-offset-2 hover:text-blue-100 transition-colors">Try Super Cloner</a></p>
-      <button
-        type="button"
-        onClick={handleDismiss}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded transition-colors"
-        aria-label="Dismiss banner"
-      >
-        <X className="w-4 h-4" />
-      </button>
+    <div className="bg-ink text-white">
+      <p className="page-wrap py-2 text-center text-sm">
+        <span className="text-slate-300">Rebuilding a funnel by hand?</span>{' '}
+        <a
+          href={SUPER_CLONER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline min-h-0 min-w-0 font-semibold text-white underline decoration-gold decoration-2 underline-offset-4 hover:text-gold"
+        >
+          Clone it in one click with Super Cloner
+        </a>
+      </p>
     </div>
   );
 }

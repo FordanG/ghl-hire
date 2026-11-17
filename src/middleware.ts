@@ -51,7 +51,7 @@ function rateLimiter(request: NextRequest): NextResponse | null {
   // Different limits for different endpoints
   const limits: Record<string, { requests: number; window: number }> = {
     '/api/auth': { requests: 5, window: 60000 }, // 5 requests per minute
-    '/api/payments': { requests: 10, window: 60000 }, // 10 requests per minute
+    '/api/subscribe': { requests: 8, window: 60000 }, // 8 signups per minute
     '/api/ai': { requests: 20, window: 60000 }, // 20 requests per minute
     '/api': { requests: 100, window: 60000 }, // 100 requests per minute for other API routes
   };
@@ -113,14 +113,9 @@ setInterval(() => {
 }, 60000); // Clean up every minute
 
 /**
- * Waitlist mode: the public site is replaced by /waitlist while the platform
- * and payments are being reworked.
- *
- * - WAITLIST_MODE=off  -> full site everywhere (set this to relaunch)
- * - WAITLIST_MODE=on   -> waitlist everywhere (for testing locally)
- * - unset              -> waitlist on the production domain only, so Netlify
- *                         deploy previews and localhost keep the full app for
- *                         development and QA
+ * Waitlist mode is off: the site is open as a free job board.
+ * Set WAITLIST_MODE=on to put every public page behind /waitlist again
+ * (for example during maintenance).
  */
 const WAITLIST_OPEN_PREFIXES = [
   '/waitlist',
@@ -133,24 +128,12 @@ const WAITLIST_OPEN_PREFIXES = [
   '/terms',
 ];
 
-function isWaitlistMode(request: NextRequest): boolean {
-  const mode = process.env.WAITLIST_MODE;
-  if (mode === 'off') return false;
-  if (mode === 'on') return true;
-  // Check every place the public hostname can show up behind Netlify's proxy
-  const hosts = [
-    request.headers.get('x-forwarded-host'),
-    request.headers.get('host'),
-    request.nextUrl.hostname,
-  ];
-  return hosts.some((value) => {
-    const host = (value || '').split(',')[0].trim().split(':')[0].toLowerCase();
-    return host === 'ghlhire.com' || host.endsWith('.ghlhire.com');
-  });
+function isWaitlistMode(): boolean {
+  return process.env.WAITLIST_MODE === 'on';
 }
 
 function waitlistRedirect(request: NextRequest): NextResponse | null {
-  if (!isWaitlistMode(request)) return null;
+  if (!isWaitlistMode()) return null;
 
   const path = request.nextUrl.pathname;
   const isOpen =

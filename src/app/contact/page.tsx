@@ -125,8 +125,8 @@ export default function ContactPage() {
                 <a href="/help" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   How do I apply for jobs?
                 </a>
-                <a href="/pricing" className="block text-blue-600 hover:text-blue-500 transition-colors">
-                  Pricing information
+                <a href="/featured" className="block text-blue-600 hover:text-blue-500 transition-colors">
+                  Featured listings
                 </a>
                 <a href="/dashboard/settings" className="block text-blue-600 hover:text-blue-500 transition-colors">
                   Account management

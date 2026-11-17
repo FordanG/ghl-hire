@@ -51,6 +51,7 @@ function formatSalary(min?: number | null, max?: number | null): string {
 export default function JobCard({ job, className = '' }: JobCardProps) {
   // Handle both database and mock job types
   const companyName =
+    ('external_company_name' in job && typeof job.external_company_name === 'string' && job.external_company_name) ? job.external_company_name :
     ('company' in job && job.company && typeof job.company === 'object' && 'company_name' in job.company) ? job.company.company_name :
     ('company' in job && typeof job.company === 'string') ? job.company :
     ('company_name' in job) ? job.company_name :

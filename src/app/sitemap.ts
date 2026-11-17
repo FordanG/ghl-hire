@@ -1,85 +1,51 @@
-import { MetadataRoute } from 'next'
-import { supabase } from '@/lib/supabase'
+import { MetadataRoute } from 'next';
+import { articles } from '@/content/articles';
+import { createPublicClient } from '@/lib/supabase/public';
+import { generateJobSlug } from '@/lib/utils';
+
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://ghlhire.com'
+  const baseUrl = 'https://ghlhire.com';
+  const now = new Date();
 
-  // Fetch all active jobs for sitemap
-  const { data: jobs } = await supabase
-    .from('jobs')
-    .select('id, updated_at, title')
-    .eq('status', 'active')
-    .order('updated_at', { ascending: false })
+  let jobUrls: MetadataRoute.Sitemap = [];
+  try {
+    const { data: jobs } = await createPublicClient()
+      .from('jobs')
+      .select('id, updated_at, title')
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(5000);
 
-  // Generate SEO-friendly job URLs
-  const jobUrls = (jobs || []).map((job) => {
-    // Create URL-friendly slug from title
-    const slug = job.title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .substring(0, 50);
-    const shortId = job.id.substring(0, 8);
-
-    return {
-      url: `${baseUrl}/jobs/${slug}-${shortId}`,
+    jobUrls = (jobs || []).map((job) => ({
+      // Must match the canonical URL on the job page.
+      url: `${baseUrl}/jobs/${generateJobSlug(job.title, job.id)}`,
       lastModified: new Date(job.updated_at),
       changeFrequency: 'daily' as const,
       priority: 0.8,
-    };
-  })
+    }));
+  } catch (error) {
+    console.error('Sitemap: could not load jobs', error);
+  }
 
-  // Static pages
   const staticPages: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'daily',
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/jobs`,
-      lastModified: new Date(),
-      changeFrequency: 'hourly',
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/employers`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/pricing`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/signin`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/signup`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/terms`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-    {
-      url: `${baseUrl}/privacy`,
-      lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.3,
-    },
-  ]
+    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1 },
+    { url: `${baseUrl}/jobs`, lastModified: now, changeFrequency: 'hourly', priority: 0.9 },
+    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${baseUrl}/employers`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${baseUrl}/featured`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+  ];
 
-  return [...staticPages, ...jobUrls]
+  const articleUrls: MetadataRoute.Sitemap = articles.map((article) => ({
+    url: `${baseUrl}/blog/${article.slug}`,
+    lastModified: new Date(`${article.publishedAt}T00:00:00Z`),
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  }));
+
+  return [...staticPages, ...articleUrls, ...jobUrls];
 }

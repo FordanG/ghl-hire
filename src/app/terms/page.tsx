@@ -94,7 +94,7 @@ export default function TermsPage() {
               <li>Honor posted compensation ranges and benefits</li>
               <li>Respect candidate privacy and handle application data responsibly</li>
               <li>Not use the Platform for recruiting for unlawful purposes</li>
-              <li>Pay applicable subscription fees in a timely manner</li>
+              <li>Pay any agreed featured listing fees on time</li>
             </ul>
 
             <h3 className="text-xl font-semibold mb-3 mt-4">4.2 Job Seeker Responsibilities</h3>
@@ -115,24 +115,20 @@ export default function TermsPage() {
           </section>
 
           <section className="fade-in fade-in-6">
-            <h2 className="text-2xl font-semibold mb-4">5. Subscription Plans and Payments</h2>
-            <h3 className="text-xl font-semibold mb-3 mt-4">5.1 Subscription Tiers</h3>
+            <h2 className="text-2xl font-semibold mb-4">5. Free Service and Featured Listings</h2>
+            <h3 className="text-xl font-semibold mb-3 mt-4">5.1 Free to Use</h3>
             <p className="text-gray-600 leading-relaxed mb-4">
-              Employer accounts have access to different subscription tiers with varying features and limitations. Current plans and pricing are available on our <Link href="/pricing" className="text-blue-600 hover:underline">pricing page</Link>.
+              Creating an account, applying for jobs and posting job listings on GHL Hire are free. There are no subscription plans.
             </p>
 
-            <h3 className="text-xl font-semibold mb-3 mt-4">5.2 Payment Terms</h3>
-            <ul className="list-disc pl-6 space-y-2 text-gray-600">
-              <li>Subscriptions are billed monthly in advance</li>
-              <li>All fees are in Philippine Pesos (PHP) unless otherwise stated</li>
-              <li>Payment is processed via Maya (PayMaya)</li>
-              <li>Failure to pay may result in suspension of premium features</li>
-              <li>Refunds are provided at our discretion and according to our refund policy</li>
-            </ul>
+            <h3 className="text-xl font-semibold mb-3 mt-4">5.2 Featured Listings</h3>
+            <p className="text-gray-600 leading-relaxed mb-4">
+              Employers can pay to have a listing featured at the top of the board. Featured listings are arranged directly by email at <a href="mailto:hello@vendrato.com" className="text-blue-600 hover:underline">hello@vendrato.com</a>. The price, dates and payment method are agreed in writing before anything is charged. See <Link href="/featured" className="text-blue-600 hover:underline">featured listings</Link>.
+            </p>
 
-            <h3 className="text-xl font-semibold mb-3 mt-4">5.3 Subscription Changes</h3>
+            <h3 className="text-xl font-semibold mb-3 mt-4">5.3 Listings From Other Sites</h3>
             <p className="text-gray-600 leading-relaxed">
-              You may upgrade or downgrade your subscription at any time. Changes take effect at the start of the next billing cycle. We reserve the right to modify subscription prices with 30 days advance notice.
+              Some listings summarise roles published on an employer&apos;s own hiring page and link to it. For those roles you apply on the employer&apos;s site, and the employer&apos;s posting is the source of truth. If you are an employer and want a listing changed or removed, email <a href="mailto:hello@vendrato.com" className="text-blue-600 hover:underline">hello@vendrato.com</a>.
             </p>
           </section>
 

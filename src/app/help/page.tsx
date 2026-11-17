@@ -30,7 +30,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: 'Is GHL Hire free to use?',
-        answer: 'Job seekers can create profiles and apply to jobs completely free. Employers can post their first job for free, with premium features available through our paid plans.'
+        answer: 'Yes. Job seekers create profiles and apply for free, and employers post jobs for free. The only paid option is a featured listing, pinned to the top of the board and arranged by email at hello@vendrato.com.'
       }
     ]
   },
@@ -83,20 +83,20 @@ const faqCategories: FAQCategory[] = [
     ]
   },
   {
-    title: 'Billing & Pricing',
+    title: 'Featured listings',
     icon: CreditCard,
     faqs: [
       {
-        question: 'What payment methods do you accept?',
-        answer: 'We accept Maya Payments and all major credit cards. All transactions are secure and encrypted.'
+        question: 'Does it cost anything to post a job?',
+        answer: 'No. Posting jobs is free and there are no subscription plans.'
       },
       {
-        question: 'Can I get a refund?',
-        answer: 'Refunds are available within 7 days of purchase if you haven\'t used the service. Contact support@ghlhire.com for refund requests.'
+        question: 'What is a featured listing?',
+        answer: 'A featured listing is pinned above the free listings on the jobs page and the homepage, with a gold Featured marker. It is the only paid option on GHL Hire.'
       },
       {
-        question: 'Do you offer discounts for multiple job postings?',
-        answer: 'Yes! We offer volume discounts for companies posting multiple jobs. Contact our sales team for custom pricing.'
+        question: 'How do I feature a job?',
+        answer: 'Email hello@vendrato.com with the job title or link and the dates you want. We reply with the rate and switch it on once it is agreed.'
       }
     ]
   },
@@ -115,10 +115,6 @@ const faqCategories: FAQCategory[] = [
       {
         question: 'How do I manage email notifications?',
         answer: 'Go to Notifications > Preferences to customize which emails you receive and how often. You can control notifications for applications, job matches, and more.'
-      },
-      {
-        question: 'Can I have multiple users on one company account?',
-        answer: 'Yes! Premium plans include multi-user access with role-based permissions. Manage team members from your company settings.'
       }
     ]
   }

@@ -41,7 +41,7 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const { resource, id, value } = parsed.value;
+  const { resource, id, action, value } = parsed.value;
   const adminClient = createAdminClient();
   const now = new Date().toISOString();
 
@@ -70,7 +70,17 @@ export async function PATCH(request: Request) {
       if (!data?.length) return notFound();
     }
 
-    if (resource === 'jobs') {
+    if (resource === 'jobs' && action === 'set-featured') {
+      const { data, error } = await adminClient
+        .from('jobs')
+        .update({ is_featured: value as boolean })
+        .eq('id', id)
+        .select('id');
+      if (error) throw error;
+      if (!data?.length) return notFound();
+    }
+
+    if (resource === 'jobs' && action === 'set-status') {
       const { data, error } = await adminClient
         .from('jobs')
         .update({ status: value as string })
@@ -80,7 +90,7 @@ export async function PATCH(request: Request) {
         return NextResponse.json(
           {
             error:
-              "This company has reached its plan's active job limit, so the job cannot be activated. Upgrade the plan or close another job first.",
+              'This company already has 25 active listings, so the job cannot be activated. Close another listing first.',
           },
           { status: 409 }
         );

@@ -50,6 +50,16 @@ const nextConfig: NextConfig = {
   // Redirects for URL consistency
   async redirects() {
     return [
+      // The board is free: the old plans page now explains featured listings.
+      { source: '/pricing', destination: '/featured', permanent: true },
+      // Old category and resource pages carried made-up salary and demand figures.
+      { source: '/categories', destination: '/jobs', permanent: true },
+      { source: '/jobs/category/ghl-developer', destination: '/jobs?q=developer', permanent: true },
+      { source: '/jobs/category/automation-specialist', destination: '/jobs?q=automation', permanent: true },
+      { source: '/jobs/category/funnel-builder', destination: '/jobs?q=funnel', permanent: true },
+      { source: '/jobs/category/:slug', destination: '/jobs', permanent: true },
+      { source: '/resources', destination: '/blog', permanent: true },
+      { source: '/company/billing/:path*', destination: '/company/dashboard/billing', permanent: false },
       {
         source: '/sign-up',
         destination: '/signup',
