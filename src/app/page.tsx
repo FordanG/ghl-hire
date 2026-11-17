@@ -4,10 +4,11 @@ import Footer from '@/components/Footer';
 import JobRow from '@/components/JobRow';
 import ArticleCard from '@/components/articles/ArticleCard';
 import SubscribeForm from '@/components/SubscribeForm';
+import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import { articles } from '@/content/articles';
 import { BOARD_JOB_SELECT, type BoardJob } from '@/lib/jobs';
-import { FEATURED_EMAIL, featuredMailto } from '@/lib/site';
+import { FEATURED_EMAIL, FEATURED_REQUEST_PATH } from '@/lib/site';
 import { createPublicClient } from '@/lib/supabase/public';
 
 // The board is public data: cache the page and refresh it every five minutes.
@@ -220,11 +221,11 @@ export default async function Home() {
               <div className="px-6 py-6">
                 <h3 className="text-xl font-semibold tracking-tight">Want the top of the board?</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-ink-soft">
-                  Featured listings are the only paid thing on GHL Hire. Your role is pinned to the top of the board and the homepage, with the gold marker. Email us and we set it up.
+                  Featured listings are the only paid thing on GHL Hire. Your role is pinned to the top of the board and the homepage, with the gold marker. Send a request and we email you a payment link.
                 </p>
-                <a href={featuredMailto()} className="press mt-5 inline-flex h-12 items-center rounded-md bg-ink px-5 text-base font-semibold text-white hover:bg-ink-2">
-                  Email {FEATURED_EMAIL}
-                </a>
+                <Link href={FEATURED_REQUEST_PATH} className="press mt-5 inline-flex h-12 items-center rounded-md bg-ink px-5 text-base font-semibold text-white hover:bg-ink-2">
+                  Request a featured listing
+                </Link>
                 <p className="mt-3 text-sm text-mute">
                   <Link href="/featured" className="min-h-0 underline underline-offset-2 hover:text-ink">How featured listings work</Link>
                 </p>
@@ -255,6 +256,7 @@ export default async function Home() {
           </div>
         </section>
 
+        <GhlStartLinks />
       </main>
 
       <Footer />

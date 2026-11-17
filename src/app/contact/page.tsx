@@ -76,7 +76,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Email Us</h3>
-                    <p className="text-gray-600">support@ghlhire.com</p>
+                    <p className="text-gray-600">inquiries@ghlhire.com</p>
                     <p className="text-gray-600">hello@ghlhire.com</p>
                   </div>
                 </div>

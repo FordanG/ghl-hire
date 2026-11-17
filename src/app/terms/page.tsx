@@ -123,12 +123,12 @@ export default function TermsPage() {
 
             <h3 className="text-xl font-semibold mb-3 mt-4">5.2 Featured Listings</h3>
             <p className="text-gray-600 leading-relaxed mb-4">
-              Employers can pay to have a listing featured at the top of the board. Featured listings are arranged directly by email at <a href="mailto:hello@vendrato.com" className="text-blue-600 hover:underline">hello@vendrato.com</a>. The price, dates and payment method are agreed in writing before anything is charged. See <Link href="/featured" className="text-blue-600 hover:underline">featured listings</Link>.
+              Employers can pay to have a listing featured at the top of the board. Featured listings are requested through the form on the featured listings page or by email at <a href="mailto:inquiries@ghlhire.com" className="text-blue-600 hover:underline">inquiries@ghlhire.com</a>. We reply with the price and a payment link (currently through Wise). Nothing is charged until you pay that link. See <Link href="/featured" className="text-blue-600 hover:underline">featured listings</Link>.
             </p>
 
             <h3 className="text-xl font-semibold mb-3 mt-4">5.3 Listings From Other Sites</h3>
             <p className="text-gray-600 leading-relaxed">
-              Some listings summarise roles published on an employer&apos;s own hiring page and link to it. For those roles you apply on the employer&apos;s site, and the employer&apos;s posting is the source of truth. If you are an employer and want a listing changed or removed, email <a href="mailto:hello@vendrato.com" className="text-blue-600 hover:underline">hello@vendrato.com</a>.
+              Some listings summarise roles published on an employer&apos;s own hiring page and link to it. For those roles you apply on the employer&apos;s site, and the employer&apos;s posting is the source of truth. If you are an employer and want a listing changed or removed, email <a href="mailto:inquiries@ghlhire.com" className="text-blue-600 hover:underline">inquiries@ghlhire.com</a>.
             </p>
           </section>
 

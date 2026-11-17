@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { FEATURED_EMAIL, SUPER_CLONER_URL } from '@/lib/site';
+import { AFFILIATE_NOTE, CONTACT_EMAIL, GHL_BOOTCAMP_URL, GHL_TRIAL_URL, SUPER_CLONER_URL } from '@/lib/site';
 
 const linkClass =
   'inline-flex min-h-[40px] items-center text-[15px] text-slate-300 transition-colors hover:text-white outline-none focus-visible:underline';
@@ -57,23 +57,36 @@ export default function Footer() {
           </nav>
         ))}
 
-        <div>
-          <h2 className="text-sm font-semibold text-white">From the same team</h2>
-          <a href={SUPER_CLONER_URL} target="_blank" rel="noopener noreferrer" className={`${linkClass} mt-3 font-medium text-white`}>
-            Super Cloner
-          </a>
-          <p className="text-[15px] leading-relaxed text-slate-300">
-            Copy a whole GoHighLevel funnel into your own account in one click.
-          </p>
-          <a href={`mailto:${FEATURED_EMAIL}`} className={`${linkClass} mt-4`}>
-            {FEATURED_EMAIL}
-          </a>
-        </div>
+        <nav aria-label="HighLevel tools">
+          <h2 className="text-sm font-semibold text-white">HighLevel tools</h2>
+          <ul className="mt-3">
+            <li>
+              <a href={SUPER_CLONER_URL} target="_blank" rel="sponsored noopener" className={linkClass}>
+                Super Cloner funnel cloner
+              </a>
+            </li>
+            <li>
+              <a href={GHL_TRIAL_URL} target="_blank" rel="sponsored noopener" className={linkClass}>
+                HighLevel 14-day free trial
+              </a>
+            </li>
+            <li>
+              <a href={GHL_BOOTCAMP_URL} target="_blank" rel="sponsored noopener" className={linkClass}>
+                Free HighLevel Bootcamp
+              </a>
+            </li>
+            <li>
+              <a href={`mailto:${CONTACT_EMAIL}`} className={linkClass}>
+                {CONTACT_EMAIL}
+              </a>
+            </li>
+          </ul>
+        </nav>
       </div>
 
       <div className="border-t border-white/10">
         <div className="page-wrap flex flex-col gap-2 py-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 GHL Hire. Not affiliated with HighLevel Inc.</p>
+          <p>© 2026 GHL Hire. Not affiliated with HighLevel Inc. {AFFILIATE_NOTE}</p>
           <nav className="flex gap-5" aria-label="Legal">
             <Link href="/privacy" className="inline-flex min-h-[40px] items-center hover:text-white">Privacy</Link>
             <Link href="/terms" className="inline-flex min-h-[40px] items-center hover:text-white">Terms</Link>

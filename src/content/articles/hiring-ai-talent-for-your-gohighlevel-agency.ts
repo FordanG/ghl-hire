@@ -70,7 +70,7 @@ const article: Article = {
     },
     {
       type: "p",
-      text: "Add one screening question that only a practitioner can answer quickly, such as \"Describe a bot you built that had to hand a conversation to a human. What triggered the handover?\" Posting a role on GHL Hire is free: you can [post a job here](/post-job). If you want the role pinned for more visibility, featured placement is arranged by email at hello@vendrato.com.",
+      text: "Add one screening question that only a practitioner can answer quickly, such as \"Describe a bot you built that had to hand a conversation to a human. What triggered the handover?\" Posting a role on GHL Hire is free: you can [post a job here](/post-job). If you want the role pinned for more visibility, you can request [featured placement](/featured).",
     },
     {
       type: "h2",
@@ -189,7 +189,7 @@ const article: Article = {
     },
     {
       q: "Is it free to post an AI job on GHL Hire?",
-      a: "Yes, posting a role on GHL Hire is free. Featured placement is available and is arranged by email at hello@vendrato.com.",
+      a: "Yes, posting a role on GHL Hire is free. Featured placement is available: send the request form on the featured listings page and we email you a payment link.",
     },
   ],
   sources: [

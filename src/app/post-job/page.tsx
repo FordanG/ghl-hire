@@ -7,7 +7,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { FEATURED_EMAIL, featuredMailto } from '@/lib/site';
+import Link from 'next/link';
+import { FEATURED_REQUEST_PATH } from '@/lib/site';
 
 export default function PostJobPage() {
   const router = useRouter();
@@ -124,7 +125,7 @@ export default function PostJobPage() {
       console.error('Job posting error:', err);
       const message = err instanceof Error ? err.message : '';
       if (message.includes('JOB_POST_LIMIT_REACHED')) {
-        setError('You already have 25 active listings. Close one first, or email hello@vendrato.com.');
+        setError('You already have 25 active listings. Close one first, or email inquiries@ghlhire.com.');
       } else {
         setError(message || 'Failed to post job. Please try again.');
       }
@@ -164,11 +165,10 @@ export default function PostJobPage() {
           <div className="mb-6 rounded-lg border border-rule bg-surface p-4 text-[15px] text-ink-soft">
             <p>
               <span className="font-semibold text-ink">Posting is free.</span> Your listing goes live as soon as you publish.
-              Want it pinned to the top of the board? Featured listings are arranged by email at{' '}
-              <a href={featuredMailto(formData.title || undefined)} className="inline min-h-0 min-w-0 font-semibold text-brand underline underline-offset-2">
-                {FEATURED_EMAIL}
-              </a>
-              .
+              Want it pinned to the top of the board? <Link href={FEATURED_REQUEST_PATH} className="inline min-h-0 min-w-0 font-semibold text-brand underline underline-offset-2">
+                Request a featured listing
+              </Link>{' '}
+              after you publish.
             </p>
           </div>
 

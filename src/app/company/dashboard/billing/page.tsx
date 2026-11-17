@@ -5,7 +5,7 @@ import Link from 'next/link';
 import CompanyDashboardLayout from '@/components/CompanyDashboardLayout';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { FEATURED_EMAIL, featuredMailto } from '@/lib/site';
+import { FEATURED_REQUEST_PATH } from '@/lib/site';
 import { generateJobSlug } from '@/lib/utils';
 
 interface ListingRow {
@@ -60,14 +60,14 @@ export default function FeaturedListingsPage() {
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-gray-900">How to feature a job</h2>
           <p className="mt-1 text-gray-600">
-            Email {FEATURED_EMAIL} with the role and your dates. We reply with the rate, and switch it on once it is agreed.
+            Send a short request with the role and your dates. We email you the rate and a payment link (through Wise for now), and switch it on once it is paid.
           </p>
-          <a
-            href={featuredMailto()}
+          <Link
+            href={FEATURED_REQUEST_PATH}
             className="mt-4 inline-flex h-11 items-center rounded-md bg-blue-600 px-5 font-semibold text-white transition-colors hover:bg-blue-700"
           >
-            Email {FEATURED_EMAIL}
-          </a>
+            Request a featured listing
+          </Link>
         </div>
 
         <div className="mt-6 rounded-xl border border-gray-200 bg-white">
@@ -94,9 +94,9 @@ export default function FeaturedListingsPage() {
                   {job.is_featured ? (
                     <span className="rounded-sm bg-amber-400 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-900">Featured</span>
                   ) : (
-                    <a href={featuredMailto(job.title)} className="inline-flex h-11 items-center font-semibold text-blue-600 hover:underline">
+                    <Link href={FEATURED_REQUEST_PATH} className="inline-flex h-11 items-center font-semibold text-blue-600 hover:underline">
                       Ask to feature this
-                    </a>
+                    </Link>
                   )}
                 </li>
               ))}

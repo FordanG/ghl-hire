@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
-import { FEATURED_EMAIL, featuredMailto } from '@/lib/site';
+import { FEATURED_EMAIL, FEATURED_REQUEST_PATH } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Hire GoHighLevel talent: post a job free',
@@ -27,8 +27,8 @@ const included = [
 
 const faqs = [
   ['Is it really free to post?', 'Yes. Creating an employer account and publishing listings costs nothing. The only paid option is a featured listing.'],
-  ['What is a featured listing?', 'A listing pinned above the free ones on the jobs page and the homepage, marked Featured in gold. It is arranged by email and switched on by our team.'],
-  ['How much does featuring cost?', `Email ${FEATURED_EMAIL} with the role you want to feature and we will reply with the current rate and available dates.`],
+  ['What is a featured listing?', 'A listing pinned above the free ones on the jobs page and the homepage, marked Featured in gold. You send a short request and our team switches it on.'],
+  ['How do I pay for a featured listing?', `Send the request form on the featured listings page. We email you the rate and a payment link. Payment is through Wise for now, while we set up more payment methods. Questions go to ${FEATURED_EMAIL}.`],
   ['Who sees my listing?', 'People looking for GoHighLevel work: automation specialists, funnel builders, Voice AI builders, virtual assistants, account managers and developers.'],
   ['How long does a listing stay up?', 'Until you close it. Please close roles once they are filled so the board stays accurate.'],
 ];
@@ -92,12 +92,12 @@ export default function EmployersPage() {
                 Need more eyes on a role? Feature it.
               </h2>
               <p className="mt-4 max-w-lg text-lg leading-relaxed text-ink-soft">
-                Featured listings are pinned to the top of the board and the homepage. It is the one paid option, and it is arranged by email so you talk to a person.
+                Featured listings are pinned to the top of the board and the homepage. It is the one paid option. Send a short request and we email you a payment link.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <a href={featuredMailto()} className="press inline-flex h-12 items-center rounded-md bg-ink px-6 text-base font-semibold text-white hover:bg-ink-2">
-                  Email {FEATURED_EMAIL}
-                </a>
+                <Link href={FEATURED_REQUEST_PATH} className="press inline-flex h-12 items-center rounded-md bg-ink px-6 text-base font-semibold text-white hover:bg-ink-2">
+                  Request a featured listing
+                </Link>
                 <Link href="/featured" className="press inline-flex h-12 items-center rounded-md border border-rule bg-white px-6 text-base font-semibold text-ink hover:bg-brand-soft">
                   How it works
                 </Link>

@@ -3,6 +3,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ArticleCard from '@/components/articles/ArticleCard';
 import SubscribeForm from '@/components/SubscribeForm';
+import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import { articles } from '@/content/articles';
 
@@ -68,6 +69,7 @@ export default function BlogPage() {
           </div>
         </section>
 
+        <GhlStartLinks />
       </main>
 
       <Footer />

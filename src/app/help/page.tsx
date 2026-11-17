@@ -30,7 +30,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: 'Is GHL Hire free to use?',
-        answer: 'Yes. Job seekers create profiles and apply for free, and employers post jobs for free. The only paid option is a featured listing, pinned to the top of the board and arranged by email at hello@vendrato.com.'
+        answer: 'Yes. Job seekers create profiles and apply for free, and employers post jobs for free. The only paid option is a featured listing, pinned to the top of the board. You request it with a short form and we email you a payment link.'
       }
     ]
   },
@@ -96,7 +96,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: 'How do I feature a job?',
-        answer: 'Email hello@vendrato.com with the job title or link and the dates you want. We reply with the rate and switch it on once it is agreed.'
+        answer: 'Fill in the request form on the Featured listings page. We email you the rate and a payment link (through Wise for now), and switch featuring on once it is paid. Questions: inquiries@ghlhire.com.'
       }
     ]
   },
@@ -110,7 +110,7 @@ const faqCategories: FAQCategory[] = [
       },
       {
         question: 'How do I delete my account?',
-        answer: 'Contact support@ghlhire.com to request account deletion. Please note this action is permanent and cannot be undone.'
+        answer: 'Contact inquiries@ghlhire.com to request account deletion. Please note this action is permanent and cannot be undone.'
       },
       {
         question: 'How do I manage email notifications?',

@@ -51,12 +51,12 @@ export default function SuperClonerPanel({
       <aside className="field-ink rounded-xl p-6 text-white sm:p-7">
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
         <p className="mt-2 text-[15px] leading-relaxed text-slate-300">
-          Super Cloner, from the team behind GHL Hire, copies a whole GoHighLevel funnel into your own builder, fully editable. From $20, no subscription.
+          Super Cloner copies a whole GoHighLevel funnel into your own builder, fully editable. From $20, no subscription.
         </p>
         <a
           href={SUPER_CLONER_URL}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="sponsored noopener"
           className="press mt-5 inline-flex h-11 items-center rounded-md bg-gold px-5 text-[15px] font-semibold text-ink transition-colors hover:bg-white"
         >
           Try Super Cloner
@@ -73,7 +73,7 @@ export default function SuperClonerPanel({
             Clone an entire GoHighLevel funnel in one click
           </h2>
           <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-300">
-            Super Cloner is our own Chrome extension. It copies any GHL funnel or website you can open and pastes it into your own builder. Every page arrives fully editable, so a rebuild that takes days is done before your coffee is.
+            Super Cloner is a Chrome extension that copies any GHL funnel or website you can open and pastes it into your own builder. Every page arrives fully editable, so a rebuild that takes days is done before your coffee is.
           </p>
           <ul className="mt-6 grid max-w-xl gap-x-6 gap-y-2 text-[15px] text-slate-200 sm:grid-cols-3">
             <li>Starts at $20</li>
@@ -83,7 +83,7 @@ export default function SuperClonerPanel({
           <a
             href={SUPER_CLONER_URL}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="sponsored noopener"
             className="press mt-8 inline-flex h-12 items-center rounded-md bg-gold px-6 text-base font-semibold text-ink transition-colors hover:bg-white"
           >
             Try Super Cloner

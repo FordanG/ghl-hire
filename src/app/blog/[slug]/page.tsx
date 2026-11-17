@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import RichText from '@/components/articles/RichText';
 import ArticleCard from '@/components/articles/ArticleCard';
 import SubscribeForm from '@/components/SubscribeForm';
+import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import { articles, formatArticleDate, getArticle, type ArticleBlock } from '@/content/articles';
 
@@ -285,6 +286,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               <SubscribeForm source={`article-${article.slug}`.slice(0, 60)} />
             </div>
           </section>
+        </div>
+
+        <div className="page-wrap-narrow mt-8">
+          <GhlStartLinks variant="card" />
         </div>
 
         <section className="page-wrap py-16">

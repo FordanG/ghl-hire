@@ -12,7 +12,7 @@ export default function PromoBanner() {
         <a
           href={SUPER_CLONER_URL}
           target="_blank"
-          rel="noopener noreferrer"
+          rel="sponsored noopener"
           className="inline min-h-0 min-w-0 font-semibold text-white underline decoration-gold decoration-2 underline-offset-4 hover:text-gold"
         >
           Clone any GHL funnel in one click with Super Cloner

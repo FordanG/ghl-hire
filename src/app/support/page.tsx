@@ -96,7 +96,7 @@ export default function SupportPage() {
           <div className="bg-white p-6 rounded-lg shadow-sm text-center">
             <Mail className="w-10 h-10 text-blue-600 mx-auto mb-3" />
             <h3 className="font-semibold text-gray-900 mb-2">Email Us</h3>
-            <p className="text-sm text-gray-600">support@ghlhire.com</p>
+            <p className="text-sm text-gray-600">inquiries@ghlhire.com</p>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-sm text-center">

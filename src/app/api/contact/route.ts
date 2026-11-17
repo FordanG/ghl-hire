@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     // Notify the support inbox. The ticket is already persisted, so email
     // delivery failures are logged but do not fail the request.
     try {
-      const supportInbox = process.env.SUPPORT_INBOX_EMAIL || 'support@ghlhire.com';
+      const supportInbox = process.env.SUPPORT_INBOX_EMAIL || 'inquiries@ghlhire.com';
       await sendEmail({
         to: supportInbox,
         replyTo: email,

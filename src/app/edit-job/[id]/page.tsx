@@ -188,7 +188,7 @@ export default function EditJobPage({ params }: EditJobPageProps) {
       console.error('Job update error:', err);
       const message = err instanceof Error ? err.message : '';
       if (message.includes('JOB_POST_LIMIT_REACHED')) {
-        setError('You already have 25 active listings. Close one first, or email hello@vendrato.com.');
+        setError('You already have 25 active listings. Close one first, or email inquiries@ghlhire.com.');
       } else {
         setError(message || 'Failed to update job. Please try again.');
       }

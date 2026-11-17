@@ -6,13 +6,14 @@ import Footer from '@/components/Footer';
 import CompanyMark from '@/components/CompanyMark';
 import JobText from '@/components/JobText';
 import SubscribeForm from '@/components/SubscribeForm';
+import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import JobDetailClient from './JobDetailClient';
 import ShareButtons from './ShareButtons';
 import { supabase } from '@/lib/supabase';
 import { extractJobIdFromSlug, generateJobSlug } from '@/lib/utils';
 import { companyName, formatSalary, locationLabel, postedAgo } from '@/lib/jobs';
-import { featuredMailto } from '@/lib/site';
+import { FEATURED_REQUEST_PATH } from '@/lib/site';
 
 interface JobDetailPageProps {
   params: Promise<{
@@ -397,11 +398,13 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
               </p>
               <p className="mt-3 flex flex-wrap gap-x-5 text-[15px] font-semibold">
                 <Link href="/post-job" className="inline-flex min-h-[44px] items-center text-brand hover:underline">Post a job free</Link>
-                <a href={featuredMailto()} className="inline-flex min-h-[44px] items-center text-brand hover:underline">Feature a job</a>
+                <Link href={FEATURED_REQUEST_PATH} className="inline-flex min-h-[44px] items-center text-brand hover:underline">Feature a job</Link>
               </p>
             </div>
 
             <SuperClonerPanel variant="card" title="Hired to rebuild funnels? Clone them in one click." />
+
+            <GhlStartLinks variant="card" />
           </aside>
         </div>
       </main>

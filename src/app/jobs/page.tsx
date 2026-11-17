@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import JobRow from '@/components/JobRow';
 import SubscribeForm from '@/components/SubscribeForm';
+import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import {
   BOARD_JOB_SELECT,
@@ -12,7 +13,7 @@ import {
   safeSearchTerm,
   type BoardJob,
 } from '@/lib/jobs';
-import { featuredMailto } from '@/lib/site';
+import { FEATURED_REQUEST_PATH } from '@/lib/site';
 import { createPublicClient } from '@/lib/supabase/public';
 
 const JOBS_PER_PAGE = 20;
@@ -259,19 +260,21 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             <div className="rounded-xl border border-rule p-6">
               <h2 className="text-lg font-semibold tracking-tight">Hiring for GoHighLevel work?</h2>
               <p className="mt-1 text-[15px] leading-relaxed text-ink-soft">
-                Posting is free. Featured listings sit at the top of this page and are arranged by email.
+                Posting is free. Featured listings sit at the top of this page.
               </p>
               <div className="mt-4 flex flex-col gap-2">
                 <Link href="/post-job" className="press inline-flex h-11 items-center justify-center rounded-md bg-brand px-4 font-semibold text-white hover:bg-brand-dark">
                   Post a job free
                 </Link>
-                <a href={featuredMailto()} className="press inline-flex h-11 items-center justify-center rounded-md border border-rule px-4 font-semibold text-ink hover:bg-surface">
+                <Link href={FEATURED_REQUEST_PATH} className="press inline-flex h-11 items-center justify-center rounded-md border border-rule px-4 font-semibold text-ink hover:bg-surface">
                   Ask about featuring
-                </a>
+                </Link>
               </div>
             </div>
 
             <SuperClonerPanel variant="card" title="Hired to rebuild funnels? Clone them in one click." />
+
+            <GhlStartLinks variant="card" />
           </aside>
         </div>
       </main>
