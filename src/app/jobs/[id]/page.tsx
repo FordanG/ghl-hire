@@ -10,10 +10,29 @@ import GhlStartLinks from '@/components/GhlStartLinks';
 import SuperClonerPanel from '@/components/SuperClonerPanel';
 import JobDetailClient from './JobDetailClient';
 import ShareButtons from './ShareButtons';
-import { supabase } from '@/lib/supabase';
+import ViewCounter from './ViewCounter';
+import { createPublicClient } from '@/lib/supabase/public';
 import { extractJobIdFromSlug, generateJobSlug } from '@/lib/utils';
 import { companyName, formatSalary, locationLabel, postedAgo } from '@/lib/jobs';
 import { FEATURED_REQUEST_PATH } from '@/lib/site';
+
+// Job pages are prebuilt and refreshed hourly, so a visit (or a crawler hit)
+// is served from the CDN instead of rendering in a server function. A job
+// posted after the last build is generated on its first visit, then cached.
+export const revalidate = 3600;
+export const dynamicParams = true;
+
+const supabase = createPublicClient();
+
+export async function generateStaticParams() {
+  const { data } = await supabase
+    .from('jobs')
+    .select('id, title')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(500);
+  return (data ?? []).map((job) => ({ id: generateJobSlug(job.title, job.id) }));
+}
 
 interface JobDetailPageProps {
   params: Promise<{
@@ -156,11 +175,6 @@ async function getSimilarJobs(currentJobId: string, companyId: string | null, li
   return [...(companyJobs || []), ...(otherJobs || [])];
 }
 
-async function incrementViewCount(jobId: string) {
-  // Increment the view count
-  await supabase.rpc('increment_job_views', { job_id: jobId });
-}
-
 const EMPLOYMENT_TYPE: Record<string, string> = {
   'Full-Time': 'FULL_TIME',
   'Part-Time': 'PART_TIME',
@@ -177,9 +191,6 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
   if (!job) {
     notFound();
   }
-
-  // Fire and forget: do not block the page on the counter.
-  incrementViewCount(job.id);
 
   const similarJobs = await getSimilarJobs(job.id, job.company_id, 4);
   const name = job.company.company_name;
@@ -236,6 +247,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jobPostingSchema) }} />
       )}
 
+      <ViewCounter jobId={job.id} />
       <Header />
 
       <main>

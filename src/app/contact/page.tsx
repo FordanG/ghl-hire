@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { submitSiteForm } from '@/lib/site-forms';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -29,15 +30,8 @@ export default function ContactPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to send message. Please try again.');
-      }
+      const problem = await submitSiteForm('contact', formData);
+      if (problem) throw new Error(problem);
       alert('Thank you for your message! We\'ll get back to you soon.');
       setFormData({ name: '', email: '', subject: '', message: '', type: 'general' });
     } catch (err) {

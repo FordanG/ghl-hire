@@ -52,6 +52,7 @@ const nextConfig: NextConfig = {
     return [
       // The board is free: the old plans page now explains featured listings.
       { source: '/pricing', destination: '/featured', permanent: true },
+      { source: '/waitlist', destination: '/#subscribe', permanent: false },
       // Old category and resource pages carried made-up salary and demand figures.
       { source: '/categories', destination: '/jobs', permanent: true },
       { source: '/jobs/category/ghl-developer', destination: '/jobs?q=developer', permanent: true },

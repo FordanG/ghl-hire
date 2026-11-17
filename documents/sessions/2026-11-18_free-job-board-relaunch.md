@@ -55,3 +55,23 @@ Curated roles go stale. Re-check the `apply_url` of each curated listing regular
 ```sql
 select id, title, external_company_name, apply_url, created_at from jobs where company_id is null and status = 'active';
 ```
+
+## Follow-up the same day: off Netlify functions
+
+Netlify reported about 430,000 serverless function requests a month (free limit 125,000) and about 340,000 edge function requests. Cause: every page was rendered on demand and the middleware matched every request, so each visit and each crawler hit cost one of each.
+
+- Public pages are prebuilt: `/` (refreshed every 5 minutes), `/jobs` (10 minutes), `/jobs/[id]` (hourly, new jobs generated on first visit), guides, employers, featured.
+- `/jobs` search, filters, sort and paging run in the browser (`src/components/JobsBoard.tsx`).
+- Job view counts are sent from the browser straight to Supabase (`ViewCounter`).
+- Middleware only matches signed-in areas and `/api`; security headers moved to `netlify.toml`. Waitlist mode is removed.
+- Public forms (newsletter signup, featured request, contact) call the Supabase Edge Function `site-forms` (`supabase/functions/site-forms/index.ts`, deployed 2026-11-18). The matching Next API routes are deleted.
+- Still on Netlify functions, by design: signed-in dashboards' API routes (profile creation, application emails, resume links, admin actions, AI helpers), sign-in callbacks, and the periodic page refreshes.
+
+To do: add `RESEND_API_KEY` to the Supabase Edge Function secrets, otherwise form submissions are saved (and visible in the admin console) but no notification email is sent.
+
+Not verified: the real drop in Netlify function usage, which can only be measured after deploy.
+
+## Email
+
+`inquiries@ghlhire.com` is a Mango Mail mailbox with a filter that forwards to Gabriel's Gmail. DNS is in Netlify DNS. All site addresses use it.
+

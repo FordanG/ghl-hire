@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { submitSiteForm } from '@/lib/site-forms';
 
 interface SubscribeFormProps {
   /** Where the signup happened, stored with the subscriber. */
@@ -16,29 +17,20 @@ export default function SubscribeForm({ source, tone = 'light', buttonLabel = 'G
   const [interest, setInterest] = useState<'jobseeker' | 'employer'>('jobseeker');
   const [state, setState] = useState<'idle' | 'sending' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [website, setWebsite] = useState(''); // honeypot, hidden from people
   const dark = tone === 'dark';
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setState('sending');
     setMessage('');
-    try {
-      const response = await fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, interest, source }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setState('error');
-        setMessage(data.error || 'That did not go through. Please try again.');
-        return;
-      }
-      setState('done');
-    } catch {
+    const error = await submitSiteForm('subscribe', { email, interest, source, website });
+    if (error) {
       setState('error');
-      setMessage('That did not go through. Please try again.');
+      setMessage(error);
+      return;
     }
+    setState('done');
   }
 
   if (state === 'done') {
@@ -65,6 +57,7 @@ export default function SubscribeForm({ source, tone = 'light', buttonLabel = 'G
 
   return (
     <form onSubmit={handleSubmit} noValidate={false}>
+      <input type="text" name="website" value={website} onChange={(event) => setWebsite(event.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className={`flex flex-col gap-3 ${stacked ? '' : 'sm:flex-row'}`}>
         <label className="sr-only" htmlFor={`email-${source}`}>Email address</label>
         <input

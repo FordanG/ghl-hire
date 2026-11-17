@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { submitSiteForm } from '@/lib/site-forms';
 
 const field =
   'h-12 w-full rounded-md border border-rule bg-white px-3 text-base text-ink outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/30';
@@ -9,7 +10,7 @@ const label = 'mb-1.5 block text-[15px] font-medium text-ink';
 type State = 'idle' | 'sending' | 'done' | 'error';
 
 export default function FeaturedRequestForm() {
-  const [form, setForm] = useState({ name: '', email: '', company: '', job: '', startDate: '', notes: '' });
+  const [form, setForm] = useState({ name: '', email: '', company: '', job: '', startDate: '', notes: '', website: '' });
   const [state, setState] = useState<State>('idle');
   const [message, setMessage] = useState('');
 
@@ -20,23 +21,13 @@ export default function FeaturedRequestForm() {
     event.preventDefault();
     setState('sending');
     setMessage('');
-    try {
-      const response = await fetch('/api/featured-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setState('error');
-        setMessage(data.error || 'Your request did not go through. Please try again.');
-        return;
-      }
-      setState('done');
-    } catch {
+    const error = await submitSiteForm('featured', form);
+    if (error) {
       setState('error');
-      setMessage('Your request did not go through. Please try again.');
+      setMessage(error);
+      return;
     }
+    setState('done');
   }
 
   if (state === 'done') {
@@ -52,6 +43,7 @@ export default function FeaturedRequestForm() {
 
   return (
     <form onSubmit={handleSubmit} className="rounded-xl border border-rule bg-white p-6 sm:p-8">
+      <input type="text" name="website" value={form.website} onChange={update('website')} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="fr-name" className={label}>Your name</label>
