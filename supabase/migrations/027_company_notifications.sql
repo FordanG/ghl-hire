@@ -84,12 +84,26 @@ DECLARE
     v_job_title TEXT;
     v_company_id UUID;
     v_candidate_name TEXT;
+    v_enabled BOOLEAN;
 BEGIN
     SELECT j.title, j.company_id INTO v_job_title, v_company_id
     FROM jobs j WHERE j.id = NEW.job_id;
 
     -- Curated listings have no company account to notify.
     IF v_company_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    -- An employer who also has a profile may have switched application
+    -- notifications off there; keep honouring that. Company-only accounts
+    -- have no preferences row and default to on.
+    SELECT np.inapp_application_updates INTO v_enabled
+    FROM companies c
+    JOIN profiles op ON op.user_id = c.user_id
+    JOIN notification_preferences np ON np.profile_id = op.id
+    WHERE c.id = v_company_id;
+
+    IF v_enabled IS FALSE THEN
         RETURN NEW;
     END IF;
 
