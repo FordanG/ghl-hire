@@ -67,19 +67,11 @@ export default function NotificationsPage() {
     try {
       setLoading(true);
 
-      // Get user's profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profileData) return;
-
+      // Row level security returns only this user's notifications, whether
+      // they belong to their profile or their company.
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('profile_id', profileData.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -143,18 +135,9 @@ export default function NotificationsPage() {
     if (!user) return;
 
     try {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (!profileData) return;
-
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq('profile_id', profileData.id)
         .eq('is_read', false);
 
       if (error) throw error;

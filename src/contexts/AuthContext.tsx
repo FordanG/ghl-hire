@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, Profile, Company } from '@/lib/supabase';
 import { deferAuthStateWork } from './auth-state';
+import { resolveAccountType, signupTypeFromMetadata } from '@/lib/account-type';
 
 interface AuthContextType {
   user: User | null;
@@ -23,9 +24,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [adminRole, setAdminRole] = useState<string | null>(null);
+  const [companyJobCount, setCompanyJobCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const userType = profile ? 'jobseeker' : company ? 'employer' : null;
+  const userType = resolveAccountType({
+    hasProfile: Boolean(profile),
+    hasCompany: Boolean(company),
+    signupType: signupTypeFromMetadata(user?.user_metadata),
+    companyJobCount,
+  });
 
   const refreshProfile = async (authenticatedUser?: User) => {
     const currentUser = authenticatedUser ?? (await supabase.auth.getUser()).data.user;
@@ -59,8 +66,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .maybeSingle()
       : { data: null };
 
+    // Only an account with both records needs the tie-break.
+    const { count: jobCount } =
+      profileData && companyData
+        ? await supabase
+            .from('jobs')
+            .select('id', { count: 'exact', head: true })
+            .eq('company_id', companyData.id)
+        : { count: 0 };
+
     setProfile(profileData);
     setCompany(companyData);
+    setCompanyJobCount(jobCount ?? 0);
     setAdminRole(adminRoleData?.role || null);
   };
 

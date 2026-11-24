@@ -28,3 +28,13 @@ An employer emailed inquiries: registered as Employer, but the dashboard showed 
 - 3 accounts have both a profile and a company and are treated as job seekers.
 - A signed-in job seeker has no in-app way to become an employer (`/post-job` redirects to `/signup`).
 - Tests: `npx tsx --test src/**/*.test.ts` (9 pass). `npx tsc --noEmit`, eslint on changed files and `npm run build` pass.
+
+## Follow-up (same day): notifications, dual accounts, apply flow
+
+- PR #16 merged and deployed. The 14 other affected employer signups were converted and emailed from inquiries@ghlhire.com.
+- Five accounts had both a profile and a company. Four were made employer-only. For two of them (both with live jobs) this removed 11 in-app "New Application Received" notifications, because notifications were tied to the profile. Their jobs and applications are intact. One real job seeker with an unused company was left alone.
+- `supabase/migrations/027_company_notifications.sql`: a notification can belong to a company, so employers get application notifications without a profile. **Not applied to production yet.** The app changes work with or without it.
+- After 027 is applied, the 11 removed notifications can be rebuilt from the `applications` table for those two companies.
+- `src/lib/account-type.ts`: an account with both records is an employer if it signed up as one or its company has posted a job; otherwise a job seeker. Used by the auth context, sign-in and the auth callback.
+- Apply flow: checked in a rolled-back production transaction that a new job seeker gets a profile, can insert an application under RLS, sees it, the job's application count increments and a duplicate is blocked. Fixed a race in `JobDetailClient` where clicking Apply before the session finished loading sent a signed-in job seeker to sign-in or showed "Only job seekers can apply".
+- Not tested: a real application submitted through the browser (it would create a live application and email the employer).

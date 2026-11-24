@@ -7,6 +7,7 @@ import { Eye, EyeOff, Mail, Lock, Users, Briefcase, AlertCircle } from 'lucide-r
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { createClient } from '@/lib/supabase/client';
+import { resolveAccountType, signupTypeFromMetadata } from '@/lib/account-type';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -78,10 +79,25 @@ export default function SignInPage() {
 
         // Route by the user's ACTUAL account type (ignore the selected tab so an
         // already-registered user is never blocked for picking the wrong toggle).
-        if (profile) {
+        const { count: companyJobCount } =
+          profile && company
+            ? await supabase
+                .from('jobs')
+                .select('id', { count: 'exact', head: true })
+                .eq('company_id', company.id)
+            : { count: 0 };
+
+        const accountType = resolveAccountType({
+          hasProfile: Boolean(profile),
+          hasCompany: Boolean(company),
+          signupType: signupTypeFromMetadata(data.user.user_metadata),
+          companyJobCount: companyJobCount ?? 0,
+        });
+
+        if (accountType === 'jobseeker') {
           router.push(safeRedirect ?? '/dashboard');
           router.refresh();
-        } else if (company) {
+        } else if (accountType === 'employer') {
           router.push(safeRedirect ?? '/company/dashboard');
           router.refresh();
         } else {

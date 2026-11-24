@@ -7,7 +7,8 @@ import type { Json } from '@/types/supabase';
 
 export interface Notification {
   id: string;
-  profile_id: string;
+  profile_id: string | null;
+  company_id: string | null;
   type: string;
   title: string;
   message: string;
@@ -44,22 +45,13 @@ export async function getNotifications(limit = 20): Promise<NotificationsResult>
       return { success: false, error: 'Not authenticated' };
     }
 
-    // Get user's profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: false, error: 'Profile not found' };
-    }
+    // Row level security scopes notifications to the caller, whether they
+    // are owned by the caller's profile or by the caller's company.
 
     // Get notifications
     const { data: notifications, error: notifError } = await supabase
       .from('notifications')
       .select('*')
-      .eq('profile_id', profile.id)
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -96,22 +88,13 @@ export async function getUnreadCount(): Promise<{ success: boolean; count: numbe
       return { success: true, count: 0 };
     }
 
-    // Get user's profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: true, count: 0 };
-    }
+    // Row level security scopes notifications to the caller, whether they
+    // are owned by the caller's profile or by the caller's company.
 
     // Count unread notifications
     const { count, error: countError } = await supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
-      .eq('profile_id', profile.id)
       .eq('is_read', false);
 
     if (countError) {
@@ -179,16 +162,8 @@ export async function markAllAsRead(): Promise<{ success: boolean; error?: strin
       return { success: false, error: 'Not authenticated' };
     }
 
-    // Get user's profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return { success: false, error: 'Profile not found' };
-    }
+    // Row level security scopes notifications to the caller, whether they
+    // are owned by the caller's profile or by the caller's company.
 
     const { error: updateError } = await supabase
       .from('notifications')
@@ -196,7 +171,6 @@ export async function markAllAsRead(): Promise<{ success: boolean; error?: strin
         is_read: true,
         read_at: new Date().toISOString()
       })
-      .eq('profile_id', profile.id)
       .eq('is_read', false);
 
     if (updateError) {
