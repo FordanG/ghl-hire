@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { resolveAccountType, signupTypeFromMetadata } from '@/lib/account-type';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -49,7 +50,7 @@ export async function GET(request: Request) {
           .single();
 
         // Account type: explicit ?type= param, else what the user chose at signup.
-        const metaType = user.user_metadata?.role ?? user.user_metadata?.user_type;
+        const metaType = signupTypeFromMetadata(user.user_metadata);
         const userType =
           (typeParam ?? metaType) === 'employer' ? 'employer' : 'jobseeker';
 
@@ -86,7 +87,21 @@ export async function GET(request: Request) {
 
         // Redirect by the account that actually exists; fall back to the
         // chosen type only when a record was just created above.
-        if (profile || (!company && userType === 'jobseeker')) {
+        const { count: companyJobCount } =
+          profile && company
+            ? await supabase
+                .from('jobs')
+                .select('id', { count: 'exact', head: true })
+                .eq('company_id', company.id)
+            : { count: 0 };
+        const existingType = resolveAccountType({
+          hasProfile: Boolean(profile),
+          hasCompany: Boolean(company),
+          signupType: metaType,
+          companyJobCount: companyJobCount ?? 0,
+        });
+
+        if ((existingType ?? userType) === 'jobseeker') {
           return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
         } else {
           return NextResponse.redirect(new URL('/company/dashboard', requestUrl.origin));

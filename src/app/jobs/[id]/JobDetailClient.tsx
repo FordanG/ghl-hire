@@ -21,7 +21,7 @@ interface JobDetailClientProps {
 
 export default function JobDetailClient({ job }: JobDetailClientProps) {
   const router = useRouter();
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -31,6 +31,10 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
   // Check if job is saved and if user has applied
   useEffect(() => {
     const checkStatus = async () => {
+      // Wait for the session and profile to load. Until then `profile` is
+      // empty even for a signed-in job seeker.
+      if (authLoading) return;
+
       if (!profile) {
         setLoading(false);
         return;
@@ -64,14 +68,14 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
     };
 
     checkStatus();
-  }, [profile, job.id]);
+  }, [authLoading, profile, job.id]);
 
   const isClosed =
     (!!job.status && job.status !== 'active') ||
     (!!job.expires_at && new Date(job.expires_at).getTime() < Date.now());
 
   const handleApply = () => {
-    if (isClosed) return;
+    if (isClosed || authLoading) return;
     if (!user) {
       router.push(`/signin?redirect=/jobs/${job.id}`);
       return;
@@ -86,6 +90,7 @@ export default function JobDetailClient({ job }: JobDetailClientProps) {
   };
 
   const handleSave = async () => {
+    if (authLoading) return;
     if (!user) {
       router.push(`/signin?redirect=/jobs/${job.id}`);
       return;

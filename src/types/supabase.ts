@@ -885,7 +885,8 @@ export type Database = {
           is_read: boolean | null
           link: string | null
           message: string
-          profile_id: string
+          company_id: string | null
+          profile_id: string | null
           read_at: string | null
           title: string
           type: string
@@ -897,7 +898,8 @@ export type Database = {
           is_read?: boolean | null
           link?: string | null
           message: string
-          profile_id: string
+          company_id?: string | null
+          profile_id?: string | null
           read_at?: string | null
           title: string
           type: string
@@ -909,7 +911,8 @@ export type Database = {
           is_read?: boolean | null
           link?: string | null
           message?: string
-          profile_id?: string
+          company_id?: string | null
+          profile_id?: string | null
           read_at?: string | null
           title?: string
           type?: string
