@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const userType = requestUrl.searchParams.get('type') || 'jobseeker';
+  const typeParam = requestUrl.searchParams.get('type');
 
   // Optional post-exchange destination (e.g. password recovery -> update-password).
   // Only allow safe internal paths to prevent open redirects.
@@ -48,6 +48,11 @@ export async function GET(request: Request) {
           .eq('user_id', user.id)
           .single();
 
+        // Account type: explicit ?type= param, else what the user chose at signup.
+        const metaType = user.user_metadata?.role ?? user.user_metadata?.user_type;
+        const userType =
+          (typeParam ?? metaType) === 'employer' ? 'employer' : 'jobseeker';
+
         // If neither exists, create one based on type
         if (!profile && !company) {
           if (userType === 'jobseeker') {
@@ -61,7 +66,7 @@ export async function GET(request: Request) {
               .from('companies')
               .insert({
                 user_id: user.id,
-                company_name: user.user_metadata.full_name || user.email?.split('@')[0] || 'Company',
+                company_name: user.user_metadata.company_name || user.user_metadata.full_name || user.email?.split('@')[0] || 'Company',
                 email: user.email!,
               })
               .select()
@@ -79,8 +84,9 @@ export async function GET(request: Request) {
           }
         }
 
-        // Redirect based on profile type
-        if (profile || userType === 'jobseeker') {
+        // Redirect by the account that actually exists; fall back to the
+        // chosen type only when a record was just created above.
+        if (profile || (!company && userType === 'jobseeker')) {
           return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
         } else {
           return NextResponse.redirect(new URL('/company/dashboard', requestUrl.origin));

@@ -15,6 +15,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -68,15 +69,32 @@ export default function SignUpPage() {
         email: formData.email,
         password: formData.password,
         options: {
+          // The handle_new_user database trigger reads this metadata to create
+          // the profile (job seeker) or company (employer), so the account type
+          // is set even when email confirmation means there is no session yet.
           data: {
             full_name: formData.fullName,
+            role: userType,
             user_type: userType,
+            company_name: userType === 'employer' ? formData.companyName : undefined,
+            phone: formData.phone || undefined,
+            location: formData.location || undefined,
           }
         }
       });
 
       if (signUpError) {
         setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user && !data.session) {
+        // Email confirmation is required: there is no session yet, so the
+        // profile API cannot run. The database trigger has already created
+        // the right account type.
+        setNeedsConfirmation(true);
+        setSuccess(true);
         setLoading(false);
         return;
       }
@@ -144,10 +162,22 @@ export default function SignUpPage() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
-            <h2 className="text-2xl font-semibold">Account Created!</h2>
+            <h2 className="text-2xl font-semibold">
+              {needsConfirmation ? 'Check your email' : 'Account Created!'}
+            </h2>
             <p className="text-gray-600">
-              Welcome to GHL Hire! Redirecting you to your dashboard...
+              {needsConfirmation
+                ? `We sent a confirmation link to ${formData.email}. Open it to activate your ${userType === 'employer' ? 'employer' : 'job seeker'} account, then sign in.`
+                : 'Welcome to GHL Hire! Redirecting you to your dashboard...'}
             </p>
+            {needsConfirmation && (
+              <Link
+                href="/signin"
+                className="inline-block text-blue-600 hover:text-blue-500 font-medium rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                Go to sign in
+              </Link>
+            )}
           </div>
         </div>
         <Footer />
